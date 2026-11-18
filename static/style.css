@@ -2916,35 +2916,48 @@ html[dir="ltr"] .customer-account-row{
 
 /* ============================================================
    CUSTOMER PORTAL — FIVE-LANGUAGE SWITCHER
+   Compact circular globe control; native select stays functional.
    ============================================================ */
 .customer-language-bar{
   position:fixed;
   z-index:110;
-  top:max(14px,env(safe-area-inset-top));
-  right:18px;
-  display:flex;
-  align-items:center;
-  gap:8px;
-  padding:7px 9px;
-  border:1px solid #e4e8ee;
-  border-radius:14px;
-  background:rgba(255,255,255,.96);
-  box-shadow:0 8px 24px rgba(13,30,51,.10);
+  top:max(16px,env(safe-area-inset-top));
+  right:28px;
+  width:44px;
+  height:44px;
+  display:grid;
+  place-items:center;
+  padding:0;
+  overflow:hidden;
+  border:1px solid #e7ebf0;
+  border-radius:50%;
+  background:rgba(255,255,255,.97);
+  box-shadow:0 7px 20px rgba(13,30,51,.10);
   backdrop-filter:blur(14px);
 }
 .customer-language-bar[hidden]{display:none!important}
 .customer-language-icon{
-  font-size:17px;
+  position:absolute;
+  inset:0;
+  z-index:1;
+  display:grid;
+  place-items:center;
+  font-size:18px;
   line-height:1;
+  pointer-events:none;
 }
 .customer-language-bar select{
-  min-width:112px;
-  height:36px;
+  position:absolute;
+  inset:0;
+  z-index:2;
+  width:100%;
+  height:100%;
+  min-width:0;
+  margin:0;
+  padding:0;
   border:0;
   outline:0;
-  background:transparent;
-  color:var(--customer-navy);
-  font:700 12px 'Plus Jakarta Sans',Arial,sans-serif;
+  opacity:0;
   cursor:pointer;
 }
 .customer-language-list button.active{
@@ -2969,20 +2982,18 @@ html[dir="ltr"] .customer-account-row{
 }
 @media(min-width:861px){
   .customer-language-bar{
-    right:max(18px,calc((100vw - 860px)/2 + 18px));
+    right:max(28px,calc((100vw - 860px)/2 + 28px));
   }
 }
 @media(max-width:520px){
   .customer-language-bar{
-    top:max(10px,env(safe-area-inset-top));
-    right:10px;
-    padding:5px 7px;
-    border-radius:12px;
+    top:max(12px,env(safe-area-inset-top));
+    right:18px;
+    width:42px;
+    height:42px;
   }
-  .customer-language-bar select{
-    min-width:92px;
-    height:32px;
-    font-size:11px;
+  .customer-language-icon{
+    font-size:17px;
   }
   .customer-auth-card{
     padding-top:72px;
