@@ -2349,7 +2349,7 @@ function reorderCustomerShipmentForm(form){
 
   const sectionFor=selector=>form.querySelector(selector)?.closest('.customer-form-section');
   const route=sectionFor('#customerShipmentOrigin');
-  const packageSection=sectionFor('#customerShipmentWeight');
+  const packageSection=sectionFor('#customerShipmentPackageType');
   const sender=sectionFor('#customerShipmentSenderId');
   const recipient=sectionFor('#customerShipmentRecipient');
   const payment=sectionFor('#customerShipmentPaymentMethod');
@@ -2624,7 +2624,6 @@ async function wireCustomerCreateShipment(){
     }
   };
   reorderCustomerShipmentForm(form);
-  mountCustomerPricing3D(form,showQuote);
   mountCustomerPromoCode(form,showQuote);
   if(quoteButton)quoteButton.onclick=()=>showQuote();
 
@@ -2639,21 +2638,18 @@ async function wireCustomerCreateShipment(){
     if(!originValue||!destinationValue)return toast(customerTranslate('اختر مدينة الاستلام ومدينة التسليم'));
     if(originValue===destinationValue)return toast(customerTranslate('مدينة الاستلام والتسليم يجب أن تكون مختلفة'));
 
-    const selectedParcelCode=String(form.elements.namedItem('pricing_size_code')?.value||'').trim().toUpperCase();
-    if(!selectedParcelCode)return toast(customerCampaignText('selectParcelFirst'));
-
     const pickupPreferredValue=String(form.elements.namedItem('pickup_preferred_at')?.value||'').trim();
     if(!pickupPreferredValue)return toast(customerTranslate('وقت الاستلام المفضل'));
 
     const payload=Object.fromEntries(new FormData(form));
     payload.pickup_preferred_at=pickupPreferredValue;
     payload.promo_code=String(payload.promo_code||'').trim().toUpperCase();
-    payload.pricing_size_code=selectedParcelCode;
+    payload.pricing_size_code=String(payload.pricing_size_code||'').trim().toUpperCase();
     payload.origin=originValue;
     payload.destination=destinationValue;
     if(destinationBranch)payload.recipient_branch=String(destinationBranch.value||'').trim().toUpperCase();
     ['pieces','weight','length_cm','width_cm','height_cm','declared_value','cod'].forEach(key=>payload[key]=Number(payload[key]||0));
-    payload.insured=document.querySelector('#customerShipmentInsured').checked;
+    payload.insured=!!document.querySelector('#customerShipmentInsured')?.checked;
 
     const submit=form.querySelector('[type="submit"]');
     submit.disabled=true;
