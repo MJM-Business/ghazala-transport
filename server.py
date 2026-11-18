@@ -5061,6 +5061,17 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send_json(payload)
             if path=='/api/public/offers':
                 return self.send_json(public_offer_rows(c))
+            # Public QR for customer receipts. The QR contains only the public
+            # tracking URL; private shipment documents still require customer login.
+            if len(parts)==5 and parts[:3]==['api','public','tracking'] and parts[4]=='qr':
+                awb=parts[3].strip().upper()
+                row=c.execute('SELECT id,awb FROM shipments WHERE awb=?',(awb,)).fetchone()
+                if not row: return self.send_json({'error':'لم يتم العثور على شحنة بهذا الرقم'},404)
+                try:
+                    return self.send_svg(code_svg(self.tracking_url(awb),'qr'))
+                except ImportError:
+                    return self.send_json({'error':'QR renderer unavailable; install reportlab in this Python environment'},503)
+
             if len(parts)==4 and parts[:3]==['api','public','tracking']:
                 awb=parts[3].strip().upper(); row=c.execute(shipment_query()+' WHERE s.awb=?',(awb,)).fetchone()
                 if not row: return self.send_json({'error':'لم يتم العثور على شحنة بهذا الرقم'},404)
