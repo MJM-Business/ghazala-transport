@@ -821,7 +821,7 @@ function landingPage(){return `<div class="landing-shell"><div class="landing-wr
     <div class="landing-actions">
       <button class="btn customer-portal-launch" type="button" data-customer-login>Login <span>→</span></button>
       <button class="btn light" type="button" data-customer-signup>Sign Up <span>＋</span></button>
-      <button class="landing-secondary" type="button" data-customer-track-guest>Track Shipment <span>⌕</span></button>
+      <button class="landing-track-cta" type="button" data-customer-track-guest><span class="landing-track-cta-icon">⌕</span><span class="landing-track-cta-text">TRACK YOUR SHIPMENT</span></button>
     </div>
     <div class="landing-trust">
       <span><i>✓</i> وجهتان واضحتان</span>
