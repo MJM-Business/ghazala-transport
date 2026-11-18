@@ -1,0 +1,30 @@
+GHAZALA TRANSPORT - FULL PROJECT CHECKPOINT
+
+Date: 21 Oct 2026
+
+OPEN IN CURSOR
+1. Extract this ZIP.
+2. In Cursor choose File > Open Folder.
+3. Open this folder: Ghazala-Transport-FULL-2026-10-21
+4. Open Terminal in Cursor.
+5. Run: python server.py
+6. Open the local URL shown in the terminal (currently http://127.0.0.1:8000/).
+
+If Python dependencies are missing, run:
+    pip install -r requirements.txt
+then run:
+    python server.py
+
+This package contains the full project tree, backend, frontend, assets, tests and SQLite work folder.
+The latest UI/backend checkpoint files have been merged over the last full project baseline, including:
+- shipment lifecycle/status fixes
+- COD Collected label
+- Jazan spelling/current-location fixes
+- Audit Central Search fix
+- customer account shipment-linking UI/backend
+- latest report export accuracy file
+
+IMPORTANT ABOUT DATA
+The SQLite database included comes from the last complete project archive available to this build.
+Your PC's currently-running database (with the exact GHZ-2666001 test history) cannot be copied automatically from your computer into this chat.
+Code is updated; local live data may differ until you copy your own current work/ghazala.sqlite3 into this project's work folder.

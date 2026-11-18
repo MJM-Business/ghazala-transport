@@ -1,0 +1,11 @@
+{
+  "checkpoint_date": "2026-10-21",
+  "base_full_archive": "Ghazala-MASTER-LATEST-FULL.zip.zip (2026-10-07)",
+  "overlays": [
+    "latest customer account linking fix",
+    "latest app.js COD/lifecycle checkpoint",
+    "latest style.css checkpoint",
+    "analytics/report accuracy reports.py"
+  ],
+  "database_note": "Bundled DB is from last full archive; replace work/ghazala.sqlite3 with your current PC DB to retain exact latest operational records."
+}

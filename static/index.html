@@ -1,0 +1,924 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#101e31">
+
+  <link rel="icon" type="image/png" href="/ghazala-logo.png?v=2">
+  <link rel="apple-touch-icon" href="/ghazala-logo.png?v=2">
+
+  <meta name="description" content="غزالا ترانسبورت لخدمات الشحن والتوصيل بين جدة وجازان. متابعة تشغيلية للشحنات وخيارات الدفع عند الاستلام.">
+  <meta property="og:title" content="غزالا ترانسبورت | شحن بين جدة وجازان">
+  <meta property="og:description" content="شحن موثوق بين جدة وجازان مع إدارة ومتابعة واضحة للشحنات.">
+  <meta property="og:type" content="website">
+
+  <title>غزالا ترانسبورت | شحن بين جدة وجازان</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&family=Noto+Nastaliq+Urdu:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap"
+    rel="stylesheet"
+  >
+
+  <link href="/style.css?v=25" rel="stylesheet">
+</head>
+
+<body>
+  <header class="topbar">
+    <button class="mobile-menu icon-btn" id="menuToggle" aria-label="القائمة">☰</button>
+
+    <div
+      class="brand-link"
+      id="brandHomeLink"
+      data-page="landing"
+      role="button"
+      tabindex="0"
+      title="الصفحة الرئيسية | Home"
+      aria-label="الصفحة الرئيسية"
+    >
+      <img
+        class="brand-logo"
+        src="/ghazala-logo.png?v=2"
+        alt="غزالا ترانسبورت · Ghazala Transport"
+      >
+
+      <div class="brand">
+        <b>غزالا ترانسبورت</b>
+        <span id="sessionLabel">
+          <i></i>
+          المقر الرئيسي · جدة
+          <small>KSA</small>
+        </span>
+      </div>
+    </div>
+
+    <!-- Public top navigation intentionally has NO Login / Sign Up buttons. -->
+    <nav
+      class="topbar-guest-nav"
+      id="topbarGuestNav"
+      aria-label="التنقل السريع"
+    >
+      <a href="#services" class="topbar-nav-pill" data-scroll="services">
+        <span class="pill-dot">❖</span>
+        <span class="nav-txt">خدماتنا</span>
+      </a>
+
+      <a href="#route" class="topbar-nav-pill" data-scroll="route">
+        <span class="pill-dot">⌖</span>
+        <span class="nav-txt">مسارنا</span>
+      </a>
+
+      <a href="#how" class="topbar-nav-pill" data-scroll="how">
+        <span class="pill-dot">⚡</span>
+        <span class="nav-txt">كيف نعمل</span>
+      </a>
+    </nav>
+
+    <div class="top-actions">
+      <select id="langSelect" class="language-select" aria-label="Language">
+        <option value="ar">العربية</option>
+        <option value="en">English</option>
+        <option value="ur">اردو</option>
+        <option value="hi">हिन्दी</option>
+      </select>
+
+      <button class="icon-btn" id="passwordBtn" title="تغيير كلمة المرور" hidden>🔑</button>
+      <button class="icon-btn" id="globalSearch" title="بحث">⌕</button>
+      <button class="icon-btn notice" title="التنبيهات">♧<em>3</em></button>
+      <button
+        class="icon-btn logout-shortcut"
+        id="logoutBtn"
+        title="تسجيل الخروج"
+        aria-label="تسجيل الخروج"
+        hidden
+      >⇥</button>
+    </div>
+  </header>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="side-label">بوابة العمليات</div>
+    <nav id="sideNav"></nav>
+
+    <div class="side-bottom">
+      <div class="online-dot"></div>
+      النظام يعمل بشكل طبيعي
+      <small>الإصدار التجريبي · 1.0</small>
+      <button class="btn light small side-logout" id="sideLogoutBtn">⇥ تسجيل الخروج</button>
+    </div>
+  </aside>
+
+  <main id="app" class="main"></main>
+
+  <main
+    id="customerPortalRoot"
+    class="customer-portal-root"
+    hidden
+  ></main>
+
+  <div id="customerLanguageBar" class="customer-language-bar" hidden>
+    <span class="customer-language-icon" aria-hidden="true">🌐</span>
+    <select id="customerLanguageSelect" aria-label="Language">
+      <option value="en">English</option>
+      <option value="ur">اردو</option>
+      <option value="ar">العربية</option>
+      <option value="hi">हिन्दी</option>
+      <option value="bn">বাংলা</option>
+    </select>
+  </div>
+
+  <nav id="mobileNav" class="mobile-nav"></nav>
+
+  <nav
+    id="customerMobileNav"
+    class="customer-mobile-nav"
+    hidden
+    aria-label="Customer navigation"
+  >
+    <button type="button" class="customer-nav-item active" data-customer-page="home">
+      <span class="customer-nav-icon">⌂</span>
+      <span>Home</span>
+    </button>
+
+    <button type="button" class="customer-nav-item" data-customer-page="shipments">
+      <span class="customer-nav-icon">□</span>
+      <span>Shipments</span>
+    </button>
+
+    <button
+      type="button"
+      class="customer-nav-item customer-nav-create"
+      data-customer-page="create"
+    >
+      <span class="customer-nav-create-icon">＋</span>
+      <span>Create</span>
+    </button>
+
+    <button type="button" class="customer-nav-item" data-customer-page="support">
+      <span class="customer-nav-icon">◉</span>
+      <span>Support</span>
+    </button>
+
+    <button type="button" class="customer-nav-item" data-customer-page="account">
+      <span class="customer-nav-icon">♙</span>
+      <span>Account</span>
+    </button>
+  </nav>
+
+  <!-- Customer entry -->
+  <template id="customerEntryTemplate">
+    <section class="customer-screen customer-entry-screen">
+      <div class="customer-auth-card">
+        <button type="button" class="customer-back-btn" data-customer-action="close" aria-label="Back">←</button>
+
+        <div class="customer-auth-logo-wrap">
+          <img src="/ghazala-logo.png?v=2" class="customer-auth-logo" alt="Ghazala Transport">
+        </div>
+
+        <div class="customer-auth-heading">
+          <span class="customer-auth-kicker">GHAZALA TRANSPORT</span>
+          <h1>بوابة العملاء</h1>
+          <p>احجز شحنتك، تابع حالتها، وأدر جميع شحناتك من مكان واحد.</p>
+        </div>
+
+        <div class="customer-entry-actions">
+          <button type="button" class="customer-primary-btn" data-customer-action="login">تسجيل الدخول</button>
+          <button type="button" class="customer-secondary-btn" data-customer-action="register">إنشاء حساب جديد</button>
+        </div>
+
+        <div class="customer-entry-divider">
+          <span></span><em>أو</em><span></span>
+        </div>
+
+        <button type="button" class="customer-track-guest-btn" data-customer-action="track">
+          تتبع شحنة بدون تسجيل الدخول
+        </button>
+      </div>
+    </section>
+  </template>
+
+  <!-- Customer login -->
+  <template id="customerLoginTemplate">
+    <section class="customer-screen customer-auth-screen">
+      <div class="customer-auth-card">
+        <button type="button" class="customer-back-btn" data-customer-action="entry">←</button>
+
+        <div class="customer-auth-logo-wrap">
+          <img src="/ghazala-logo.png?v=2" class="customer-auth-logo" alt="Ghazala Transport">
+        </div>
+
+        <div class="customer-auth-heading">
+          <h1>تسجيل الدخول</h1>
+          <p>أدخل بيانات حسابك للوصول إلى بوابة العملاء</p>
+        </div>
+
+        <form id="customerLoginForm" class="customer-form" autocomplete="on">
+          <label class="customer-field">
+            <span>البريد الإلكتروني / اسم المستخدم</span>
+            <div class="customer-input-wrap">
+              <input
+                type="text"
+                id="customerLoginUsername"
+                name="username"
+                placeholder="example@email.com"
+                autocomplete="username"
+                required
+              >
+              <span class="customer-input-icon">✉</span>
+            </div>
+          </label>
+
+          <label class="customer-field">
+            <span>كلمة المرور</span>
+            <div class="customer-input-wrap">
+              <input
+                type="password"
+                id="customerLoginPassword"
+                name="password"
+                placeholder="••••••••"
+                autocomplete="current-password"
+                required
+              >
+              <button
+                type="button"
+                class="customer-password-toggle"
+                data-password-toggle="customerLoginPassword"
+                aria-label="Show password"
+              >◉</button>
+            </div>
+          </label>
+
+          <button type="submit" class="customer-primary-btn">تسجيل الدخول</button>
+
+          <button type="button" class="customer-text-btn" data-customer-action="register">
+            ليس لديك حساب؟ إنشاء حساب
+          </button>
+        </form>
+      </div>
+    </section>
+  </template>
+
+  <!-- Customer registration -->
+  <template id="customerRegisterTemplate">
+    <section class="customer-screen customer-auth-screen">
+      <div class="customer-auth-card">
+        <button type="button" class="customer-back-btn" data-customer-action="entry">←</button>
+
+        <div class="customer-auth-logo-wrap">
+          <img src="/ghazala-logo.png?v=2" class="customer-auth-logo" alt="Ghazala Transport">
+        </div>
+
+        <div class="customer-auth-heading">
+          <h1>إنشاء حساب</h1>
+          <p>أدخل بياناتك لإنشاء حساب عميل جديد</p>
+        </div>
+
+        <form id="customerRegisterForm" class="customer-form" autocomplete="on">
+          <label class="customer-field">
+            <span>الاسم الكامل</span>
+            <div class="customer-input-wrap">
+              <input
+                type="text"
+                id="customerRegisterName"
+                name="display_name"
+                placeholder="أدخل الاسم الكامل"
+                autocomplete="name"
+                required
+              >
+              <span class="customer-input-icon">♙</span>
+            </div>
+          </label>
+
+          <label class="customer-field">
+            <span>البريد الإلكتروني / اسم المستخدم</span>
+            <div class="customer-input-wrap">
+              <input
+                type="text"
+                id="customerRegisterUsername"
+                name="username"
+                placeholder="example@email.com"
+                autocomplete="username"
+                required
+              >
+              <span class="customer-input-icon">✉</span>
+            </div>
+          </label>
+
+          <label class="customer-field">
+            <span>رقم الجوال</span>
+            <div class="customer-input-wrap">
+              <input
+                type="tel"
+                id="customerRegisterMobile"
+                name="mobile"
+                placeholder="+966 5X XXX XXXX"
+                autocomplete="tel"
+                required
+              >
+              <span class="customer-input-icon">☎</span>
+            </div>
+          </label>
+
+          <label class="customer-field">
+            <span>العنوان</span>
+            <div class="customer-input-wrap">
+              <input
+                type="text"
+                id="customerRegisterAddress"
+                name="address"
+                placeholder="جدة، المملكة العربية السعودية"
+                autocomplete="street-address"
+              >
+              <span class="customer-input-icon">⌖</span>
+            </div>
+          </label>
+
+          <label class="customer-field">
+            <span>كلمة المرور</span>
+            <div class="customer-input-wrap">
+              <input
+                type="password"
+                id="customerRegisterPassword"
+                name="password"
+                placeholder="أدخل كلمة المرور"
+                autocomplete="new-password"
+                required
+              >
+              <button
+                type="button"
+                class="customer-password-toggle"
+                data-password-toggle="customerRegisterPassword"
+                aria-label="Show password"
+              >◉</button>
+            </div>
+          </label>
+
+          <div class="customer-password-hint">
+            Password: minimum 10 characters, including uppercase, lowercase and a number.
+          </div>
+
+          <label class="customer-field">
+            <span>تأكيد كلمة المرور</span>
+            <div class="customer-input-wrap">
+              <input
+                type="password"
+                id="customerRegisterPasswordConfirm"
+                name="password_confirm"
+                placeholder="أعد إدخال كلمة المرور"
+                autocomplete="new-password"
+                required
+              >
+              <button
+                type="button"
+                class="customer-password-toggle"
+                data-password-toggle="customerRegisterPasswordConfirm"
+                aria-label="Show password"
+              >◉</button>
+            </div>
+          </label>
+
+          <label class="customer-checkbox-row">
+            <input type="checkbox" id="customerRegisterTerms" required>
+            <span>أوافق على الشروط والأحكام وسياسة الخصوصية</span>
+          </label>
+
+          <button type="submit" class="customer-primary-btn">إنشاء الحساب</button>
+
+          <button type="button" class="customer-text-btn" data-customer-action="login">
+            لديك حساب بالفعل؟ تسجيل الدخول
+          </button>
+        </form>
+      </div>
+    </section>
+  </template>
+
+  <!-- Customer home -->
+  <template id="customerHomeTemplate">
+    <section class="customer-screen customer-dashboard">
+      <div class="customer-dashboard-header">
+        <div>
+          <small>مرحباً بك</small>
+          <h1 id="customerHomeName">عميل غزالا</h1>
+        </div>
+
+        <button type="button" class="customer-avatar-btn" data-customer-page="account">
+          <span id="customerHomeAvatar">G</span>
+        </button>
+      </div>
+
+      <div class="customer-dashboard-brand">
+        <img src="/ghazala-logo.png?v=2" alt="Ghazala Transport">
+      </div>
+
+      <form id="customerTrackingForm" class="customer-tracking-box">
+        <span class="customer-tracking-scan">⌗</span>
+        <input
+          id="customerTrackingInput"
+          type="text"
+          placeholder="أدخل رقم الشحنة للتتبع"
+          autocomplete="off"
+        >
+        <button type="submit" aria-label="Track shipment">⌕</button>
+      </form>
+
+      <div class="customer-section-heading">
+        <div>
+          <small>وصول سريع</small>
+          <h2>ماذا تريد أن تفعل؟</h2>
+        </div>
+      </div>
+
+      <div class="customer-quick-grid">
+        <button type="button" class="customer-quick-card" data-customer-page="create">
+          <div class="customer-quick-icon">📦</div>
+          <strong>إنشاء شحنة</strong>
+          <span>احجز شحنتك الآن</span>
+        </button>
+
+        <button type="button" class="customer-quick-card" data-customer-action="service-centers">
+          <div class="customer-quick-icon">⌖</div>
+          <strong>مراكز الخدمة</strong>
+          <span>جدة وجازان</span>
+        </button>
+
+        <button type="button" class="customer-quick-card" data-customer-action="calculator">
+          <div class="customer-quick-icon">🧮</div>
+          <strong>حاسبة السعر</strong>
+          <span>احسب تكلفة الشحن</span>
+        </button>
+      </div>
+
+      <button type="button" class="customer-address-card" data-customer-page="account">
+        <span class="customer-address-icon">⌖</span>
+        <span class="customer-address-copy">
+          <strong>إضافة عنوانك</strong>
+          <small id="customerHomeAddress">إضافة / تعديل العنوان</small>
+        </span>
+        <span class="customer-address-add">+ إضافة</span>
+      </button>
+
+      <section class="customer-recent-section">
+        <div class="customer-section-heading customer-section-heading-inline">
+          <div>
+            <small>آخر النشاط</small>
+            <h2>الشحنات الأخيرة</h2>
+          </div>
+
+          <button type="button" class="customer-text-btn" data-customer-page="shipments">عرض الكل</button>
+        </div>
+
+        <div id="customerRecentShipments" class="customer-recent-list"></div>
+      </section>
+    </section>
+  </template>
+
+  <!-- Customer shipments -->
+  <template id="customerShipmentsTemplate">
+    <section class="customer-screen customer-list-screen">
+      <div class="customer-page-header">
+        <div>
+          <small>My Shipments</small>
+          <h1>شحناتي</h1>
+        </div>
+
+        <button type="button" class="customer-round-btn" data-customer-page="create">＋</button>
+      </div>
+
+      <form id="customerShipmentSearchForm" class="customer-tracking-box">
+        <span class="customer-tracking-scan">⌗</span>
+        <input
+          id="customerShipmentSearchInput"
+          type="text"
+          placeholder="ابحث برقم الشحنة"
+          autocomplete="off"
+        >
+        <button type="submit">⌕</button>
+      </form>
+
+      <div id="customerShipmentList" class="customer-shipment-list"></div>
+
+      <div id="customerShipmentsEmpty" class="customer-empty-state" hidden>
+        <div class="customer-empty-box">📦</div>
+        <h2>لا توجد شحنات</h2>
+        <p>أنشئ أول شحنة ليتم عرض تفاصيلها هنا</p>
+        <button type="button" class="customer-primary-btn" data-customer-page="create">
+          إنشاء أول شحنة
+        </button>
+      </div>
+    </section>
+  </template>
+
+  <!-- Create shipment -->
+  <template id="customerCreateShipmentTemplate">
+    <section class="customer-screen customer-create-screen">
+      <div class="customer-page-header">
+        <button type="button" class="customer-back-btn" data-customer-page="home">←</button>
+
+        <div>
+          <small>Create Shipment</small>
+          <h1>إنشاء شحنة جديدة</h1>
+        </div>
+      </div>
+
+      <form id="customerShipmentForm" class="customer-form customer-shipment-form">
+        <section class="customer-form-section">
+          <div class="customer-form-section-title">
+            <span>01</span>
+            <div><small>Route</small><h2>مسار الشحنة</h2></div>
+          </div>
+
+          <div class="customer-form-grid two">
+            <label class="customer-field">
+              <span>مدينة الاستلام</span>
+              <select id="customerShipmentOrigin" name="origin" required>
+                <option value="">اختر المدينة</option>
+                <option value="جدة">جدة</option>
+                <option value="جازان">جازان</option>
+              </select>
+            </label>
+
+            <label class="customer-field">
+              <span>مدينة التسليم</span>
+              <select id="customerShipmentDestination" name="destination" required>
+                <option value="">اختر المدينة</option>
+                <option value="جدة">جدة</option>
+                <option value="جازان">جازان</option>
+              </select>
+            </label>
+          </div>
+        </section>
+
+        <section class="customer-form-section">
+          <div class="customer-form-section-title">
+            <span>02</span>
+            <div><small>Sender</small><h2>بيانات المرسل</h2></div>
+          </div>
+
+          <div class="customer-form-grid">
+            <label class="customer-field">
+              <span>رقم الهوية / الإقامة</span>
+              <input type="text" name="sender_id" id="customerShipmentSenderId" required>
+            </label>
+
+            <label class="customer-field">
+              <span>عنوان الاستلام</span>
+              <textarea
+                name="sender_address"
+                id="customerShipmentSenderAddress"
+                rows="3"
+                required
+              ></textarea>
+            </label>
+          </div>
+        </section>
+
+        <section class="customer-form-section">
+          <div class="customer-form-section-title">
+            <span>03</span>
+            <div><small>Recipient</small><h2>بيانات المستلم</h2></div>
+          </div>
+
+          <div class="customer-form-grid">
+            <label class="customer-field">
+              <span>اسم المستلم</span>
+              <input type="text" name="recipient" id="customerShipmentRecipient" required>
+            </label>
+
+            <label class="customer-field">
+              <span>رقم الجوال</span>
+              <input
+                type="tel"
+                name="phone"
+                id="customerShipmentRecipientPhone"
+                placeholder="+966 5X XXX XXXX"
+                required
+              >
+            </label>
+
+            <label class="customer-field">
+              <span>رقم الهوية / الإقامة</span>
+              <input type="text" name="recipient_id" id="customerShipmentRecipientId" required>
+            </label>
+
+            <label class="customer-field">
+              <span>عنوان التسليم</span>
+              <textarea
+                name="recipient_address"
+                id="customerShipmentRecipientAddress"
+                rows="3"
+                required
+              ></textarea>
+            </label>
+          </div>
+        </section>
+
+        <section class="customer-form-section">
+          <div class="customer-form-section-title">
+            <span>04</span>
+            <div><small>Package</small><h2>تفاصيل الشحنة</h2></div>
+          </div>
+
+          <div class="customer-form-grid two">
+            <label class="customer-field">
+              <span>نوع الشحنة</span>
+              <select name="package_type" id="customerShipmentPackageType">
+                <option value="طرد تجاري سريع">طرد تجاري سريع</option>
+                <option value="وثائق">وثائق</option>
+                <option value="طرود">طرود</option>
+                <option value="منتجات تجارية">منتجات تجارية</option>
+                <option value="أخرى">أخرى</option>
+              </select>
+            </label>
+
+            <label class="customer-field">
+              <span>عدد القطع</span>
+              <input
+                type="number"
+                name="pieces"
+                id="customerShipmentPieces"
+                min="1"
+                value="1"
+                required
+              >
+            </label>
+
+            <label class="customer-field">
+              <span>الوزن بالكيلو</span>
+              <input
+                type="number"
+                name="weight"
+                id="customerShipmentWeight"
+                min="0.5"
+                step="0.1"
+                value="0.5"
+                required
+              >
+            </label>
+
+            <label class="customer-field">
+              <span>القيمة المعلنة</span>
+              <input
+                type="number"
+                name="declared_value"
+                id="customerShipmentDeclaredValue"
+                min="0"
+                step="0.01"
+                value="0"
+              >
+            </label>
+          </div>
+
+          <label class="customer-field">
+            <span>وصف محتويات الشحنة</span>
+            <textarea
+              name="package_description"
+              id="customerShipmentDescription"
+              rows="3"
+              placeholder="اكتب وصفاً مختصراً لمحتويات الشحنة"
+            ></textarea>
+          </label>
+
+          <div class="customer-dimensions-grid">
+            <label class="customer-field">
+              <span>الطول cm</span>
+              <input type="number" name="length_cm" min="0" step="0.1" value="0">
+            </label>
+
+            <label class="customer-field">
+              <span>العرض cm</span>
+              <input type="number" name="width_cm" min="0" step="0.1" value="0">
+            </label>
+
+            <label class="customer-field">
+              <span>الارتفاع cm</span>
+              <input type="number" name="height_cm" min="0" step="0.1" value="0">
+            </label>
+          </div>
+
+          <label class="customer-checkbox-row">
+            <input type="checkbox" name="insured" id="customerShipmentInsured">
+            <span>إضافة تأمين على الشحنة</span>
+          </label>
+        </section>
+
+        <section class="customer-form-section">
+          <div class="customer-form-section-title">
+            <span>05</span>
+            <div><small>Payment</small><h2>طريقة الدفع</h2></div>
+          </div>
+
+          <label class="customer-field">
+            <span>طريقة دفع رسوم الشحن</span>
+            <select name="payment_method" id="customerShipmentPaymentMethod" required>
+              <option value="sender">الدفع من قبل المرسل</option>
+              <option value="cod">الدفع عند الاستلام</option>
+            </select>
+          </label>
+
+          <label class="customer-field" id="customerCodField" hidden>
+            <span>مبلغ التحصيل عند الاستلام</span>
+            <input
+              type="number"
+              name="cod"
+              id="customerShipmentCod"
+              min="0"
+              step="0.01"
+              value="0"
+            >
+          </label>
+
+          <label class="customer-field">
+            <span>الموعد المتوقع</span>
+            <input
+              type="text"
+              name="eta"
+              id="customerShipmentEta"
+              placeholder="مثال: غداً 14:00"
+              required
+            >
+          </label>
+        </section>
+
+        <section class="customer-quote-card" id="customerQuoteCard">
+          <div>
+            <small>التكلفة التقديرية</small>
+            <strong id="customerQuoteTotal">— ر.س</strong>
+          </div>
+
+          <button type="button" id="customerCalculateQuoteBtn">حساب السعر</button>
+        </section>
+
+        <button
+          type="submit"
+          class="customer-primary-btn customer-submit-shipment-btn"
+        >
+          تأكيد وإنشاء الشحنة
+        </button>
+      </form>
+    </section>
+  </template>
+
+  <!-- Customer account -->
+  <template id="customerAccountTemplate">
+    <section class="customer-screen customer-account-screen">
+      <div class="customer-page-header">
+        <div>
+          <small>Account</small>
+          <h1>حسابي</h1>
+        </div>
+      </div>
+
+      <div class="customer-profile-card">
+        <div class="customer-profile-avatar" id="customerProfileAvatar">G</div>
+
+        <div class="customer-profile-copy">
+          <strong id="customerProfileName">Ghazala Customer</strong>
+          <span id="customerProfileUsername">customer</span>
+          <small id="customerProfileMobile">+966</small>
+        </div>
+
+        <button
+          type="button"
+          class="customer-profile-edit-btn"
+          data-customer-action="edit-profile"
+        >›</button>
+      </div>
+
+      <div class="customer-account-group">
+        <h2>الملف الشخصي والتفضيلات</h2>
+
+        <button type="button" class="customer-account-row" data-customer-action="address">
+          <span class="customer-account-row-icon">⌂</span>
+          <span class="customer-account-row-copy">
+            <strong>دفتر العناوين</strong>
+            <small id="customerAccountAddress">إضافة / تعديل العنوان</small>
+          </span>
+          <span class="customer-account-chevron">›</span>
+        </button>
+
+        <button type="button" class="customer-account-row" data-customer-action="language">
+          <span class="customer-account-row-icon">◎</span>
+          <span class="customer-account-row-copy">
+            <strong>اللغة</strong>
+            <small>العربية</small>
+          </span>
+          <span class="customer-account-chevron">›</span>
+        </button>
+
+        <button type="button" class="customer-account-row" data-customer-page="shipments">
+          <span class="customer-account-row-icon">□</span>
+          <span class="customer-account-row-copy">
+            <strong>سجل الشحنات</strong>
+            <small>عرض جميع الشحنات السابقة</small>
+          </span>
+          <span class="customer-account-chevron">›</span>
+        </button>
+      </div>
+
+      <div class="customer-account-group">
+        <h2>الدعم والمعلومات</h2>
+
+        <button type="button" class="customer-account-row" data-customer-page="support">
+          <span class="customer-account-row-icon">?</span>
+          <span class="customer-account-row-copy">
+            <strong>المساعدة والدعم</strong>
+          </span>
+          <span class="customer-account-chevron">›</span>
+        </button>
+
+        <button type="button" class="customer-account-row" data-customer-action="about">
+          <span class="customer-account-row-icon">i</span>
+          <span class="customer-account-row-copy">
+            <strong>عن غزالا ترانسبورت</strong>
+          </span>
+          <span class="customer-account-chevron">›</span>
+        </button>
+      </div>
+
+      <button type="button" class="customer-logout-btn" id="customerLogoutBtn">
+        ⇥ تسجيل الخروج
+      </button>
+    </section>
+  </template>
+
+  <!-- Customer support -->
+  <template id="customerSupportTemplate">
+    <section class="customer-screen customer-support-screen">
+      <div class="customer-page-header">
+        <div>
+          <small>Support</small>
+          <h1>المساعدة والدعم</h1>
+        </div>
+      </div>
+
+      <div class="customer-support-hero">
+        <div class="customer-support-icon">☏</div>
+        <h2>كيف يمكننا مساعدتك؟</h2>
+        <p>فريق غزالا ترانسبورت جاهز لمساعدتك في الشحن والتتبع والحساب.</p>
+      </div>
+
+      <div class="customer-support-list">
+        <a href="tel:+966" class="customer-support-row">
+          <span>☎</span>
+          <div>
+            <small>اتصال</small>
+            <strong>خدمة العملاء</strong>
+          </div>
+          <em>›</em>
+        </a>
+
+        <a href="mailto:info@ghazala.sa" class="customer-support-row">
+          <span>✉</span>
+          <div>
+            <small>البريد الإلكتروني</small>
+            <strong>info@ghazala.sa</strong>
+          </div>
+          <em>›</em>
+        </a>
+
+        <button
+          type="button"
+          class="customer-support-row"
+          data-customer-action="service-centers"
+        >
+          <span>⌖</span>
+          <div>
+            <small>مواقعنا</small>
+            <strong>مراكز الخدمة</strong>
+          </div>
+          <em>›</em>
+        </button>
+      </div>
+    </section>
+  </template>
+
+  <!-- Customer tracking result -->
+  <template id="customerTrackingResultTemplate">
+    <section class="customer-screen customer-tracking-result-screen">
+      <div class="customer-page-header">
+        <button type="button" class="customer-back-btn" data-customer-page="home">←</button>
+
+        <div>
+          <small>Tracking</small>
+          <h1>تتبع الشحنة</h1>
+        </div>
+      </div>
+
+      <div id="customerTrackingResult" class="customer-tracking-result"></div>
+    </section>
+  </template>
+
+  <div id="modalRoot"></div>
+  <div id="toastRoot" aria-live="polite"></div>
+
+  <script src="/pdf-tools.js?v=1"></script>
+  <script src="/locales.js?v=16" defer></script>
+  <script src="/ops-locales.js?v=12" defer></script>
+  <script src="/landing-locales.js?v=1" defer></script>
+  <script src="/workflow-locales.js?v=1" defer></script>
+  <script src="/i18n.js?v=2" defer></script>
+  <script src="/app.js?v=23" defer></script>
+  <script src="/ops.js?v=24" defer></script>
+</body>
+</html>

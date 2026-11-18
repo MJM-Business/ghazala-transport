@@ -1,0 +1,6 @@
+reportlab>=4.4,<5
+openpyxl>=3.1,<4
+arabic-reshaper>=3,<4
+python-bidi>=0.6,<1
+uharfbuzz>=0.50,<1
+Pillow>=10,<13
