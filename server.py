@@ -5942,7 +5942,7 @@ class Handler(BaseHTTPRequestHandler):
                 customers.require_customer(c,user)
 
                 allowed_fields={
-                    "sender_id","sender_address","pickup_preferred_at",
+                    "sender_id","sender_address",
                     "recipient","recipient_id","phone",
                     "origin","destination","eta",
                     "recipient_branch","recipient_address",
@@ -5976,7 +5976,6 @@ class Handler(BaseHTTPRequestHandler):
                 origin=str(data.get("origin","")).strip()
                 destination=str(data.get("destination","")).strip()
                 eta=str(data.get("eta","")).strip()
-                pickup_preferred_at=str(data.get("pickup_preferred_at","")).strip()
                 recipient_address=str(data.get("recipient_address","")).strip()
                 recipient_branch=str(data.get("recipient_branch","")).strip().upper()
 
@@ -5990,7 +5989,6 @@ class Handler(BaseHTTPRequestHandler):
                     "recipient mobile":recipient_phone,
                     "origin":origin,
                     "destination":destination,
-                    "preferred pickup time":pickup_preferred_at,
                     "ETA":eta,
                     "recipient address":recipient_address,
                 }
@@ -6008,7 +6006,6 @@ class Handler(BaseHTTPRequestHandler):
                     "origin":120,
                     "destination":120,
                     "eta":120,
-                    "pickup_preferred_at":80,
                     "sender_address":1000,
                     "recipient_address":1000,
                     "recipient_branch":120,
@@ -6023,7 +6020,6 @@ class Handler(BaseHTTPRequestHandler):
                     "origin":origin,
                     "destination":destination,
                     "eta":eta,
-                    "pickup_preferred_at":pickup_preferred_at,
                     "sender_address":sender_address,
                     "recipient_address":recipient_address,
                     "recipient_branch":recipient_branch,
@@ -6032,17 +6028,6 @@ class Handler(BaseHTTPRequestHandler):
                 }
                 if any(len(length_values[key])>limit for key,limit in limits.items()):
                     return self.send_json({"error":"A booking field exceeds the allowed size."},400)
-
-                # datetime-local from the customer portal is stored as the customer's
-                # requested local pickup time. Keep the original local value so the
-                # operations UI displays exactly what the customer selected.
-                try:
-                    preferred_dt=datetime.fromisoformat(pickup_preferred_at)
-                    if preferred_dt.tzinfo is not None:
-                        preferred_dt=preferred_dt.replace(tzinfo=None)
-                    pickup_preferred_at=preferred_dt.isoformat(timespec="minutes")
-                except (TypeError,ValueError):
-                    return self.send_json({"error":"Select a valid preferred pickup date and time."},400)
 
                 if origin==destination:
                     return self.send_json({"error":"Origin and destination must be different."},400)
@@ -6212,7 +6197,7 @@ class Handler(BaseHTTPRequestHandler):
                        ) VALUES(?,?,?,?,?,?,?,?,?,?,?,'requested',NULL,?)""",
                     (
                         pickup_number,user["id"],origin_branch_id,sender_name,sender_phone,
-                        origin,sender_address,pickup_preferred_at,quote["pieces"],quote["weight"],pickup_note,
+                        origin,sender_address,"",quote["pieces"],quote["weight"],pickup_note,
                         shipment_id
                     )
                 )
@@ -6229,7 +6214,7 @@ class Handler(BaseHTTPRequestHandler):
                         "pickup_number":pickup_number,
                         "awb":awb,
                         "branch_id":origin_branch_id,
-                        "preferred_at":pickup_preferred_at,
+                        "preferred_at":"",
                         "auto_created":True
                     },
                     request=self
