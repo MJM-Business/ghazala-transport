@@ -2697,26 +2697,6 @@ async function wireCustomerCreateShipment(){
 
   if(address&&!address.value)address.value=customerProfile.address||'';
 
-  // Customer-created shipments automatically create pickup tasks. Ask for the
-  // pickup appointment inside the shipment form so operations never receives an
-  // auto-created pickup with a blank Preferred Time.
-  let pickupPreferred=document.querySelector('#customerShipmentPickupPreferredAt');
-  if(!pickupPreferred&&address){
-    const label=document.createElement('label');
-    label.className='customer-field';
-    label.innerHTML=`<span>${esc(customerTranslate('وقت الاستلام المفضل'))}</span><input type="datetime-local" name="pickup_preferred_at" id="customerShipmentPickupPreferredAt" step="900" required>`;
-    const addressField=address.closest('.customer-field');
-    addressField?.insertAdjacentElement('afterend',label);
-    pickupPreferred=label.querySelector('input');
-  }
-  if(pickupPreferred){
-    const nextQuarter=new Date(Date.now()+15*60*1000);
-    nextQuarter.setSeconds(0,0);
-    nextQuarter.setMinutes(Math.ceil(nextQuarter.getMinutes()/15)*15);
-    const localIso=new Date(nextQuarter.getTime()-nextQuarter.getTimezoneOffset()*60000).toISOString().slice(0,16);
-    pickupPreferred.min=localIso;
-  }
-
   const toggleCod=()=>{if(codField)codField.hidden=method?.value!=='cod'};
   toggleCod();
   if(method)method.onchange=toggleCod;
@@ -2761,11 +2741,7 @@ async function wireCustomerCreateShipment(){
     if(!originValue||!destinationValue)return toast(customerTranslate('اختر مدينة الاستلام ومدينة التسليم'));
     if(originValue===destinationValue)return toast(customerTranslate('مدينة الاستلام والتسليم يجب أن تكون مختلفة'));
 
-    const pickupPreferredValue=String(form.elements.namedItem('pickup_preferred_at')?.value||'').trim();
-    if(!pickupPreferredValue)return toast(customerTranslate('وقت الاستلام المفضل'));
-
     const payload=Object.fromEntries(new FormData(form));
-    payload.pickup_preferred_at=pickupPreferredValue;
     payload.promo_code=String(payload.promo_code||'').trim().toUpperCase();
     payload.pricing_size_code=String(payload.pricing_size_code||'').trim().toUpperCase();
     payload.origin=originValue;
