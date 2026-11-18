@@ -141,6 +141,56 @@ def shipments(con, user, awb=None):
     return result
 
 
+
+def link_created_shipment(con, user, shipment_id, request=None):
+    """Link a newly customer-created shipment to the authenticated customer.
+
+    This is intentionally separate from the staff-side link_shipment() helper:
+    customer self-service creation must not require staff permissions, but it
+    still writes the same authoritative customer_shipments ownership row.
+    """
+    require_customer(con, user)
+    try:
+        shipment_id=int(shipment_id)
+    except (TypeError,ValueError):
+        raise ValueError('Invalid shipment.') from None
+
+    shipment=con.execute(
+        'SELECT id,awb FROM shipments WHERE id=?',
+        (shipment_id,)
+    ).fetchone()
+    if not shipment:
+        raise CustomerShipmentNotFound('Shipment not found.')
+
+    current=con.execute(
+        'SELECT * FROM customer_shipments WHERE shipment_id=?',
+        (shipment_id,)
+    ).fetchone()
+    if current:
+        if current['customer_user_id'] != user['id']:
+            raise CustomerConflict('Shipment is already linked to another customer.')
+        return dict(current), False
+
+    con.execute(
+        'INSERT INTO customer_shipments(shipment_id,customer_user_id,linked_by) VALUES(?,?,?)',
+        (shipment_id,user['id'],user['id'])
+    )
+    result=dict(con.execute(
+        'SELECT * FROM customer_shipments WHERE shipment_id=?',
+        (shipment_id,)
+    ).fetchone())
+
+    write_audit(
+        con,
+        auth.context(con,user),
+        'shipment.customer_linked',
+        'shipment',
+        shipment_id,
+        after=result,
+        request=request
+    )
+    return result, True
+
 def link_shipment(con, actor, shipment, data, request=None):
     if not auth.allowed(actor, 'shipments.edit'):
         raise auth.AccessDenied()
