@@ -8104,8 +8104,11 @@ class Handler(BaseHTTPRequestHandler):
 
 if __name__ == "__main__":
     parser=argparse.ArgumentParser(description="Run the Ghazala Transport portal")
-    parser.add_argument("--host",default="127.0.0.1",help="Use 0.0.0.0 for access from the local network")
-    parser.add_argument("--port",type=int,default=8000)
+    render_port=os.environ.get("PORT")
+    default_host="0.0.0.0" if render_port else "127.0.0.1"
+    default_port=int(render_port or 8000)
+    parser.add_argument("--host",default=default_host,help="Use 0.0.0.0 for network/hosted access")
+    parser.add_argument("--port",type=int,default=default_port)
     args=parser.parse_args(); init_db()
     threading.Thread(target=notification_worker,daemon=True,name="route-notification-worker").start()
     print(f"Ghazala Transport running on {args.host}:{args.port}")
