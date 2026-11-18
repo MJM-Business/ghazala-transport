@@ -2680,8 +2680,9 @@ async function wireCustomerCreateShipment(){
   try{
     await Promise.all([loadGhazalaNetwork(),ensureCustomerPricing()]);
   }catch(error){
-    toast(customerTranslate(error.message||'تعذر تحميل المدن والفروع'));
-    return;
+    // Pricing/network helpers are useful for previews, but must never disable
+    // the actual customer shipment submit flow.
+    console.warn('Customer shipment helper data unavailable:',error);
   }
 
   const previousOrigin=origin?.value||'';
@@ -2753,9 +2754,10 @@ async function wireCustomerCreateShipment(){
     const submit=form.querySelector('[type="submit"]');
     submit.disabled=true;
     try{
-      const verifiedQuote=await showQuote();
-      if(!verifiedQuote)return;
-      payload.pricing_size_code=String(form.elements.namedItem('pricing_size_code')?.value||verifiedQuote.size_code||payload.pricing_size_code||'').trim().toUpperCase();
+      const verifiedQuote=await showQuote(false);
+      if(verifiedQuote){
+        payload.pricing_size_code=String(form.elements.namedItem('pricing_size_code')?.value||verifiedQuote.size_code||payload.pricing_size_code||'').trim().toUpperCase();
+      }
       const result=await api('/api/customer/shipments',{method:'POST',body:JSON.stringify(payload)});
       customerPreferredPricingSizeCode='';
       await customerRefresh();
