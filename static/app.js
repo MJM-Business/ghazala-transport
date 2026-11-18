@@ -1126,7 +1126,7 @@ function landingPage(){return `<div class="landing-shell"><div class="landing-wr
     <!-- Step 4 -->
     <div class="step-card-3d">
       <div class="step-visual">
-        <img src="/images/workflow-step4-delivery.jpg" alt="التسليم المعتمد وإثبات الاستلام POD" loading="lazy">
+        <img src="/images/ghazala-truck-hero.png" alt="التسليم المعتمد وإثبات الاستلام POD" loading="lazy">
         <span class="step-num-badge">04</span>
       </div>
       <div class="step-card-body">
