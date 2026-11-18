@@ -819,9 +819,9 @@ function landingPage(){return `<div class="landing-shell"><div class="landing-wr
     <h1>من جدة إلى جازان،<br><em>بكل وضوح.</em></h1>
     <p>شحنك بين المدينتين، مع متابعة تشغيلية واضحة من تسجيل الشحنة حتى تأكيد التسليم.</p>
     <div class="landing-actions">
-      <button class="btn customer-portal-launch" type="button" data-customer-login>Login <span>→</span></button>
-      <button class="btn light" type="button" data-customer-signup>Sign Up <span>＋</span></button>
-      <button class="landing-track-cta" type="button" data-customer-track-guest><span class="landing-track-cta-icon">⌕</span><span class="landing-track-cta-text">TRACK YOUR SHIPMENT</span></button>
+      <button class="btn customer-portal-launch" type="button" data-customer-login>تسجيل الدخول <span>→</span></button>
+      <button class="btn light" type="button" data-customer-signup>إنشاء حساب جديد <span>＋</span></button>
+      <button class="landing-track-cta" type="button" data-customer-track-guest><span class="landing-track-cta-icon">⌕</span><span class="landing-track-cta-text">تتبع شحنتك</span></button>
     </div>
     <div class="landing-trust">
       <span><i>✓</i> وجهتان واضحتان</span>
