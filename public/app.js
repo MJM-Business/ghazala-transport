@@ -1704,6 +1704,10 @@ function wireCustomerLogin(){
   const form=document.querySelector('#customerLoginForm');
   if(!form)return;
 
+  // Use explicit customer-friendly validation instead of the browser silently
+  // blocking submit on an off-screen required field.
+  form.noValidate=true;
+
   form.onsubmit=async e=>{
     e.preventDefault();
 
@@ -2737,6 +2741,34 @@ async function wireCustomerCreateShipment(){
 
   form.onsubmit=async e=>{
     e.preventDefault();
+
+    const requiredFields=[
+      ['origin','Pickup City'],
+      ['destination','Delivery City'],
+      ['sender_id','ID / Iqama Number'],
+      ['sender_address','Pickup Address'],
+      ['recipient','Recipient Name'],
+      ['phone','Recipient Mobile Number'],
+      ['recipient_id','Recipient ID / Iqama Number'],
+      ['recipient_address','Recipient Address'],
+      ['pieces','Pieces'],
+      ['payment_method','Payment Method'],
+      ['eta','Expected Delivery Time']
+    ];
+    const missing=requiredFields.find(([name])=>{
+      const field=form.elements.namedItem(name);
+      return !field || !String(field.value||'').trim();
+    });
+    if(missing){
+      const field=form.elements.namedItem(missing[0]);
+      toast('Please complete: '+missing[1]);
+      try{
+        field?.scrollIntoView({behavior:'smooth',block:'center'});
+        setTimeout(()=>field?.focus(),250);
+      }catch(_){}
+      return;
+    }
+
     const originValue=String(origin?.value||'').trim();
     const destinationValue=String(destination?.value||'').trim();
     if(!originValue||!destinationValue)return toast(customerTranslate('اختر مدينة الاستلام ومدينة التسليم'));
