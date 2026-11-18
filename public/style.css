@@ -7124,3 +7124,76 @@ html[dir="rtl"] .ops-home-notification.is-unread{
   .pricing-admin-grid .parcel-examples span,
   .pricing-admin-card .parcel-examples span{font-size:11.4px!important}
 }
+
+/* =========================================================
+   GHAZALA HERO — TRACK YOUR SHIPMENT CTA
+   ========================================================= */
+.landing-hero .landing-actions .landing-track-cta{
+  appearance:none!important;
+  -webkit-appearance:none!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:10px!important;
+  width:300px!important;
+  min-width:300px!important;
+  max-width:300px!important;
+  height:56px!important;
+  min-height:56px!important;
+  padding:0 22px!important;
+  margin:0!important;
+  border:1px solid rgba(255,255,255,.94)!important;
+  border-radius:15px!important;
+  background:linear-gradient(135deg,#ffffff 0%,#fff5ed 100%)!important;
+  color:#0d1e33!important;
+  box-shadow:0 12px 28px rgba(4,10,20,.28),0 0 0 1px rgba(234,91,24,.10)!important;
+  font-family:'Plus Jakarta Sans','IBM Plex Sans Arabic',Arial,sans-serif!important;
+  font-size:13px!important;
+  font-weight:800!important;
+  letter-spacing:.035em!important;
+  line-height:1!important;
+  white-space:nowrap!important;
+  cursor:pointer!important;
+  text-decoration:none!important;
+  transition:transform .18s ease,box-shadow .18s ease,background .18s ease!important;
+}
+.landing-hero .landing-actions .landing-track-cta:hover{
+  transform:translateY(-2px)!important;
+  background:linear-gradient(135deg,#ffffff 0%,#ffede0 100%)!important;
+  box-shadow:0 16px 34px rgba(4,10,20,.32),0 0 0 3px rgba(234,91,24,.12)!important;
+}
+.landing-hero .landing-actions .landing-track-cta:active{
+  transform:translateY(0) scale(.985)!important;
+}
+.landing-hero .landing-actions .landing-track-cta-icon{
+  display:grid!important;
+  place-items:center!important;
+  width:32px!important;
+  height:32px!important;
+  min-width:32px!important;
+  flex:0 0 32px!important;
+  border-radius:9px!important;
+  background:linear-gradient(135deg,#ff8a3d 0%,#ea5b18 100%)!important;
+  color:#fff!important;
+  font-size:16px!important;
+  font-weight:900!important;
+  box-shadow:0 6px 14px rgba(234,91,24,.34)!important;
+}
+.landing-hero .landing-actions .landing-track-cta-text{
+  display:block!important;
+  color:#0d1e33!important;
+  font-size:13px!important;
+  font-weight:800!important;
+  letter-spacing:.035em!important;
+}
+@media(max-width:760px){
+  .landing-hero .landing-actions .landing-track-cta{
+    width:100%!important;
+    min-width:0!important;
+    max-width:none!important;
+    height:54px!important;
+    min-height:54px!important;
+    flex:1 1 100%!important;
+  }
+}
+
