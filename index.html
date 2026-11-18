@@ -46,8 +46,80 @@
 
 
 
-  \<link href="/style.css?v=30" rel="stylesheet">
+  \<link href="/style.css?v=31" rel="stylesheet">
 
+
+  \<style id="customer-language-circle-final"\>
+    /* Final customer portal language control override */
+    #customerLanguageBar.customer-language-bar{
+      position:fixed!important;
+      z-index:110!important;
+      top:max(16px,env(safe-area-inset-top))!important;
+      right:28px!important;
+      width:44px!important;
+      min-width:44px!important;
+      max-width:44px!important;
+      height:44px!important;
+      min-height:44px!important;
+      max-height:44px!important;
+      display:grid!important;
+      place-items:center!important;
+      gap:0!important;
+      padding:0!important;
+      margin:0!important;
+      overflow:hidden!important;
+      border:1px solid #e7ebf0!important;
+      border-radius:50%!important;
+      background:rgba(255,255,255,.98)!important;
+      box-shadow:0 7px 20px rgba(13,30,51,.10)!important;
+      backdrop-filter:blur(14px)!important;
+    }
+    #customerLanguageBar.customer-language-bar[hidden]{display:none!important}
+    #customerLanguageBar .customer-language-icon{
+      position:absolute!important;
+      inset:0!important;
+      display:grid!important;
+      place-items:center!important;
+      z-index:1!important;
+      width:100%!important;
+      height:100%!important;
+      font-size:18px!important;
+      line-height:1!important;
+      pointer-events:none!important;
+    }
+    #customerLanguageBar #customerLanguageSelect{
+      position:absolute!important;
+      inset:0!important;
+      z-index:2!important;
+      width:100%!important;
+      min-width:0!important;
+      max-width:none!important;
+      height:100%!important;
+      padding:0!important;
+      margin:0!important;
+      border:0!important;
+      outline:0!important;
+      opacity:0!important;
+      cursor:pointer!important;
+    }
+    @media(min-width:861px){
+      #customerLanguageBar.customer-language-bar{
+        right:max(28px,calc((100vw - 860px)/2 + 28px))!important;
+      }
+    }
+    @media(max-width:520px){
+      #customerLanguageBar.customer-language-bar{
+        top:max(12px,env(safe-area-inset-top))!important;
+        right:18px!important;
+        width:42px!important;
+        min-width:42px!important;
+        max-width:42px!important;
+        height:42px!important;
+        min-height:42px!important;
+        max-height:42px!important;
+      }
+    }
+  \</style>
 
   \<style id="ghazala-hero-track-prominent-fix"\>
     /* Public landing hero only — prominent shipment tracking bar */
