@@ -1207,16 +1207,21 @@ html[dir="ltr"] .route-arrow-sep {
   position: relative;
   height: 160px;
   overflow: hidden;
-  background: #10213a;
+  background: #f7f7f7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .step-visual img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  transition: transform 0.5s ease;
+  object-fit: contain;
+  object-position: center center;
+  display: block;
+  transition: none;
 }
 .step-card-3d:hover .step-visual img {
-  transform: scale(1.08);
+  transform: none;
 }
 .step-num-badge {
   position: absolute;
