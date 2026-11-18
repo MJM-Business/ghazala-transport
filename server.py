@@ -1,5 +1,6 @@
 """Ghazala Transport operational portal: Python API with persistent SQLite."""
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+import traceback
 from pathlib import Path
 from urllib.parse import urlparse, parse_qs, unquote, urlencode
 from urllib.request import Request, urlopen
@@ -5007,8 +5008,13 @@ class Handler(BaseHTTPRequestHandler):
         except (ValueError,TypeError,OverflowError) as exc: return self.send_json({'error':str(exc) or 'Invalid request.'},400)
         except sqlite3.IntegrityError: return self.send_json({'error':'This change conflicts with existing records.'},409)
         except Exception as exc:
-            print(f'API request failed {self.audit_request_id}: {type(exc).__name__}',flush=True)
-            return self.send_json({'error':'The request could not be completed.'},500)
+            print(
+                f'API request failed {self.audit_request_id}: {type(exc).__name__}: {exc} '
+                f'[{getattr(self,"command","?")} {getattr(self,"path","?")}]',
+                flush=True
+            )
+            traceback.print_exc()
+            return self.send_json({'error':'The request could not be completed.','request_id':self.audit_request_id},500)
 
     def prepare_mutation(self,con,user,method,parts,data):
         self.auth_ctx=auth.context(con,user)
