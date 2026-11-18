@@ -642,31 +642,6 @@
                 required
               >
             </label>
-
-            <label class="customer-field">
-              <span>الوزن بالكيلو</span>
-              <input
-                type="number"
-                name="weight"
-                id="customerShipmentWeight"
-                min="0.5"
-                step="0.1"
-                value="0.5"
-                required
-              >
-            </label>
-
-            <label class="customer-field">
-              <span>القيمة المعلنة</span>
-              <input
-                type="number"
-                name="declared_value"
-                id="customerShipmentDeclaredValue"
-                min="0"
-                step="0.01"
-                value="0"
-              >
-            </label>
           </div>
 
           <label class="customer-field">
@@ -679,27 +654,12 @@
             ></textarea>
           </label>
 
-          <div class="customer-dimensions-grid">
-            <label class="customer-field">
-              <span>الطول cm</span>
-              <input type="number" name="length_cm" min="0" step="0.1" value="0">
-            </label>
-
-            <label class="customer-field">
-              <span>العرض cm</span>
-              <input type="number" name="width_cm" min="0" step="0.1" value="0">
-            </label>
-
-            <label class="customer-field">
-              <span>الارتفاع cm</span>
-              <input type="number" name="height_cm" min="0" step="0.1" value="0">
-            </label>
-          </div>
-
-          <label class="customer-checkbox-row">
-            <input type="checkbox" name="insured" id="customerShipmentInsured">
-            <span>إضافة تأمين على الشحنة</span>
-          </label>
+          <!-- Technical defaults kept hidden so the existing backend/pricing API remains compatible. -->
+          <input type="hidden" name="weight" value="0.5" data-customer-hidden-default>
+          <input type="hidden" name="declared_value" value="0" data-customer-hidden-default>
+          <input type="hidden" name="length_cm" value="0" data-customer-hidden-default>
+          <input type="hidden" name="width_cm" value="0" data-customer-hidden-default>
+          <input type="hidden" name="height_cm" value="0" data-customer-hidden-default>
         </section>
 
         <section class="customer-form-section">
