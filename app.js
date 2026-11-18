@@ -445,10 +445,27 @@ function populateBranchSelect(select,city='',selected=''){
   select.innerHTML=branchOptions(city,current,true);
   if(current)select.value=current;
 }
+function customerTrackingAwbFromHash(){
+  const raw=String(window.location.hash||'').replace(/^#/,'');
+  const params=new URLSearchParams(raw);
+  return String(params.get('track')||'').trim().toUpperCase();
+}
 async function load(){
   try{
     const auth=await api('/api/me');
     user=auth.user;
+
+    const qrTrackAwb=customerTrackingAwbFromHash();
+    if(qrTrackAwb){
+      try{
+        customerTrackingResult=await api('/api/public/tracking/'+encodeURIComponent(qrTrackAwb));
+        customerMode=true;
+        customerPage='tracking';
+        return render();
+      }catch(_){
+        // If the QR/AWB is invalid, fall through to the normal landing/login flow.
+      }
+    }
 
     if(user&&accessRole()!=='customer'&&!location.hash.startsWith('#track=')){
       const restoredPage=readStaffPage();
@@ -1563,6 +1580,106 @@ function wireCustomerRegister(){
   };
 }
 
+function customerReceiptText(key){
+  const labels={
+    receipt:{ar:'الإيصال',en:'Receipt',ur:'رسید',hi:'रसीद',bn:'রসিদ'},
+    download:{ar:'تحميل PDF',en:'Download PDF',ur:'PDF ڈاؤن لوڈ',hi:'PDF डाउनलोड',bn:'PDF ডাউনলোড'},
+    print:{ar:'طباعة',en:'Print',ur:'پرنٹ',hi:'प्रिंट',bn:'প্রিন্ট'},
+    track:{ar:'تتبع',en:'Track',ur:'ٹریک',hi:'ट्रैक',bn:'ট্র্যাক'},
+    receiptTitle:{ar:'إيصال الشحنة',en:'Shipment Receipt',ur:'شپمنٹ رسید',hi:'शिपमेंट रसीद',bn:'শিপমেন্ট রসিদ'},
+    scan:{ar:'امسح رمز QR لمتابعة حالة الشحنة',en:'Scan the QR code to track shipment status',ur:'شپمنٹ اسٹیٹس دیکھنے کے لیے QR اسکین کریں',hi:'शिपमेंट स्थिति देखने के लिए QR स्कैन करें',bn:'শিপমেন্ট স্ট্যাটাস দেখতে QR স্ক্যান করুন'},
+    status:{ar:'الحالة الحالية',en:'Current Status',ur:'موجودہ حالت',hi:'वर्तमान स्थिति',bn:'বর্তমান অবস্থা'},
+    route:{ar:'المسار',en:'Route',ur:'روٹ',hi:'रूट',bn:'রুট'},
+    recipient:{ar:'المستلم',en:'Recipient',ur:'وصول کنندہ',hi:'प्राप्तकर्ता',bn:'প্রাপক'},
+    created:{ar:'تاريخ الإنشاء',en:'Created',ur:'تاریخ',hi:'बनाया गया',bn:'তৈরির তারিখ'}
+  };
+  const row=labels[key]||{};
+  return row[customerLang]||row.en||key;
+}
+
+function customerReceiptPdfUrl(awb){
+  return '/api/customer/shipments/'+encodeURIComponent(String(awb||'').trim().toUpperCase())+'/waybill/pdf';
+}
+
+async function customerPrintReceipt(awb){
+  const normalized=String(awb||'').trim().toUpperCase();
+  if(!normalized)return;
+  try{
+    const [docs,tracking]=await Promise.all([
+      api('/api/customer/shipments/'+encodeURIComponent(normalized)+'/documents'),
+      api('/api/public/tracking/'+encodeURIComponent(normalized))
+    ]);
+    const shipment=docs.shipment||{};
+    const popup=window.open('','_blank','noopener,noreferrer,width=900,height=1100');
+    if(!popup)return toast(customerTranslate('تعذر فتح نافذة الطباعة'));
+    const qr='/api/public/tracking/'+encodeURIComponent(normalized)+'/qr';
+    popup.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${normalized}</title>
+      <style>
+        body{font-family:Arial,sans-serif;color:#13263c;margin:32px}
+        .receipt{max-width:760px;margin:auto;border:1px solid #dfe6ee;border-radius:22px;padding:28px}
+        .head{display:flex;justify-content:space-between;gap:20px;align-items:center;border-bottom:2px solid #f36a21;padding-bottom:18px}
+        .logo{font-size:22px;font-weight:800}.awb{font-size:18px;font-weight:800}
+        .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0}
+        .box{border:1px solid #e3e8ef;border-radius:14px;padding:14px}.box small{display:block;color:#718096;margin-bottom:5px}
+        .qr{text-align:center;margin-top:22px}.qr img{width:150px;height:150px}
+        @media print{body{margin:0}.receipt{border:none}}
+      </style></head><body><div class="receipt">
+      <div class="head"><div><div class="logo">GHAZALA TRANSPORT</div><small>${customerReceiptText('receiptTitle')}</small></div><div class="awb">${normalized}</div></div>
+      <div class="grid">
+        <div class="box"><small>${customerReceiptText('status')}</small><strong>${esc(customerTranslate(tracking.status||''))}</strong></div>
+        <div class="box"><small>${customerReceiptText('route')}</small><strong>${esc(customerTranslate(shipment.origin||'—'))} → ${esc(customerTranslate(shipment.destination||'—'))}</strong></div>
+        <div class="box"><small>${customerReceiptText('recipient')}</small><strong>${esc(shipment.recipient||'—')}</strong></div>
+        <div class="box"><small>${customerReceiptText('created')}</small><strong>${esc(customerTrackingDate(shipment.created_at||''))}</strong></div>
+      </div>
+      <div class="qr"><img src="${qr}" alt="QR"><p>${customerReceiptText('scan')}</p></div>
+      </div></body></html>`);
+    popup.document.close();
+    const trigger=()=>{try{popup.focus();popup.print()}catch(_){}};
+    const img=popup.document.querySelector('.qr img');
+    if(img?.complete)setTimeout(trigger,250); else if(img)img.onload=()=>setTimeout(trigger,150); else setTimeout(trigger,300);
+  }catch(err){ toast(err.message); }
+}
+
+async function customerReceiptModal(awb){
+  const normalized=String(awb||'').trim().toUpperCase();
+  if(!normalized)return;
+  try{
+    const [docs,tracking]=await Promise.all([
+      api('/api/customer/shipments/'+encodeURIComponent(normalized)+'/documents'),
+      api('/api/public/tracking/'+encodeURIComponent(normalized))
+    ]);
+    const s=docs.shipment||{};
+    const root=document.querySelector('#modalRoot');
+    root.innerHTML=`
+      <div class="modal-backdrop" data-close>
+        <section class="modal customer-info-modal" style="max-width:680px">
+          <div class="modal-head">
+            <div><small>${esc(customerReceiptText('receiptTitle'))}</small><h2 style="margin:4px 0 0">${esc(normalized)}</h2></div>
+            <button class="icon-btn" type="button" data-close>×</button>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:14px 0">
+            <div class="card" style="padding:13px"><small>${esc(customerReceiptText('status'))}</small><strong style="display:block;margin-top:4px">${esc(customerTranslate(tracking.status||''))}</strong></div>
+            <div class="card" style="padding:13px"><small>${esc(customerReceiptText('route'))}</small><strong style="display:block;margin-top:4px">${esc(customerTranslate(s.origin||'—'))} → ${esc(customerTranslate(s.destination||'—'))}</strong></div>
+            <div class="card" style="padding:13px"><small>${esc(customerReceiptText('recipient'))}</small><strong style="display:block;margin-top:4px">${esc(s.recipient||'—')}</strong></div>
+            <div class="card" style="padding:13px"><small>AWB</small><strong style="display:block;margin-top:4px">${esc(normalized)}</strong></div>
+          </div>
+          <div style="text-align:center;padding:14px">
+            <img src="/api/public/tracking/${encodeURIComponent(normalized)}/qr" alt="Tracking QR" style="width:150px;height:150px">
+            <p style="margin:8px 0 0;color:#64748b">${esc(customerReceiptText('scan'))}</p>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px">
+            <a class="btn primary" href="${customerReceiptPdfUrl(normalized)}" target="_blank" rel="noopener">${esc(customerReceiptText('download'))}</a>
+            <button type="button" class="btn light" data-print-receipt="${esc(normalized)}">${esc(customerReceiptText('print'))}</button>
+            <button type="button" class="btn light" data-customer-track="${esc(normalized)}">${esc(customerReceiptText('track'))}</button>
+          </div>
+        </section>
+      </div>`;
+    wireModal();
+    root.querySelector('[data-print-receipt]')?.addEventListener('click',()=>customerPrintReceipt(normalized));
+    root.querySelector('[data-customer-track]')?.addEventListener('click',()=>{closeModal();customerTrackShipment(normalized)});
+  }catch(err){ toast(err.message); }
+}
+
 function customerShipmentCard(s){
   return `
     <article class="customer-shipment-card">
@@ -1586,6 +1703,9 @@ function customerShipmentCard(s){
 function bindCustomerTrackButtons(root=customerPortalRoot){
   root.querySelectorAll('[data-customer-track]').forEach(btn=>{
     btn.onclick=()=>customerTrackShipment(btn.dataset.customerTrack);
+  });
+  root.querySelectorAll('[data-customer-receipt]').forEach(btn=>{
+    btn.onclick=()=>customerReceiptModal(btn.dataset.customerReceipt);
   });
 }
 
@@ -2356,6 +2476,7 @@ async function wireCustomerCreateShipment(){
       toast(customerTranslate('تم إنشاء الشحنة')+' '+result.awb);
       customerPage='shipments';
       renderCustomerPortal();
+      await customerReceiptModal(result.awb);
     }catch(err){
       toast(err.message);
     }finally{
