@@ -2982,13 +2982,13 @@ html[dir="ltr"] .customer-account-row{
 }
 @media(min-width:861px){
   .customer-language-bar{
-    right:max(28px,calc((100vw - 860px)/2 + 28px));
+    right:max(74px,calc((100vw - 860px)/2 + 74px));
   }
 }
 @media(max-width:520px){
   .customer-language-bar{
     top:max(12px,env(safe-area-inset-top));
-    right:18px;
+    right:64px;
     width:42px;
     height:42px;
   }
