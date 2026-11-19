@@ -7248,3 +7248,112 @@ html[dir="rtl"] .ops-home-notification.is-unread{
   }
 }
 
+
+
+/* ============================================================
+   CUSTOMER CREATE SHIPMENT — CLASSIC SIMPLE FORM
+   ============================================================ */
+.customer-create-screen .customer-shipment-form{
+  display:block;
+  padding:18px 22px 22px;
+  border:1px solid #e4e9ef;
+  border-radius:14px;
+  background:#fff;
+  box-shadow:none;
+}
+.customer-create-screen .customer-form-section{
+  padding:0 0 18px;
+  margin:0 0 18px;
+  border:0;
+  border-bottom:1px solid #edf1f5;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+}
+.customer-create-screen .customer-form-section:last-of-type{
+  margin-bottom:16px;
+}
+.customer-create-screen .customer-form-section-title{
+  margin:0 0 12px;
+  padding:0 0 7px;
+  border-bottom:0;
+}
+.customer-create-screen .customer-form-section-title>span,
+.customer-create-screen .customer-form-section-title small{
+  display:none!important;
+}
+.customer-create-screen .customer-form-section-title h2{
+  margin:0;
+  font-size:14px;
+  font-weight:800;
+  color:#13263c;
+}
+.customer-create-screen .customer-form-grid,
+.customer-create-screen .customer-form-grid.two{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:10px;
+}
+.customer-create-screen .customer-field{
+  display:grid;
+  grid-template-columns:180px minmax(0,1fr);
+  align-items:center;
+  gap:12px;
+  margin:0;
+}
+.customer-create-screen .customer-field>span{
+  margin:0;
+  color:#536274;
+  font-size:12px;
+  font-weight:700;
+}
+.customer-create-screen .customer-field input,
+.customer-create-screen .customer-field select,
+.customer-create-screen .customer-field textarea{
+  min-height:42px;
+  padding:9px 12px;
+  border:1px solid #d7dde6;
+  border-radius:8px;
+  background:#fff;
+  box-shadow:none;
+}
+.customer-create-screen .customer-field textarea{
+  min-height:68px;
+  resize:vertical;
+}
+.customer-create-screen .customer-form-section>.customer-field{
+  margin-top:10px;
+}
+.customer-create-screen #customerCodField[hidden]{
+  display:none!important;
+}
+.customer-create-screen .customer-quote-card{
+  margin:0 0 12px;
+  padding:14px 16px;
+  border-radius:10px;
+  box-shadow:none;
+}
+.customer-create-screen .customer-submit-shipment-btn{
+  min-height:48px;
+  border-radius:10px;
+  box-shadow:none;
+}
+@media(max-width:700px){
+  .customer-create-screen .customer-shipment-form{
+    padding:14px;
+    border-radius:12px;
+  }
+  .customer-create-screen .customer-form-section{
+    padding:0 0 16px;
+    margin:0 0 16px;
+  }
+  .customer-create-screen .customer-field{
+    grid-template-columns:1fr;
+    gap:6px;
+  }
+  .customer-create-screen .customer-field input,
+  .customer-create-screen .customer-field select,
+  .customer-create-screen .customer-field textarea{
+    width:100%;
+  }
+}
