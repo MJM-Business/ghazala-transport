@@ -2950,7 +2950,8 @@ html[dir="ltr"] .customer-account-row{
   position:fixed;
   z-index:110;
   top:max(16px,env(safe-area-inset-top));
-  right:28px;
+  left:18px;
+  right:auto;
   width:44px;
   height:44px;
   display:grid;
@@ -3010,13 +3011,15 @@ html[dir="ltr"] .customer-account-row{
 }
 @media(min-width:861px){
   .customer-language-bar{
-    right:max(106px,calc((100vw - 860px)/2 + 106px));
+    left:max(18px,calc((100vw - 860px)/2 + 18px));
+    right:auto;
   }
 }
 @media(max-width:520px){
   .customer-language-bar{
     top:max(12px,env(safe-area-inset-top));
-    right:88px;
+    left:12px;
+    right:auto;
     width:42px;
     height:42px;
   }
