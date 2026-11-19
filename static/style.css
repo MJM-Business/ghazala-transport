@@ -2206,15 +2206,15 @@ body.customer-mode #app{
 /* Create shipment — clean single-form layout */
 .customer-shipment-form{
   gap:0;
-  padding:0 20px 22px;
+  padding:0 18px 18px;
   overflow:hidden;
-  border:1px solid #e3e8ef;
-  border-radius:22px;
+  border:1px solid #e6ebf1;
+  border-radius:14px;
   background:#fff;
-  box-shadow:0 8px 28px rgba(13,30,51,.06);
+  box-shadow:none;
 }
 .customer-form-section{
-  padding:22px 0;
+  padding:16px 0;
   border:0;
   border-bottom:1px solid #edf1f5;
   border-radius:0;
@@ -2227,38 +2227,26 @@ body.customer-mode #app{
 .customer-form-section-title{
   display:flex;
   align-items:center;
-  gap:10px;
-  margin-bottom:15px;
+  gap:0;
+  margin-bottom:10px;
 }
 .customer-form-section-title>span{
-  width:30px;
-  height:30px;
-  flex:0 0 30px;
-  display:grid;
-  place-items:center;
-  border-radius:9px;
-  background:#fff3ec;
-  color:var(--customer-orange);
-  font:800 10px 'JetBrains Mono',monospace;
+  display:none;
 }
 .customer-form-section-title small{
-  display:block;
-  color:#9aa6b5;
-  font-size:8px;
-  font-weight:800;
-  letter-spacing:.05em;
-  text-transform:uppercase;
+  display:none;
 }
 .customer-form-section-title h2{
-  margin:1px 0 0;
+  margin:0;
   color:var(--customer-navy);
-  font-size:16px;
-  line-height:1.2;
+  font-size:15px;
+  line-height:1.25;
+  font-weight:800;
 }
 .customer-form-grid{
   display:grid;
   grid-template-columns:1fr;
-  gap:12px;
+  gap:10px;
 }
 .customer-form-grid.two{
   grid-template-columns:repeat(2,minmax(0,1fr));
@@ -2266,22 +2254,28 @@ body.customer-mode #app{
 .customer-shipment-form input,
 .customer-shipment-form select,
 .customer-shipment-form textarea{
-  border-radius:12px;
+  min-height:44px;
+  padding-top:10px;
+  padding-bottom:10px;
+  border-radius:9px;
   box-shadow:none;
 }
 .customer-shipment-form textarea{
-  min-height:92px;
+  min-height:76px;
 }
 .customer-shipment-form .customer-quote-card{
   margin:18px 0 0;
 }
 @media(max-width:700px){
   .customer-shipment-form{
-    padding:0 14px 18px;
-    border-radius:18px;
+    padding:0 12px 14px;
+    border-radius:12px;
   }
   .customer-form-section{
-    padding:18px 0;
+    padding:14px 0;
+    border-radius:0;
+    background:transparent;
+    box-shadow:none;
   }
 }
 .customer-dimensions-grid{
@@ -2820,8 +2814,10 @@ body.customer-mode #app{
     font-size:10px;
   }
   .customer-form-section{
-    padding:16px;
-    border-radius:18px;
+    padding:14px 0;
+    border-radius:0;
+    background:transparent;
+    box-shadow:none;
   }
   .customer-form-grid.two{
     grid-template-columns:1fr;
