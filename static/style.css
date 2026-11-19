@@ -2949,11 +2949,11 @@ html[dir="ltr"] .customer-account-row{
 .customer-language-bar{
   position:fixed;
   z-index:110;
-  top:max(16px,env(safe-area-inset-top));
-  left:18px;
-  right:auto;
-  width:44px;
-  height:44px;
+  top:max(12px,env(safe-area-inset-top));
+  left:auto;
+  right:14px;
+  width:36px;
+  height:36px;
   display:grid;
   place-items:center;
   padding:0;
@@ -2961,7 +2961,7 @@ html[dir="ltr"] .customer-account-row{
   border:1px solid #e7ebf0;
   border-radius:50%;
   background:rgba(255,255,255,.97);
-  box-shadow:0 7px 20px rgba(13,30,51,.10);
+  box-shadow:0 6px 16px rgba(13,30,51,.09);
   backdrop-filter:blur(14px);
 }
 .customer-language-bar[hidden]{display:none!important}
@@ -2971,7 +2971,7 @@ html[dir="ltr"] .customer-account-row{
   z-index:1;
   display:grid;
   place-items:center;
-  font-size:18px;
+  font-size:15px;
   line-height:1;
   pointer-events:none;
 }
@@ -3011,20 +3011,20 @@ html[dir="ltr"] .customer-account-row{
 }
 @media(min-width:861px){
   .customer-language-bar{
-    left:max(18px,calc((100vw - 860px)/2 + 18px));
-    right:auto;
+    left:auto;
+    right:max(14px,calc((100vw - 860px)/2 + 14px));
   }
 }
 @media(max-width:520px){
   .customer-language-bar{
-    top:max(12px,env(safe-area-inset-top));
-    left:12px;
-    right:auto;
-    width:42px;
-    height:42px;
+    top:max(10px,env(safe-area-inset-top));
+    left:auto;
+    right:10px;
+    width:34px;
+    height:34px;
   }
   .customer-language-icon{
-    font-size:17px;
+    font-size:14px;
   }
   .customer-auth-card{
     padding-top:72px;
