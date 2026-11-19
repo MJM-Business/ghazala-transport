@@ -2596,9 +2596,55 @@ async function wireCustomerCreateShipment(){
   toggleCod();
   if(method)method.onchange=toggleCod;
 
+  const quoteRequiredFields=[
+    ['origin','Pickup City'],
+    ['destination','Delivery City'],
+    ['sender_id','ID / Iqama Number'],
+    ['sender_address','Pickup Address'],
+    ['recipient','Recipient Name'],
+    ['phone','Recipient Mobile Number'],
+    ['recipient_id','Recipient ID / Iqama Number'],
+    ['recipient_address','Recipient Address'],
+    ['pieces','Pieces'],
+    ['payment_method','Payment Method'],
+    ['eta','Expected Delivery Time']
+  ];
+  const resetQuoteDisplay=()=>{
+    const target=document.querySelector('#customerQuoteTotal');
+    const summary=document.querySelector('#customerPricingLiveSummary');
+    if(target){
+      delete target.dataset.amount;
+      target.textContent='— '+customerTranslate('ر.س');
+    }
+    if(summary)summary.innerHTML='';
+  };
+  const firstMissingQuoteField=()=>quoteRequiredFields.find(([name])=>{
+    const field=form.elements.namedItem(name);
+    return !field || !String(field.value||'').trim();
+  });
   const showQuote=async(showError=true)=>{
     const target=document.querySelector('#customerQuoteTotal');
     const summary=document.querySelector('#customerPricingLiveSummary');
+    const missing=firstMissingQuoteField();
+    if(missing){
+      resetQuoteDisplay();
+      if(showError){
+        toast('Please complete: '+missing[1]);
+        const field=form.elements.namedItem(missing[0]);
+        try{
+          field?.scrollIntoView({behavior:'smooth',block:'center'});
+          setTimeout(()=>field?.focus(),250);
+        }catch(_){}
+      }
+      return null;
+    }
+    const originValue=String(origin?.value||'').trim();
+    const destinationValue=String(destination?.value||'').trim();
+    if(!originValue||!destinationValue||originValue===destinationValue){
+      resetQuoteDisplay();
+      if(showError)toast(customerTranslate('مدينة الاستلام والتسليم يجب أن تكون مختلفة'));
+      return null;
+    }
     try{
       const quote=await customerServerQuote(form);
       const hidden=form.elements.namedItem('pricing_size_code');
@@ -2616,6 +2662,7 @@ async function wireCustomerCreateShipment(){
       }
       return quote;
     }catch(error){
+      resetQuoteDisplay();
       if(showError)toast(error.message);
       if(summary&&showError)summary.innerHTML=`<div class="notice-error">${esc(error.message)}</div>`;
       return null;
@@ -2624,9 +2671,7 @@ async function wireCustomerCreateShipment(){
   reorderCustomerShipmentForm(form);
   if(quoteButton)quoteButton.onclick=()=>showQuote();
 
-  if(form.elements.namedItem('pricing_size_code')?.value){
-    showQuote(false);
-  }
+  resetQuoteDisplay();
 
   form.onsubmit=async e=>{
     e.preventDefault();
