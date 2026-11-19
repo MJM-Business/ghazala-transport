@@ -1014,11 +1014,6 @@
         <label class="field"><span>${opsTr('نوع الشحنة')}</span><select name="package_type">${['طرد تجاري سريع','مستندات','قابل للكسر','شحنة كبيرة'].map(type=>`<option value="${safe(type)}">${opsTr(type)}</option>`).join('')}</select></label><label class="field"><span>${opsTr('عدد الطرود')}</span><input name="pieces" type="number" min="1" max="100" value="1" required></label>
         <label class="field"><span>${opsTr('الوزن الإجمالي (كجم)')}</span><input name="weight" type="number" min="0.5" step="0.1" value="1" required></label><label class="field"><span>${opsTr('وقت الوصول المتوقع ETA')} *</span><input name="eta" type="datetime-local" value="${localDT(24)}" required></label>
         <label class="field"><span>${opsTr('الطول (سم)')}</span><input name="length_cm" type="number" min="0" step="0.1" value="0"></label><label class="field"><span>${opsTr('العرض (سم)')}</span><input name="width_cm" type="number" min="0" step="0.1" value="0"></label><label class="field"><span>${opsTr('الارتفاع (سم)')}</span><input name="height_cm" type="number" min="0" step="0.1" value="0"></label><label class="field"><span>${opsTr('القيمة المعلنة')}</span><input name="declared_value" type="number" min="0" step="0.01" value="0"></label>
-        <input type="hidden" name="pricing_size_code" value="">
-        <section class="field span-2 pricing-3d-panel">
-          <div class="pricing-3d-title"><div><small>GHAZALA SMART PRICING</small><h3>${pricingUi('أحجام الطرود','Parcel Sizes')}</h3><p>${opsTr('اختر الحجم أو أدخل الأبعاد ليقترح النظام الحجم المناسب')}</p></div><span class="pricing-orbit">◈</span></div>
-          <div class="pricing-3d-grid customer-pricing-3d-grid management-pricing-outlet-grid" id="shipmentPricing3DGrid">${pricing3DGrid('',true)}</div>
-        </section>
         <label class="field span-2"><span>${opsTr('وصف محتوى الشحنة')}</span><textarea name="package_description"></textarea></label><label class="field check-field span-2"><input name="insured" type="checkbox"><span>${opsTr('تأمين الشحنة على القيمة المعلنة')}</span></label>
         <h3 class="field span-2">${opsTr('خيارات الدفع والتحصيل')}</h3>
         <label class="field"><span>${opsTr('طريقة الدفع')}</span><select name="payment_method"><option value="cod">${opsTr('الدفع عند الاستلام COD')}</option><option value="sender">${opsTr('يدفع المرسل')}</option><option value="company">${opsTr('حساب الشركات المتعاقدة')}</option></select></label>
@@ -1029,16 +1024,6 @@
       </form></section></div>`;
 
     wireModal();localizeNow($('#modalRoot'));const f=$('#createForm');
-    const pricingGrid=$('#shipmentPricing3DGrid');
-    bindPricing3DCards(pricingGrid,f,()=>refreshQuote($('#modalRoot')));
-    const syncPricingRecommendation=()=>{
-      const selected=selectedPricingSize(f.elements.pricing_size_code.value);
-      const dims=normalizedDims(f.elements.length_cm.value,f.elements.width_cm.value,f.elements.height_cm.value);
-      if(selected&&pricingSizeFits(selected,dims))return;
-      const next=recommendPricingSize(f.elements.length_cm.value,f.elements.width_cm.value,f.elements.height_cm.value);
-      f.elements.pricing_size_code.value=next?.code||'';
-    };
-    ['length_cm','width_cm','height_cm'].forEach(name=>f.elements[name].addEventListener('input',syncPricingRecommendation));
     f.addEventListener('input',()=>refreshQuote($('#modalRoot')));
     const syncPaymentFields=()=>{const cod=f.elements.payment_method.value==='cod',company=f.elements.payment_method.value==='company';$('#codField').hidden=!cod;$('#companyField').hidden=!company;f.elements.cod.required=cod;f.elements.company_account.required=company;refreshQuote($('#modalRoot'))};
     f.elements.payment_method.onchange=syncPaymentFields;syncPaymentFields();
