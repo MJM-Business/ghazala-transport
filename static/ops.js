@@ -1010,11 +1010,16 @@
         <label class="field"><span>${opsTr('جوال المستلم')} *</span><input name="phone" type="tel" required></label><label class="field"><span>${opsTr('من مدينة')}</span><select name="origin" required>${cityOptionMarkup(originDefault)}</select></label>
         <label class="field"><span>${opsTr('إلى مدينة')}</span><select name="destination" required>${cityOptionMarkup(destinationDefault)}</select></label><label class="field"><span>${opsTr('فرع الوجهة')}</span><select name="recipient_branch">${branchOptions(destinationDefault)}</select></label>
         <label class="field span-2"><span>${opsTr('عنوان المستلم بالتفصيل')} *</span><textarea name="recipient_address" required placeholder="${opsTr('الحي، الشارع، رقم المبنى، أقرب علامة')}"></textarea></label>
-        <h3 class="field span-2">${opsTr('تفاصيل الطرد والشحنة')}</h3>
-        <label class="field"><span>${opsTr('نوع الشحنة')}</span><select name="package_type">${['طرد تجاري سريع','مستندات','قابل للكسر','شحنة كبيرة'].map(type=>`<option value="${safe(type)}">${opsTr(type)}</option>`).join('')}</select></label><label class="field"><span>${opsTr('عدد الطرود')}</span><input name="pieces" type="number" min="1" max="100" value="1" required></label>
-        <label class="field"><span>${opsTr('الوزن الإجمالي (كجم)')}</span><input name="weight" type="number" min="0.5" step="0.1" value="1" required></label><label class="field"><span>${opsTr('وقت الوصول المتوقع ETA')} *</span><input name="eta" type="datetime-local" value="${localDT(24)}" required></label>
-        <label class="field"><span>${opsTr('الطول (سم)')}</span><input name="length_cm" type="number" min="0" step="0.1" value="0"></label><label class="field"><span>${opsTr('العرض (سم)')}</span><input name="width_cm" type="number" min="0" step="0.1" value="0"></label><label class="field"><span>${opsTr('الارتفاع (سم)')}</span><input name="height_cm" type="number" min="0" step="0.1" value="0"></label><label class="field"><span>${opsTr('القيمة المعلنة')}</span><input name="declared_value" type="number" min="0" step="0.01" value="0"></label>
-        <label class="field span-2"><span>${opsTr('وصف محتوى الشحنة')}</span><textarea name="package_description"></textarea></label><label class="field check-field span-2"><input name="insured" type="checkbox"><span>${opsTr('تأمين الشحنة على القيمة المعلنة')}</span></label>
+        <input type="hidden" name="package_type" value="طرد تجاري سريع">
+        <input type="hidden" name="pieces" value="1">
+        <input type="hidden" name="weight" value="1">
+        <input type="hidden" name="eta" value="${localDT(24)}">
+        <input type="hidden" name="length_cm" value="0">
+        <input type="hidden" name="width_cm" value="0">
+        <input type="hidden" name="height_cm" value="0">
+        <input type="hidden" name="declared_value" value="0">
+        <input type="hidden" name="package_description" value="">
+        <input type="hidden" name="insured" value="">
         <h3 class="field span-2">${opsTr('خيارات الدفع والتحصيل')}</h3>
         <label class="field"><span>${opsTr('طريقة الدفع')}</span><select name="payment_method"><option value="cod">${opsTr('الدفع عند الاستلام COD')}</option><option value="sender">${opsTr('يدفع المرسل')}</option><option value="company">${opsTr('حساب الشركات المتعاقدة')}</option></select></label>
         <label class="field" id="codField"><span>${opsTr('مبلغ التحصيل عند الاستلام')} *</span><input name="cod" type="number" min="0.01" step="0.01" value=""></label><label class="field span-2" id="companyField" hidden><span>${opsTr('رقم / اسم حساب الشركة')} *</span><input name="company_account"></label>
@@ -1049,7 +1054,7 @@
         if(owner)data.customer_user_id=Number(owner);else delete data.customer_user_id;
       }
       data.recipient_branch=String(data.recipient_branch||'').trim().toUpperCase();
-      data.insured=f.elements.insured.checked;
+      data.insured=false;
       ['pieces','weight','length_cm','width_cm','height_cm','declared_value','cod'].forEach(k=>{if(data[k]!==''&&data[k]!=null)data[k]=Number(data[k]);});
       if(f.elements.payment_method.value==='sender'||f.elements.payment_method.value==='company')data.cod=0;
       try{
