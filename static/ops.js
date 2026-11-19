@@ -1010,8 +1010,6 @@
         <label class="field"><span>${opsTr('جوال المستلم')} *</span><input name="phone" type="tel" required></label><label class="field"><span>${opsTr('من مدينة')}</span><select name="origin" required>${cityOptionMarkup(originDefault)}</select></label>
         <label class="field"><span>${opsTr('إلى مدينة')}</span><select name="destination" required>${cityOptionMarkup(destinationDefault)}</select></label><label class="field"><span>${opsTr('فرع الوجهة')}</span><select name="recipient_branch">${branchOptions(destinationDefault)}</select></label>
         <label class="field span-2"><span>${opsTr('عنوان المستلم بالتفصيل')} *</span><textarea name="recipient_address" required placeholder="${opsTr('الحي، الشارع، رقم المبنى، أقرب علامة')}"></textarea></label>
-        <label class="field"><span>${opsTr('خط العرض GPS')}</span><input name="recipient_latitude" type="number" step="any" placeholder="21.5433"></label><label class="field"><span>${opsTr('خط الطول GPS')}</span><input name="recipient_longitude" type="number" step="any" placeholder="39.1728"></label>
-        <div class="field span-2"><button class="btn light" type="button" id="shipGps">◎ ${opsTr('تحديد موقع المستلم من هذا الجهاز')}</button><small>${opsTr('يمكن حفظ الإحداثيات يدوياً أو باستخدام GPS بعد السماح للموقع.')}</small><div id="shipMapPreview" class="ops-map-preview" hidden></div><a id="shipMapLink" class="btn light small" target="_blank" rel="noopener" hidden>${opsTr('فتح الموقع على الخريطة')}</a></div>
         <h3 class="field span-2">${opsTr('تفاصيل الطرد والشحنة')}</h3>
         <label class="field"><span>${opsTr('نوع الشحنة')}</span><select name="package_type">${['طرد تجاري سريع','مستندات','قابل للكسر','شحنة كبيرة'].map(type=>`<option value="${safe(type)}">${opsTr(type)}</option>`).join('')}</select></label><label class="field"><span>${opsTr('عدد الطرود')}</span><input name="pieces" type="number" min="1" max="100" value="1" required></label>
         <label class="field"><span>${opsTr('الوزن الإجمالي (كجم)')}</span><input name="weight" type="number" min="0.5" step="0.1" value="1" required></label><label class="field"><span>${opsTr('وقت الوصول المتوقع ETA')} *</span><input name="eta" type="datetime-local" value="${localDT(24)}" required></label>
@@ -1056,10 +1054,6 @@
     f.elements.origin.onchange=()=>{keepDifferent('origin');syncBranches()};
     syncBranches();
 
-    const refreshMap=()=>{const lat=Number(f.elements.recipient_latitude.value),lng=Number(f.elements.recipient_longitude.value),preview=$('#shipMapPreview'),link=$('#shipMapLink');if(!Number.isFinite(lat)||!Number.isFinite(lng)||!lat||!lng){preview.hidden=true;link.hidden=true;return}preview.hidden=false;preview.innerHTML=`<span>⌖</span><b>${lat.toFixed(5)}, ${lng.toFixed(5)}</b><small>${opsTr('إحداثيات الموقع محفوظة في سجل الشحنة')}</small>`;link.hidden=false;link.href=`https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=16/${lat}/${lng}`};
-    f.elements.recipient_latitude.oninput=refreshMap;f.elements.recipient_longitude.oninput=refreshMap;
-    $('#shipGps').onclick=()=>gps((lat,lng)=>{f.elements.recipient_latitude.value=lat;f.elements.recipient_longitude.value=lng;refreshMap();toast(opsTr('تم تحديد إحداثيات الموقع'))});
-
     f.onsubmit=async e=>{
       e.preventDefault();
       if(f.elements.origin.value===f.elements.destination.value)return toast(opsTr('مدينة الإرسال والوصول يجب أن تكون مختلفة'));
@@ -1071,7 +1065,7 @@
       }
       data.recipient_branch=String(data.recipient_branch||'').trim().toUpperCase();
       data.insured=f.elements.insured.checked;
-      ['pieces','weight','length_cm','width_cm','height_cm','declared_value','recipient_latitude','recipient_longitude','cod'].forEach(k=>{if(data[k]!==''&&data[k]!=null)data[k]=Number(data[k]);else if(k.includes('latitude')||k.includes('longitude'))data[k]=null});
+      ['pieces','weight','length_cm','width_cm','height_cm','declared_value','cod'].forEach(k=>{if(data[k]!==''&&data[k]!=null)data[k]=Number(data[k]);});
       if(f.elements.payment_method.value==='sender'||f.elements.payment_method.value==='company')data.cod=0;
       try{
         const created=await api('/api/shipments',{method:'POST',body:JSON.stringify(data)});
