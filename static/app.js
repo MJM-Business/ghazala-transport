@@ -2622,7 +2622,6 @@ async function wireCustomerCreateShipment(){
     }
   };
   reorderCustomerShipmentForm(form);
-  mountCustomerPromoCode(form,showQuote);
   if(quoteButton)quoteButton.onclick=()=>showQuote();
 
   if(form.elements.namedItem('pricing_size_code')?.value){
