@@ -2949,11 +2949,11 @@ html[dir="ltr"] .customer-account-row{
 .customer-language-bar{
   position:fixed;
   z-index:110;
-  top:max(12px,env(safe-area-inset-top));
+  top:max(10px,env(safe-area-inset-top));
   left:auto;
-  right:14px;
-  width:36px;
-  height:36px;
+  right:10px;
+  width:32px;
+  height:32px;
   display:grid;
   place-items:center;
   padding:0;
@@ -2971,7 +2971,7 @@ html[dir="ltr"] .customer-account-row{
   z-index:1;
   display:grid;
   place-items:center;
-  font-size:15px;
+  font-size:13px;
   line-height:1;
   pointer-events:none;
 }
@@ -3012,19 +3012,19 @@ html[dir="ltr"] .customer-account-row{
 @media(min-width:861px){
   .customer-language-bar{
     left:auto;
-    right:max(14px,calc((100vw - 860px)/2 + 14px));
+    right:max(10px,calc((100vw - 860px)/2 + 10px));
   }
 }
 @media(max-width:520px){
   .customer-language-bar{
-    top:max(10px,env(safe-area-inset-top));
+    top:max(8px,env(safe-area-inset-top));
     left:auto;
-    right:10px;
-    width:34px;
-    height:34px;
+    right:8px;
+    width:30px;
+    height:30px;
   }
   .customer-language-icon{
-    font-size:14px;
+    font-size:12px;
   }
   .customer-auth-card{
     padding-top:72px;
@@ -7358,5 +7358,24 @@ html[dir="rtl"] .ops-home-notification.is-unread{
   .customer-create-screen .customer-field select,
   .customer-create-screen .customer-field textarea{
     width:100%;
+  }
+}
+
+
+/* Keep the fixed top-right language globe clear of customer header text. */
+.customer-dashboard-header,
+.customer-page-header{
+  padding-right:48px;
+}
+.customer-portal-root[dir="rtl"] .customer-dashboard-header,
+.customer-portal-root[dir="rtl"] .customer-page-header{
+  padding-right:48px;
+}
+@media(max-width:520px){
+  .customer-dashboard-header,
+  .customer-page-header,
+  .customer-portal-root[dir="rtl"] .customer-dashboard-header,
+  .customer-portal-root[dir="rtl"] .customer-page-header{
+    padding-right:42px;
   }
 }
