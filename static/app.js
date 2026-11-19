@@ -2562,6 +2562,7 @@ async function wireCustomerCreateShipment(){
   if(!customerProfile)return customerGo('login');
   const form=document.querySelector('#customerShipmentForm');
   const address=document.querySelector('#customerShipmentSenderAddress');
+  const senderPhone=document.querySelector('#customerShipmentSenderPhone');
   const method=document.querySelector('#customerShipmentPaymentMethod');
   const codField=document.querySelector('#customerCodField');
   const quoteButton=document.querySelector('#customerCalculateQuoteBtn');
@@ -2591,6 +2592,7 @@ async function wireCustomerCreateShipment(){
   if(destination)destination.onchange=refreshDestinationBranches;
 
   if(address&&!address.value)address.value=customerProfile.address||'';
+  if(senderPhone&&!senderPhone.value)senderPhone.value=customerProfile.mobile||'';
 
   const toggleCod=()=>{if(codField)codField.hidden=method?.value!=='cod'};
   toggleCod();
@@ -2600,6 +2602,7 @@ async function wireCustomerCreateShipment(){
     ['origin','Pickup City'],
     ['destination','Delivery City'],
     ['sender_id','ID / Iqama Number'],
+    ['sender_phone','Sender Mobile Number'],
     ['sender_address','Pickup Address'],
     ['recipient','Recipient Name'],
     ['phone','Recipient Mobile Number'],
@@ -2680,6 +2683,7 @@ async function wireCustomerCreateShipment(){
       ['origin','Pickup City'],
       ['destination','Delivery City'],
       ['sender_id','ID / Iqama Number'],
+      ['sender_phone','Sender Mobile Number'],
       ['sender_address','Pickup Address'],
       ['recipient','Recipient Name'],
       ['phone','Recipient Mobile Number'],
