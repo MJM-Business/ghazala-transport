@@ -5948,7 +5948,7 @@ class Handler(BaseHTTPRequestHandler):
                 customers.require_customer(c,user)
 
                 allowed_fields={
-                    "sender_id","sender_address",
+                    "sender_id","sender_phone","sender_address",
                     "recipient","recipient_id","phone",
                     "origin","destination","eta",
                     "recipient_branch","recipient_address",
@@ -5968,7 +5968,11 @@ class Handler(BaseHTTPRequestHandler):
                 customer_profile=customers.profile(c,user)
 
                 sender_name=str(customer_profile.get("display_name","")).strip()
-                sender_phone=str(customer_profile.get("mobile","")).strip()
+                sender_phone=str(
+                    data.get("sender_phone")
+                    or customer_profile.get("mobile","")
+                    or ""
+                ).strip()
                 sender_id=str(data.get("sender_id","")).strip()
                 sender_address=str(
                     data.get("sender_address")
