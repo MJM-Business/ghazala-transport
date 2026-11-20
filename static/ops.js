@@ -1102,6 +1102,8 @@
 
             <div class="ops-receipt-actions">
               <button class="btn light" type="button" data-close>${opsTr('إلغاء')}</button>
+              <button class="btn light" type="button" id="printReceiptBtn">🖨️ ${opsTr('طباعة')}</button>
+              <button class="btn light" type="button" id="downloadReceiptPdfBtn">📄 PDF</button>
               <button class="btn primary">حفظ وإصدار البوليصة</button>
             </div>
           </section>
@@ -1131,6 +1133,105 @@
     f.elements.destination.onchange=()=>{keepDifferent('destination');syncBranches()};
     f.elements.origin.onchange=()=>{keepDifferent('origin');syncBranches()};
     syncBranches();
+
+    const receiptSnapshot=()=>{
+      const source=f;
+      const clone=source.cloneNode(true);
+      clone.querySelectorAll('.ops-receipt-actions').forEach(el=>el.remove());
+      clone.querySelectorAll('input,select,textarea').forEach((field,index)=>{
+        const original=source.querySelectorAll('input,select,textarea')[index];
+        if(!original)return;
+        if(original.type==='hidden'){
+          field.remove();
+          return;
+        }
+        if(original.type==='radio'||original.type==='checkbox'){
+          const mark=document.createElement('span');
+          mark.className='ops-receipt-static-check';
+          mark.textContent=original.checked?'✓':'';
+          field.replaceWith(mark);
+          return;
+        }
+        const value=original.tagName==='SELECT'
+          ? (original.options[original.selectedIndex]?.textContent||original.value||'')
+          : (original.value||'');
+        const box=document.createElement(original.tagName==='TEXTAREA'?'div':'span');
+        box.className='ops-receipt-static-value';
+        box.textContent=value;
+        field.replaceWith(box);
+      });
+      return clone;
+    };
+
+    const receiptDocumentHtml=()=>{
+      const clone=receiptSnapshot();
+      return `<!doctype html><html lang="${document.documentElement.lang}" dir="${document.documentElement.dir}">
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width,initial-scale=1">
+          <title>Ghazala Shipment Receipt</title>
+          <link rel="stylesheet" href="${location.origin}/style.css?v=44">
+          <style>
+            body{margin:0;background:#fff}
+            .ops-receipt-form{max-width:900px;margin:0 auto;padding:24px}
+            .ops-receipt-static-value{display:flex;align-items:center;width:100%;min-height:100%;padding:12px 16px;color:#1f2d45;background:#fff}
+            .ops-receipt-static-check{display:grid;place-items:center;width:42px;height:42px;border:2px solid #343d98;color:#343d98;font-size:26px;font-weight:900}
+            @media print{body{margin:0}.ops-receipt-form{padding:8mm;max-width:none}}
+          </style>
+        </head><body>${clone.outerHTML}</body></html>`;
+    };
+
+    const printReceipt=()=>{
+      const win=window.open('','_blank','noopener,noreferrer');
+      if(!win)return toast('Allow pop-ups to print the receipt');
+      win.document.open();
+      win.document.write(receiptDocumentHtml());
+      win.document.close();
+      win.onload=()=>{win.focus();win.print()};
+    };
+
+    const downloadReceiptPdf=async()=>{
+      const button=$('#downloadReceiptPdfBtn');
+      if(!window.html2canvas||!window.jsPDF)return toast('PDF tools are unavailable');
+      const clone=receiptSnapshot();
+      const stage=document.createElement('div');
+      stage.className='ops-receipt-pdf-stage';
+      stage.style.cssText='position:fixed;left:-100000px;top:0;width:900px;background:#fff;z-index:-1;';
+      clone.style.width='900px';
+      clone.style.maxWidth='900px';
+      clone.style.margin='0';
+      stage.appendChild(clone);
+      document.body.appendChild(stage);
+      if(button)button.disabled=true;
+      try{
+        const canvas=await window.html2canvas(clone,{scale:2,backgroundColor:'#ffffff',useCORS:true});
+        const pdf=new window.jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+        const pageW=210,pageH=297,margin=8;
+        const imgW=pageW-margin*2;
+        const imgH=canvas.height*imgW/canvas.width;
+        const img=canvas.toDataURL('image/jpeg',0.95);
+        let y=margin;
+        pdf.addImage(img,'JPEG',margin,y,imgW,imgH);
+        let remaining=imgH-(pageH-margin*2);
+        while(remaining>0){
+          pdf.addPage();
+          y=margin-(imgH-remaining);
+          pdf.addImage(img,'JPEG',margin,y,imgW,imgH);
+          remaining-=pageH-margin*2;
+        }
+        const recipient=String(f.elements.recipient?.value||'shipment').trim().replace(/[^a-z0-9_-]+/gi,'-');
+        pdf.save(`ghazala-shipment-receipt-${recipient||'shipment'}.pdf`);
+      }catch(err){
+        console.error('Receipt PDF failed',err);
+        toast('Could not create PDF');
+      }finally{
+        stage.remove();
+        if(button)button.disabled=false;
+      }
+    };
+
+    $('#printReceiptBtn')?.addEventListener('click',printReceipt);
+    $('#downloadReceiptPdfBtn')?.addEventListener('click',downloadReceiptPdf);
 
     f.onsubmit=async e=>{
       e.preventDefault();
