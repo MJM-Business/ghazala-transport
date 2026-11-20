@@ -999,39 +999,127 @@
     let customerAccounts=[];
     if(hasPermission('shipments.edit')){try{customerAccounts=await managementCustomerAccounts()}catch(_){customerAccounts=[]}}
 
-    $('#modalRoot').innerHTML=`<div class="modal-backdrop" data-close><section class="modal ops-modal"><div class="modal-head"><div><div class="eyebrow">${opsTr('إنشاء شحنة')}</div><h2>${opsTr('بيانات الشحنة الجديدة')}</h2></div><button class="icon-btn" data-close>×</button></div>
-      <form id="createForm" class="form-grid ops-form">
-        <h3 class="field span-2">${opsTr('بيانات المرسل')}</h3>
-        <label class="field"><span>${opsTr('اسم المرسل')} *</span><input name="sender_name" required autocomplete="name"></label><label class="field"><span>${opsTr('رقم هوية المرسل')} *</span><input name="sender_id" required inputmode="numeric"></label>
-        <label class="field"><span>${opsTr('جوال المرسل')} *</span><input name="sender_phone" type="tel" required autocomplete="tel"></label><label class="field span-2"><span>${opsTr('عنوان المرسل')} *</span><textarea name="sender_address" required></textarea></label>
-        ${hasPermission('shipments.edit')?`<h3 class="field span-2">${safe(clt('account'))}</h3><label class="field span-2"><span>${safe(clt('optional'))}</span><select name="customer_user_id">${customerAccountOptionMarkup(customerAccounts)}</select></label>`:''}
-        <h3 class="field span-2">${opsTr('بيانات المستلم ووجهة الوصول')}</h3>
-        <label class="field"><span>${opsTr('اسم المستلم')} *</span><input name="recipient" required></label><label class="field"><span>${opsTr('رقم هوية المستلم')} *</span><input name="recipient_id" required inputmode="numeric"></label>
-        <label class="field"><span>${opsTr('جوال المستلم')} *</span><input name="phone" type="tel" required></label><label class="field"><span>${opsTr('من مدينة')}</span><select name="origin" required>${cityOptionMarkup(originDefault)}</select></label>
-        <label class="field"><span>${opsTr('إلى مدينة')}</span><select name="destination" required>${cityOptionMarkup(destinationDefault)}</select></label><label class="field"><span>${opsTr('فرع الوجهة')}</span><select name="recipient_branch">${branchOptions(destinationDefault)}</select></label>
-        <label class="field span-2"><span>${opsTr('عنوان المستلم بالتفصيل')} *</span><textarea name="recipient_address" required placeholder="${opsTr('الحي، الشارع، رقم المبنى، أقرب علامة')}"></textarea></label>
-        <input type="hidden" name="package_type" value="طرد تجاري سريع">
-        <input type="hidden" name="pieces" value="1">
-        <input type="hidden" name="weight" value="1">
-        <input type="hidden" name="eta" value="${localDT(24)}">
-        <input type="hidden" name="length_cm" value="0">
-        <input type="hidden" name="width_cm" value="0">
-        <input type="hidden" name="height_cm" value="0">
-        <input type="hidden" name="declared_value" value="0">
-        <input type="hidden" name="package_description" value="">
-        <input type="hidden" name="insured" value="">
-        <h3 class="field span-2">${opsTr('خيارات الدفع والتحصيل')}</h3>
-        <label class="field"><span>${opsTr('طريقة الدفع')}</span><select name="payment_method"><option value="cod">${opsTr('الدفع عند الاستلام COD')}</option><option value="sender">${opsTr('يدفع المرسل')}</option><option value="company">${opsTr('حساب الشركات المتعاقدة')}</option></select></label>
-        <label class="field" id="codField"><span>${opsTr('مبلغ التحصيل عند الاستلام')} *</span><input name="cod" type="number" min="0.01" step="0.01" value=""></label><label class="field span-2" id="companyField" hidden><span>${opsTr('رقم / اسم حساب الشركة')} *</span><input name="company_account"></label>
-        <div class="field span-2" id="quoteSummary">${quoteMarkup(baseFeeQuote(1,1,0,false,'cod'))}</div>
-        <label class="field"><span>${opsTr('السائق المكلّف')}</span><select name="driver_id"><option value="">${opsTr('غير معيّن')}</option>${drivers.map(d=>`<option value="${d.id}">${safe(d.name)} · ${safe(d.mobile)}</option>`).join('')}</select></label>
-        <div class="field span-2 ops-form-actions"><button class="btn light" type="button" data-close>${opsTr('إلغاء')}</button><button class="btn primary">${opsTr('حفظ وإصدار البوليصة')}</button></div>
-      </form></section></div>`;
+    $('#modalRoot').innerHTML=`<div class="modal-backdrop" data-close>
+      <section class="modal ops-modal ops-receipt-modal">
+        <button class="icon-btn ops-receipt-close" type="button" data-close>×</button>
+        <form id="createForm" class="ops-receipt-form">
+          <header class="ops-receipt-head">
+            <img src="/ghazala-logo.png?v=2" alt="Ghazala Transport" class="ops-receipt-logo">
+            <div class="ops-receipt-company">
+              <h2>غزالا ترانسبورت</h2>
+              <p>الإدارة / 0126849524</p>
+              <p>فرع جدة / 0509430543</p>
+              <p>فرع جازان / 0531684822</p>
+            </div>
+            <div class="ops-receipt-title">سند استلام شحنة</div>
+          </header>
+
+          <section class="ops-receipt-body">
+            <div class="ops-receipt-row">
+              <input name="recipient" required>
+              <span>اسم المستلم</span>
+            </div>
+            <div class="ops-receipt-row">
+              <input name="phone" type="tel" required>
+              <span>رقم الجوال</span>
+            </div>
+
+            <div class="ops-receipt-split">
+              <div class="ops-receipt-row compact">
+                <input name="pieces" type="number" min="1" max="100" value="1" required>
+                <span>عدد الطرود</span>
+              </div>
+              <div class="ops-receipt-row compact">
+                <input name="eta" type="datetime-local" value="${localDT(24)}" required>
+                <span>تاريخ الاستلام</span>
+              </div>
+            </div>
+
+            <div class="ops-receipt-payment-line">
+              <div class="ops-receipt-paychecks">
+                <label><input type="radio" name="payment_method" value="cod" checked><span></span><b>الدفع عند الاستلام</b></label>
+                <label><input type="radio" name="payment_method" value="sender"><span></span><b>الدفع عند التسليم</b></label>
+              </div>
+              <div class="ops-receipt-row value-row">
+                <input name="declared_value" type="number" min="0" step="0.01" value="0">
+                <span>قيمة الشحنة</span>
+              </div>
+            </div>
+
+            <div class="ops-receipt-extra-title">بيانات التشغيل</div>
+            <div class="ops-receipt-split">
+              <div class="ops-receipt-row compact"><input name="sender_name" required autocomplete="name"><span>اسم المرسل</span></div>
+              <div class="ops-receipt-row compact"><input name="sender_phone" type="tel" required autocomplete="tel"><span>جوال المرسل</span></div>
+            </div>
+            <div class="ops-receipt-split">
+              <div class="ops-receipt-row compact"><input name="sender_id" required inputmode="numeric"><span>هوية المرسل</span></div>
+              <div class="ops-receipt-row compact"><input name="recipient_id" required inputmode="numeric"><span>هوية المستلم</span></div>
+            </div>
+            <div class="ops-receipt-row"><textarea name="sender_address" required></textarea><span>عنوان المرسل</span></div>
+            <div class="ops-receipt-row"><textarea name="recipient_address" required placeholder="${opsTr('الحي، الشارع، رقم المبنى، أقرب علامة')}"></textarea><span>عنوان المستلم</span></div>
+
+            <div class="ops-receipt-split">
+              <div class="ops-receipt-row compact"><select name="origin" required>${cityOptionMarkup(originDefault)}</select><span>من مدينة</span></div>
+              <div class="ops-receipt-row compact"><select name="destination" required>${cityOptionMarkup(destinationDefault)}</select><span>إلى مدينة</span></div>
+            </div>
+            <div class="ops-receipt-row">
+              <select name="recipient_branch">${branchOptions(destinationDefault)}</select>
+              <span>فرع الوجهة</span>
+            </div>
+
+            ${hasPermission('shipments.edit')?`<div class="ops-receipt-row"><select name="customer_user_id">${customerAccountOptionMarkup(customerAccounts)}</select><span>${safe(clt('account'))}</span></div>`:''}
+
+            <div id="codField" class="ops-receipt-row">
+              <input name="cod" type="number" min="0.01" step="0.01" value="">
+              <span>مبلغ التحصيل</span>
+            </div>
+            <div id="companyField" hidden><input type="hidden" name="company_account" value=""></div>
+
+            <input type="hidden" name="package_type" value="طرد تجاري سريع">
+            <input type="hidden" name="weight" value="1">
+            <input type="hidden" name="length_cm" value="0">
+            <input type="hidden" name="width_cm" value="0">
+            <input type="hidden" name="height_cm" value="0">
+            <input type="hidden" name="package_description" value="">
+            <input type="hidden" name="insured" value="">
+            <input type="hidden" name="driver_id" value="">
+            <div id="quoteSummary" hidden>${quoteMarkup(baseFeeQuote(1,1,0,false,'cod'))}</div>
+
+            <section class="ops-receipt-terms">
+              <h3>الشروط</h3>
+              <ul>
+                <li>استلام العميل لهذه البوليصة يعتبر قبولاً لكل ما جاء بها.</li>
+                <li>يجب أن تكون المنقولات أو الطرود سليمة وخالية من المواد الممنوعة والخطرة، ويتحمل المرسل مسؤولية محتويات الشحنة.</li>
+                <li>المؤسسة غير مسؤولة عن القضاء والقدر والحوادث والكوارث الطبيعية.</li>
+                <li>يحق للمؤسسة رفض أو تأجيل أي شحنة عند وجود سبب تشغيلي أو أمني.</li>
+              </ul>
+            </section>
+
+            <div class="ops-receipt-signatures">
+              <label><b>اسم المستلم</b><input name="receipt_receiver_name"></label>
+              <label><b>التوقيع</b><input name="receipt_signature"></label>
+            </div>
+
+            <div class="ops-receipt-actions">
+              <button class="btn light" type="button" data-close>${opsTr('إلغاء')}</button>
+              <button class="btn primary">حفظ وإصدار البوليصة</button>
+            </div>
+          </section>
+        </form>
+      </section>
+    </div>`;
 
     wireModal();localizeNow($('#modalRoot'));const f=$('#createForm');
     f.addEventListener('input',()=>refreshQuote($('#modalRoot')));
-    const syncPaymentFields=()=>{const cod=f.elements.payment_method.value==='cod',company=f.elements.payment_method.value==='company';$('#codField').hidden=!cod;$('#companyField').hidden=!company;f.elements.cod.required=cod;f.elements.company_account.required=company;refreshQuote($('#modalRoot'))};
-    f.elements.payment_method.onchange=syncPaymentFields;syncPaymentFields();
+    const syncPaymentFields=()=>{
+      const method=String(new FormData(f).get('payment_method')||'cod');
+      const cod=method==='cod';
+      $('#codField').hidden=!cod;
+      f.elements.cod.required=cod;
+      refreshQuote($('#modalRoot'));
+    };
+    f.querySelectorAll('[name="payment_method"]').forEach(el=>el.onchange=syncPaymentFields);
+    syncPaymentFields();
 
     const syncBranches=()=>{const city=f.elements.destination.value,select=f.elements.recipient_branch;select.innerHTML=branchOptions(city,select.value);localizeNow(select)};
     const keepDifferent=(changed)=>{
@@ -1048,6 +1136,8 @@
       e.preventDefault();
       if(f.elements.origin.value===f.elements.destination.value)return toast(opsTr('مدينة الإرسال والوصول يجب أن تكون مختلفة'));
       const data=Object.fromEntries(new FormData(f));
+      delete data.receipt_receiver_name;
+      delete data.receipt_signature;
       data.driver_id=data.driver_id||null;
       if(Object.prototype.hasOwnProperty.call(data,'customer_user_id')){
         const owner=String(data.customer_user_id||'').trim();
