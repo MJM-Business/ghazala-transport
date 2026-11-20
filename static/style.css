@@ -7853,3 +7853,114 @@ html[dir="rtl"] .ops-home-notification.is-unread{
     padding:8px 18px;
   }
 }
+
+
+/* ============================================================
+   ADMIN RECEIPT FORM — LANGUAGE-AWARE RTL / LTR
+   Arabic + Urdu follow RTL; English + Hindi + Bengali follow LTR.
+   ============================================================ */
+html[dir="rtl"] .ops-receipt-form{
+  direction:rtl;
+}
+html[dir="ltr"] .ops-receipt-form{
+  direction:ltr;
+}
+
+/* Force the blue label tab to the language-leading side. */
+html[dir="rtl"] .ops-receipt-row{
+  direction:ltr;
+  grid-template-columns:minmax(0,1fr) 210px;
+}
+html[dir="rtl"] .ops-receipt-row.compact{
+  grid-template-columns:minmax(0,1fr) 150px;
+}
+html[dir="rtl"] .ops-receipt-row.value-row{
+  grid-template-columns:minmax(0,1fr) 180px;
+}
+html[dir="rtl"] .ops-receipt-row>span{
+  grid-column:2;
+  grid-row:1;
+  direction:rtl;
+  text-align:right;
+}
+html[dir="rtl"] .ops-receipt-row>input,
+html[dir="rtl"] .ops-receipt-row>select,
+html[dir="rtl"] .ops-receipt-row>textarea{
+  grid-column:1;
+  grid-row:1;
+  direction:rtl;
+  text-align:right;
+}
+
+html[dir="ltr"] .ops-receipt-row{
+  direction:ltr;
+  grid-template-columns:210px minmax(0,1fr);
+}
+html[dir="ltr"] .ops-receipt-row.compact{
+  grid-template-columns:150px minmax(0,1fr);
+}
+html[dir="ltr"] .ops-receipt-row.value-row{
+  grid-template-columns:180px minmax(0,1fr);
+}
+html[dir="ltr"] .ops-receipt-row>span{
+  grid-column:1;
+  grid-row:1;
+  direction:ltr;
+  text-align:left;
+}
+html[dir="ltr"] .ops-receipt-row>input,
+html[dir="ltr"] .ops-receipt-row>select,
+html[dir="ltr"] .ops-receipt-row>textarea{
+  grid-column:2;
+  grid-row:1;
+  direction:ltr;
+  text-align:left;
+}
+
+/* Payment controls and section labels follow the active page direction. */
+html[dir="rtl"] .ops-receipt-paychecks,
+html[dir="rtl"] .ops-receipt-extra-title,
+html[dir="rtl"] .ops-receipt-terms,
+html[dir="rtl"] .ops-receipt-signatures{
+  direction:rtl;
+  text-align:right;
+}
+html[dir="ltr"] .ops-receipt-paychecks,
+html[dir="ltr"] .ops-receipt-extra-title,
+html[dir="ltr"] .ops-receipt-terms,
+html[dir="ltr"] .ops-receipt-signatures{
+  direction:ltr;
+  text-align:left;
+}
+html[dir="rtl"] .ops-receipt-paychecks{justify-content:flex-start}
+html[dir="ltr"] .ops-receipt-paychecks{justify-content:flex-start}
+
+/* Keep numeric/date/phone values readable while the surrounding form can flip. */
+.ops-receipt-row input[type="number"],
+.ops-receipt-row input[type="datetime-local"],
+.ops-receipt-row input[type="tel"]{
+  direction:ltr;
+}
+html[dir="rtl"] .ops-receipt-row input[type="number"],
+html[dir="rtl"] .ops-receipt-row input[type="datetime-local"],
+html[dir="rtl"] .ops-receipt-row input[type="tel"]{
+  text-align:right;
+}
+html[dir="ltr"] .ops-receipt-row input[type="number"],
+html[dir="ltr"] .ops-receipt-row input[type="datetime-local"],
+html[dir="ltr"] .ops-receipt-row input[type="tel"]{
+  text-align:left;
+}
+
+@media(max-width:700px){
+  html[dir="rtl"] .ops-receipt-row,
+  html[dir="rtl"] .ops-receipt-row.compact,
+  html[dir="rtl"] .ops-receipt-row.value-row{
+    grid-template-columns:minmax(0,1fr) 120px;
+  }
+  html[dir="ltr"] .ops-receipt-row,
+  html[dir="ltr"] .ops-receipt-row.compact,
+  html[dir="ltr"] .ops-receipt-row.value-row{
+    grid-template-columns:120px minmax(0,1fr);
+  }
+}
