@@ -7620,11 +7620,12 @@ html[dir="rtl"] .ops-home-notification.is-unread{
 .ops-receipt-actions{
   display:flex;
   justify-content:center;
-  gap:12px;
+  gap:10px;
   margin-top:10px;
+  flex-wrap:wrap;
 }
 .ops-receipt-actions .btn{
-  min-width:180px;
+  min-width:150px;
 }
 @media(max-width:700px){
   .ops-receipt-form{padding:22px 14px}
