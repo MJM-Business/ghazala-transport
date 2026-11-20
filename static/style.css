@@ -7409,46 +7409,59 @@ html[dir="rtl"] .ops-home-notification.is-unread{
 .ops-receipt-head{
   position:relative;
   display:grid;
-  grid-template-columns:170px minmax(0,1fr);
-  gap:24px;
+  grid-template-columns:180px minmax(0,1fr);
+  grid-template-areas:
+    "logo company"
+    "title title";
+  column-gap:28px;
+  row-gap:16px;
   align-items:center;
-  min-height:190px;
-  padding:12px 8px 34px;
+  padding:18px 20px 8px;
   border-top:1px dashed #7e8db6;
 }
 .ops-receipt-logo{
-  width:150px;
-  height:150px;
+  grid-area:logo;
+  width:145px;
+  height:145px;
   object-fit:contain;
-  justify-self:start;
+  justify-self:center;
+  align-self:center;
 }
 .ops-receipt-company{
-  text-align:right;
+  grid-area:company;
+  align-self:center;
+  text-align:center;
   color:#303b97;
+  padding-inline:12px;
 }
 .ops-receipt-company h2{
-  margin:0 0 8px;
-  font-size:34px;
-  line-height:1.05;
+  margin:0 0 10px;
+  font-size:32px;
+  line-height:1.1;
   font-weight:900;
 }
 .ops-receipt-company p{
-  margin:4px 0;
-  font-size:18px;
+  margin:5px 0;
+  font-size:17px;
+  line-height:1.25;
   font-weight:800;
 }
 .ops-receipt-title{
-  position:absolute;
-  left:50%;
-  bottom:0;
-  transform:translateX(-50%);
-  min-width:290px;
-  padding:10px 34px;
-  border-radius:0;
+  grid-area:title;
+  position:relative;
+  left:auto;
+  bottom:auto;
+  transform:none;
+  justify-self:center;
+  min-width:300px;
+  max-width:420px;
+  margin-top:2px;
+  padding:11px 36px;
   background:#323b99;
   color:#fff;
   text-align:center;
-  font-size:24px;
+  font-size:23px;
+  line-height:1.1;
   font-weight:900;
   clip-path:polygon(8% 0,92% 0,100% 50%,92% 100%,8% 100%,0 50%);
 }
@@ -7616,17 +7629,23 @@ html[dir="rtl"] .ops-home-notification.is-unread{
 @media(max-width:700px){
   .ops-receipt-form{padding:22px 14px}
   .ops-receipt-head{
-    grid-template-columns:100px 1fr;
-    min-height:150px;
-    gap:14px;
+    grid-template-columns:92px minmax(0,1fr);
+    grid-template-areas:
+      "logo company"
+      "title title";
+    column-gap:12px;
+    row-gap:10px;
+    padding:14px 8px 6px;
   }
-  .ops-receipt-logo{width:96px;height:96px}
-  .ops-receipt-company h2{font-size:23px}
-  .ops-receipt-company p{font-size:12px}
+  .ops-receipt-logo{width:88px;height:88px}
+  .ops-receipt-company{padding-inline:4px}
+  .ops-receipt-company h2{font-size:21px;margin-bottom:6px}
+  .ops-receipt-company p{font-size:11px;margin:3px 0}
   .ops-receipt-title{
-    min-width:220px;
-    font-size:18px;
-    padding:8px 20px;
+    min-width:210px;
+    max-width:90%;
+    font-size:17px;
+    padding:8px 18px;
   }
   .ops-receipt-row,
   .ops-receipt-row.compact,
