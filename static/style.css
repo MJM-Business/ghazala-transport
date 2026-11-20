@@ -7763,3 +7763,93 @@ html[dir="rtl"] .ops-home-notification.is-unread{
   .ops-receipt-title::before{left:-13px}
   .ops-receipt-title::after{right:-13px}
 }
+
+
+/* Final receipt header lock — exact reference composition */
+.ops-receipt-head{
+  direction:ltr;
+  grid-template-columns:230px minmax(0,1fr);
+  grid-template-areas:
+    "logo company"
+    "title title";
+  column-gap:54px;
+  row-gap:12px;
+  align-items:center;
+  padding:26px 44px 8px;
+}
+.ops-receipt-logo{
+  grid-area:logo;
+  width:165px;
+  height:165px;
+  justify-self:center;
+  align-self:center;
+}
+.ops-receipt-company{
+  grid-area:company;
+  direction:rtl;
+  justify-self:center;
+  align-self:center;
+  width:min(100%,430px);
+  text-align:center;
+  padding:0;
+}
+.ops-receipt-company h2{
+  margin:0 0 8px;
+  font-size:36px;
+  line-height:1.05;
+  font-weight:900;
+}
+.ops-receipt-company p{
+  margin:4px 0;
+  font-size:18px;
+  line-height:1.18;
+  font-weight:800;
+}
+.ops-receipt-title{
+  grid-area:title;
+  direction:rtl;
+  justify-self:center;
+  align-self:center;
+  width:300px;
+  min-width:300px;
+  max-width:300px;
+  margin:0 auto;
+  padding:11px 28px;
+  font-size:23px;
+  line-height:1;
+}
+@media(max-width:700px){
+  .ops-receipt-head{
+    direction:ltr;
+    grid-template-columns:105px minmax(0,1fr);
+    grid-template-areas:
+      "logo company"
+      "title title";
+    column-gap:16px;
+    row-gap:9px;
+    padding:16px 10px 6px;
+  }
+  .ops-receipt-logo{
+    width:96px;
+    height:96px;
+  }
+  .ops-receipt-company{
+    direction:rtl;
+    width:100%;
+  }
+  .ops-receipt-company h2{
+    font-size:22px;
+    margin-bottom:5px;
+  }
+  .ops-receipt-company p{
+    font-size:11px;
+    margin:2px 0;
+  }
+  .ops-receipt-title{
+    width:220px;
+    min-width:220px;
+    max-width:220px;
+    font-size:17px;
+    padding:8px 18px;
+  }
+}
