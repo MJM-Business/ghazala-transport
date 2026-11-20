@@ -7668,3 +7668,98 @@ html[dir="rtl"] .ops-home-notification.is-unread{
   }
   .ops-receipt-terms ul{font-size:13px;line-height:1.8}
 }
+
+
+/* Receipt header accuracy pass — match supplied Ghazala reference */
+.ops-receipt-head{
+  grid-template-columns:220px minmax(0,1fr);
+  grid-template-areas:
+    "logo company"
+    "title title";
+  column-gap:38px;
+  row-gap:18px;
+  align-items:center;
+  padding:20px 34px 10px;
+}
+.ops-receipt-logo{
+  width:172px;
+  height:172px;
+  justify-self:center;
+}
+.ops-receipt-company{
+  justify-self:center;
+  width:min(100%,470px);
+  padding:0;
+  text-align:center;
+}
+.ops-receipt-company h2{
+  margin:0 0 10px;
+  font-size:40px;
+  line-height:1.05;
+  letter-spacing:-.02em;
+}
+.ops-receipt-company p{
+  margin:5px 0;
+  font-size:19px;
+  line-height:1.2;
+}
+.ops-receipt-title{
+  position:relative;
+  min-width:290px;
+  max-width:360px;
+  margin:0 auto;
+  padding:12px 34px;
+  overflow:visible;
+  font-size:24px;
+  line-height:1;
+  clip-path:polygon(7% 0,93% 0,100% 50%,93% 100%,7% 100%,0 50%);
+}
+.ops-receipt-title::before,
+.ops-receipt-title::after{
+  content:"";
+  position:absolute;
+  top:50%;
+  width:22px;
+  height:54px;
+  transform:translateY(-50%);
+  pointer-events:none;
+}
+.ops-receipt-title::before{
+  left:-20px;
+  border-left:5px solid #7d89c5;
+  border-top:5px solid transparent;
+  border-bottom:5px solid transparent;
+  transform:translateY(-50%) skewX(-20deg);
+}
+.ops-receipt-title::after{
+  right:-20px;
+  border-right:5px solid #7d89c5;
+  border-top:5px solid transparent;
+  border-bottom:5px solid transparent;
+  transform:translateY(-50%) skewX(20deg);
+}
+@media(max-width:700px){
+  .ops-receipt-head{
+    grid-template-columns:104px minmax(0,1fr);
+    column-gap:14px;
+    row-gap:12px;
+    padding:14px 8px 8px;
+  }
+  .ops-receipt-logo{width:100px;height:100px}
+  .ops-receipt-company{width:100%}
+  .ops-receipt-company h2{font-size:23px}
+  .ops-receipt-company p{font-size:11px}
+  .ops-receipt-title{
+    min-width:220px;
+    max-width:82%;
+    font-size:18px;
+    padding:9px 22px;
+  }
+  .ops-receipt-title::before,
+  .ops-receipt-title::after{
+    width:15px;
+    height:40px;
+  }
+  .ops-receipt-title::before{left:-13px}
+  .ops-receipt-title::after{right:-13px}
+}
