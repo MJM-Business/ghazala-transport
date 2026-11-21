@@ -1046,7 +1046,7 @@
               <input name="phone" type="tel" required>
               <span>${opsTr('رقم الجوال')}</span>
             </div>
-            <div class="ops-receipt-row">
+            <div class="ops-receipt-row ops-receipt-language-row">
               <select name="notification_language">
                 <option value="ar" ${currentLang==='ar'?'selected':''}>${currentLang==='ar'?'العربية':'Arabic'}</option>
                 <option value="en" ${currentLang==='en'?'selected':''}>English</option>
