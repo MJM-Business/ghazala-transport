@@ -2160,7 +2160,7 @@
       if(!entry?.shipments?.some(s=>canDispatchTransfer(entry,s)))return;
       b.disabled=true;try{await routeStatus(entry.id,'في الطريق');if(b.isConnected&&state.routes.some(r=>String(r.id)===String(entry.id)&&r.status==='في الطريق'))closeModal()}finally{if(b.isConnected)b.disabled=false}
     });
-    $('[data-transfer-ack-destination]',root).forEach(b=>b.onclick=async()=>{
+    $$('[data-transfer-ack-destination]',root).forEach(b=>b.onclick=async()=>{
       b.disabled=true;
       try{
         await api(`/api/routes/${b.dataset.transferAckDestination}/ack-destination`,{method:'POST',body:JSON.stringify({awb:b.dataset.transferAwb})});
@@ -2168,7 +2168,7 @@
         state.last=0;await refreshOps(true);render();
       }catch(e){toast(opsTr(e.message))}finally{if(b.isConnected)b.disabled=false}
     });
-    $('[data-transfer-ack-origin]',root).forEach(b=>b.onclick=async()=>{
+    $$('[data-transfer-ack-origin]',root).forEach(b=>b.onclick=async()=>{
       b.disabled=true;
       try{
         await api(`/api/routes/${b.dataset.transferAckOrigin}/ack-origin`,{method:'POST',body:JSON.stringify({awb:b.dataset.transferAwb})});
@@ -2176,7 +2176,7 @@
         state.last=0;await refreshOps(true);render();
       }catch(e){toast(opsTr(e.message))}finally{if(b.isConnected)b.disabled=false}
     });
-    $('[data-route-receive]',root).forEach(b=>b.onclick=async()=>{
+    $$('[data-route-receive]',root).forEach(b=>b.onclick=async()=>{
       b.disabled=true;try{if(await confirmTransferReceipt(b.dataset.routeReceive,b.dataset.receiveAwb)){
         const detail=$('#transferHistory');if(detail?.isConnected)await openTransferDetail(b.dataset.routeReceive,b.dataset.receiveAwb);
       }}finally{if(b.isConnected)b.disabled=false}
