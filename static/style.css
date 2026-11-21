@@ -7965,3 +7965,109 @@ html[dir="ltr"] .ops-receipt-row input[type="tel"]{
     grid-template-columns:120px minmax(0,1fr);
   }
 }
+
+
+/* ============================================================
+   SIMPLE SHIPMENTS PAGE — everyday-user layout
+   ============================================================ */
+.simple-shipments-kpis{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:12px;
+  margin:0 0 16px;
+}
+.simple-shipments-kpis .kpi{
+  min-height:96px;
+  padding:14px 16px;
+}
+.simple-shipments-kpis .kpi-value{
+  font-size:24px;
+}
+.simple-shipment-toolbar{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin:0 0 12px;
+}
+.simple-shipment-search{
+  flex:1;
+  min-width:0;
+}
+.simple-shipment-tabs{
+  margin:0 0 14px;
+  max-width:100%;
+}
+.simple-shipment-grid{
+  gap:12px;
+}
+.simple-shipment-card{
+  padding:16px;
+  border-radius:14px;
+  box-shadow:0 3px 12px rgba(13,30,51,.05);
+}
+.simple-shipment-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+}
+.simple-shipment-head h3{
+  margin:8px 0 2px;
+  font-size:16px;
+  color:var(--ink);
+}
+.simple-shipment-head small{
+  color:var(--muted);
+  font-size:11px;
+}
+.simple-shipment-route{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  margin:12px 0 10px;
+  padding:10px 12px;
+  border-radius:10px;
+  background:#f8fafc;
+  border:1px solid #edf2f7;
+  font-size:12px;
+}
+.simple-shipment-meta{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px 14px;
+  color:var(--muted);
+  font-size:11px;
+  padding:0 2px 10px;
+}
+.simple-shipment-actions{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  padding-top:10px;
+  border-top:1px solid #eef2f6;
+}
+.simple-shipment-actions .btn{
+  flex:0 1 auto;
+}
+@media(max-width:900px){
+  .simple-shipments-kpis{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+@media(max-width:600px){
+  .simple-shipments-kpis{
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+  }
+  .simple-shipment-toolbar{
+    flex-direction:column;
+    align-items:stretch;
+  }
+  .simple-shipment-toolbar .btn{
+    width:100%;
+  }
+  .simple-shipment-actions .btn{
+    flex:1 1 100%;
+  }
+}
