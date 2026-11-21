@@ -8087,6 +8087,8 @@ class Handler(BaseHTTPRequestHandler):
                     if isinstance(raw,bool): active=1 if raw else 0
                     elif raw in (0,1,'0','1'): active=int(raw)
                     else: raise ValueError('Invalid branch active status.')
+                    if not active and str(branch['code'] or '').upper()=='JED-MAIN':
+                        return self.send_json({'error':'Jeddah HQ is the master branch and cannot be removed.','code':'master_branch_protected'},409)
                     if not active and int(branch['is_active'] or 0)!=0:
                         active_shipments=0
                         for item in c.execute(
