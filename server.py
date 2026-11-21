@@ -381,6 +381,7 @@ def add_shipment_event(con, shipment_id, status, stage, location, actor):
     create_operational_status_notification(con,shipment_id,status)
     # Customer-facing event notifications share one durable source key so the
     # in-app notice and any configured external channels stay deduplicated.
+    linked_customer=False
     if con.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='customer_notifications'").fetchone():
         owner=con.execute(
             """SELECT cs.customer_user_id,s.awb
@@ -388,6 +389,7 @@ def add_shipment_event(con, shipment_id, status, stage, location, actor):
                WHERE cs.shipment_id=?""",(shipment_id,)
         ).fetchone()
         if owner:
+            linked_customer=True
             title=f"Shipment {owner['awb']} · {status}"
             message=" · ".join(part for part in (str(stage or "").strip(),str(location or "").strip()) if part) or str(status)
             source_key=f"shipment-event:{cur.lastrowid}"
@@ -402,6 +404,8 @@ def add_shipment_event(con, shipment_id, status, stage, location, actor):
                     category="shipment",shipment_id=shipment_id,source_key=source_key,
                     include_sms=False
                 )
+    if not linked_customer and con.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='notification_delivery_log'").fetchone():
+        dispatch_shipment_contact_whatsapp(con,shipment_id,status,"")
 
 class DeliveryPolicyError(ValueError):
     pass
@@ -646,6 +650,85 @@ def _send_whatsapp(con,recipient,message):
         return {"delivery":"sent","error":"","provider":"Twilio WhatsApp"}
     except Exception as exc:
         return {"delivery":"failed","error":str(exc)[:300],"provider":"Twilio WhatsApp"}
+
+
+def _shipment_whatsapp_text(shipment,status,tracking_url):
+    language=str(shipment.get("notification_language") or "ar").strip().lower()
+    awb=str(shipment.get("awb") or "")
+    canonical=transitions.canonical(status)
+    templates={
+        "ar":{
+            "dispatched":f"غزالا ترانسبورت: تم إرسال شحنتك {awb} وهي الآن في الطريق. التتبع: {tracking_url}",
+            "in_transit":f"غزالا ترانسبورت: شحنتك {awb} في الطريق إلى فرع الوجهة. التتبع: {tracking_url}",
+            "at_destination":f"غزالا ترانسبورت: وصلت شحنتك {awb} إلى فرع الوجهة. التتبع: {tracking_url}",
+            "out_for_delivery":f"غزالا ترانسبورت: شحنتك {awb} خرجت للتسليم. التتبع: {tracking_url}",
+            "delivered":f"غزالا ترانسبورت: تم تسليم شحنتك {awb} بنجاح. شكراً لاستخدامك غزالا.",
+            "delayed":f"غزالا ترانسبورت: يوجد تحديث على شحنتك {awb} وقد يحدث تأخير. التتبع: {tracking_url}",
+        },
+        "en":{
+            "dispatched":f"Ghazala Transport: Shipment {awb} has been dispatched and is on the way. Track: {tracking_url}",
+            "in_transit":f"Ghazala Transport: Shipment {awb} is in transit to the destination branch. Track: {tracking_url}",
+            "at_destination":f"Ghazala Transport: Shipment {awb} has arrived at the destination branch. Track: {tracking_url}",
+            "out_for_delivery":f"Ghazala Transport: Shipment {awb} is out for delivery. Track: {tracking_url}",
+            "delivered":f"Ghazala Transport: Shipment {awb} has been delivered successfully. Thank you.",
+            "delayed":f"Ghazala Transport: Shipment {awb} has an update and may be delayed. Track: {tracking_url}",
+        },
+        "ur":{
+            "dispatched":f"Ghazala Transport: Aap ki shipment {awb} dispatch ho chuki hai aur raste mein hai. Track: {tracking_url}",
+            "in_transit":f"Ghazala Transport: Aap ki shipment {awb} destination branch ki taraf ja rahi hai. Track: {tracking_url}",
+            "at_destination":f"Ghazala Transport: Aap ki shipment {awb} destination branch pohanch gayi hai. Track: {tracking_url}",
+            "out_for_delivery":f"Ghazala Transport: Aap ki shipment {awb} delivery ke liye nikal chuki hai. Track: {tracking_url}",
+            "delivered":f"Ghazala Transport: Aap ki shipment {awb} successfully deliver ho gayi hai. Shukriya.",
+            "delayed":f"Ghazala Transport: Aap ki shipment {awb} mein delay update hai. Track: {tracking_url}",
+        },
+        "hi":{
+            "dispatched":f"Ghazala Transport: Aapki shipment {awb} dispatch ho gayi hai aur raste mein hai. Track: {tracking_url}",
+            "in_transit":f"Ghazala Transport: Shipment {awb} destination branch ki taraf transit mein hai. Track: {tracking_url}",
+            "at_destination":f"Ghazala Transport: Shipment {awb} destination branch pahunch gayi hai. Track: {tracking_url}",
+            "out_for_delivery":f"Ghazala Transport: Shipment {awb} delivery ke liye nikal chuki hai. Track: {tracking_url}",
+            "delivered":f"Ghazala Transport: Shipment {awb} successfully deliver ho gayi hai. Dhanyavaad.",
+            "delayed":f"Ghazala Transport: Shipment {awb} mein delay update hai. Track: {tracking_url}",
+        },
+        "bn":{
+            "dispatched":f"Ghazala Transport: Shipment {awb} dispatch hoyeche ebong pothe ache. Track: {tracking_url}",
+            "in_transit":f"Ghazala Transport: Shipment {awb} destination branch-er dike jacche. Track: {tracking_url}",
+            "at_destination":f"Ghazala Transport: Shipment {awb} destination branch-e pouchheche. Track: {tracking_url}",
+            "out_for_delivery":f"Ghazala Transport: Shipment {awb} delivery-r jonno ber hoyeche. Track: {tracking_url}",
+            "delivered":f"Ghazala Transport: Shipment {awb} successfully delivered. Dhonnobad.",
+            "delayed":f"Ghazala Transport: Shipment {awb}-e delay update ache. Track: {tracking_url}",
+        },
+    }
+    if canonical not in ("dispatched","in_transit","at_destination","out_for_delivery","delivered","delayed"):
+        return ""
+    return (templates.get(language) or templates["en"]).get(canonical,"")
+
+
+def dispatch_shipment_contact_whatsapp(con,shipment_id,status,tracking_url):
+    shipment=con.execute("SELECT id,awb,phone,notification_language FROM shipments WHERE id=?",(shipment_id,)).fetchone()
+    if not shipment or not str(shipment["phone"] or "").strip():
+        return None
+    item=dict(shipment)
+    message=_shipment_whatsapp_text(item,status,tracking_url)
+    if not message:
+        return None
+    canonical=transitions.canonical(status)
+    source_key=f"shipment-contact:{shipment_id}:{canonical}"
+    recipient=str(item["phone"]).strip()
+    existing=con.execute("""SELECT status FROM notification_delivery_log
+        WHERE source_key=? AND channel='whatsapp' AND recipient=?""",(source_key,recipient)).fetchone()
+    if existing and existing["status"] in ("sent","demo","not_configured","queued"):
+        return dict(existing)
+    result=_send_whatsapp(con,recipient,message)
+    status_value=result["delivery"]
+    attempts=1 if status_value in ("sent","failed") else 0
+    next_retry=(datetime.now(timezone.utc)+timedelta(minutes=5)).isoformat(timespec="seconds") if status_value=="failed" else None
+    _notification_log_upsert(con,shipment_id=shipment_id,category="shipment",event_type=canonical,
+        source_key=source_key,channel="whatsapp",recipient=recipient,title="Ghazala Transport",
+        message=message,status=status_value,provider=result.get("provider",""),
+        provider_error=result.get("error",""),attempt_count=attempts,
+        sent_at=datetime.now(timezone.utc).isoformat(timespec="seconds") if status_value=="sent" else None,
+        next_attempt_at=next_retry)
+    return result
 
 
 def _send_email(recipient,title,message):
@@ -3877,6 +3960,7 @@ MIGRATIONS = (
     (18, "pickup_completion_shipment_receipt", _pickup_completion_shipment_receipt_v18),
     (19, "invoice_customer_ownership_integrity", _invoice_customer_ownership_integrity_v19),
     (20, "route_notification_exact_duplicate_integrity", _route_notification_integrity_v20),
+    (21, "branch_handoff_acknowledgements_whatsapp_language", transfers.migration21),
 )
 
 
