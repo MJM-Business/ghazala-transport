@@ -598,6 +598,26 @@
     'أبها':{ar:'أبها',en:'Abha',ur:'ابہا',hi:'अबहा',bn:'আভা'},
     'Abha':{ar:'أبها',en:'Abha',ur:'ابہا',hi:'अबहा',bn:'আভা'}
   };
+  const SAUDI_BRANCH_CITIES=[
+    'Riyadh','Jeddah','Makkah','Madinah','Dammam','Khobar','Dhahran','Jubail','Qatif','Ras Tanura',
+    'Taif','Abha','Khamis Mushait','Jazan','Sabya','Abu Arish','Samtah','Farasan','Najran','Sharurah',
+    'Tabuk','Duba','Umluj','Al Wajh','Haql','Yanbu','Al Ula','Badr','Khaybar','Rabigh',
+    'King Abdullah Economic City','Al Lith','Al Qunfudhah','Bahrah','Khulais','Al Jumum','Al Kamil',
+    'Buraidah','Unaizah','Ar Rass','Al Bukayriyah','Al Badayea','Al Mithnab','Uyun Al Jawa',
+    'Hail','Baqaa','Al Ghazalah','Ash Shinan','Arar','Rafha','Turaif','Al Uwayqilah',
+    'Sakaka','Dumat Al Jandal','Qurayyat','Al Bahah','Baljurashi','Al Mandaq','Al Aqiq',
+    'Al Hofuf','Al Mubarraz','Al Ahsa','Abqaiq','Hafar Al Batin','Khafji','Nairyah','Qaryat Al Ulya',
+    'Al Kharj','Ad Dilam','Al Muzahimiyah','Diriyah','Shaqra','Thadiq','Huraymila','Rumah','Dhurma',
+    'Al Majmaah','Az Zulfi','Al Ghat','Hawtat Sudair','Afif','Ad Dawadimi','Al Quwayiyah','Wadi Ad Dawasir',
+    'As Sulayyil','Hotat Bani Tamim','Al Hariq','Layla','Al Aflaj','Bisha','Muhayil Asir','Sarat Abidah',
+    'Ahad Rafidah','Al Namas','Tanomah','Balqarn','Rijal Alma','Al Majardah','Dhahran Al Janub',
+    'Tathlith','Yadamah','Hubuna','Badr Al Janub','Damad','Al Aridhah','Al Dayer','Al Eidabi','Al Harth',
+    'Al Tuwal','Fayfa','Harub','Baish','Ad Darb','Al Shuqaiq','Al Khurma','Ranyah','Turabah','Maysan',
+    'Adham','Al Ardiyat','Mahd adh Dhahab','Al Hinakiyah','Al Ais','Al Muwaih','Al Hawiyah'
+  ];
+  function saudiBranchCities(){
+    return [...new Set([...SAUDI_BRANCH_CITIES,...cityNames()])].sort((a,b)=>a.localeCompare(b,'en'));
+  }
   function opsUiLanguage(){
     // currentLang is the authoritative staff/operations UI language used by opsTr().
     // #langSelect can be stale/hidden after customer/staff portal switches, so it
@@ -2339,7 +2359,7 @@
     if(!requirePermission('branches.manage'))return;
     try{await ensureNetworkReady()}catch(_){}
     const editing=!!branch;
-    const cities=cityNames();
+    const cities=saudiBranchCities();
     const row=branch||{code:'',name:'',city:'',phone:'',address:'',coverage:'',is_active:1};
     $('#modalRoot').innerHTML=`<div class="modal-backdrop" data-close><section class="modal" style="max-width:660px"><div class="modal-head"><div><div class="eyebrow">${bt('registry')}</div><h2>${editing?bt('edit'):opsTr('إضافة فرع / منطقة تغطية')}</h2></div><button class="icon-btn" data-close>×</button></div>
       <form id="branchForm" class="form-grid" autocomplete="off">
