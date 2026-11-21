@@ -402,9 +402,9 @@ def add_shipment_event(con, shipment_id, status, stage, location, actor):
                 dispatch_customer_notification_channels(
                     con,owner["customer_user_id"],title,message,
                     category="shipment",shipment_id=shipment_id,source_key=source_key,
-                    include_sms=False
+                    include_sms=False,include_whatsapp=False
                 )
-    if not linked_customer and con.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='notification_delivery_log'").fetchone():
+    if con.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='notification_delivery_log'").fetchone():
         dispatch_shipment_contact_whatsapp(con,shipment_id,status,"")
 
 class DeliveryPolicyError(ValueError):
@@ -757,14 +757,14 @@ def _send_email(recipient,title,message):
         return {"delivery":"failed","error":str(exc)[:300],"provider":"SMTP"}
 
 
-def dispatch_customer_notification_channels(con,customer_user_id,title,message,*,category="general",shipment_id=None,source_key,event_type="",include_sms=True):
+def dispatch_customer_notification_channels(con,customer_user_id,title,message,*,category="general",shipment_id=None,source_key,event_type="",include_sms=True,include_whatsapp=True):
     pref=notification_preferences(con,customer_user_id)
     if not _notification_category_enabled(pref,category):
         return []
     contact=_customer_contact(con,customer_user_id); results=[]
     channels=[]
     if include_sms and pref.get("sms_enabled"): channels.append(("sms",contact["mobile"]))
-    if pref.get("whatsapp_enabled"): channels.append(("whatsapp",contact["mobile"]))
+    if include_whatsapp and pref.get("whatsapp_enabled"): channels.append(("whatsapp",contact["mobile"]))
     if pref.get("email_enabled"): channels.append(("email",contact["email"]))
     for channel,recipient in channels:
         if not recipient:
