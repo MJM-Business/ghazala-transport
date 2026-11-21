@@ -2418,6 +2418,22 @@
     };
   }
 
+  function branchManagerLoginModal(branch){
+    if(!branch||!hasPermission('users.manage'))return toast(opsTr('ليست لديك صلاحية لهذا الإجراء'));
+    userModal(null,null,[branch],async()=>{await load();state.last=0;await refreshOps(true)});
+    const form=$('#userForm');
+    if(!form)return;
+    const role=form.elements.namedItem('role');
+    if(role)role.value='branch_manager';
+    const branchBox=form.querySelector('[name="branch_ids"]');
+    if(branchBox){
+      branchBox.checked=true;
+      branchBox.dispatchEvent(new Event('change',{bubbles:true}));
+    }
+    const title=$('.modal-head h2',$('#modalRoot'));
+    if(title)title.textContent=currentLang==='ar'?('إنشاء مدير فرع · '+(branch.name||branch.code)):('Create Branch Manager · '+(branch.name||branch.code));
+  }
+
   async function branchManagementModal(){
     if(!requirePermission('branches.manage'))return;
     const root=$('#modalRoot');
@@ -2430,12 +2446,13 @@
         <div class="grid shipment-grid">${(rows||[]).map(branch=>`<article class="card">
           <div class="shipment-top"><span class="icon-square">⌂</span><div class="ship-name">${safe(branch.name)}<div class="ship-phone">${safe(branch.code)} · ${safe(opsTr(branch.city))}</div></div><span class="badge ${branch.is_active!==0?'green':'red'} push">${branch.is_active!==0?bt('active'):bt('inactive')}</span></div>
           <div class="record-meta"><span>${bt('phone')}: <b>${safe(branch.phone||'—')}</b></span><span>${bt('coverage')}: <b>${safe(branch.coverage||'—')}</b></span><span>${bt('address')}: <b>${safe(branch.address||'—')}</b></span></div>
-          <div class="ship-bottom"><button class="btn light small" data-branch-edit="${safe(branch.id)}">${bt('edit')}</button><button class="btn ${branch.is_active!==0?'danger':'primary'} small" data-branch-toggle="${safe(branch.id)}" data-next-active="${branch.is_active===0?'true':'false'}">${branch.is_active!==0?bt('deactivate'):bt('activate')}</button></div>
+          <div class="ship-bottom"><button class="btn light small" data-branch-edit="${safe(branch.id)}">${bt('edit')}</button>${branch.is_active!==0?`<button class="btn light small" data-branch-manager="${safe(branch.id)}">♙ ${currentLang==='ar'?'إنشاء دخول مدير الفرع':'Create Manager Login'}</button>`:''}<button class="btn ${branch.is_active!==0?'danger':'primary'} small" data-branch-toggle="${safe(branch.id)}" data-next-active="${branch.is_active===0?'true':'false'}">${branch.is_active!==0?(currentLang==='ar'?'إزالة الفرع':'Remove Branch'):bt('activate')}</button></div>
         </article>`).join('')||`<div class="card empty">${bt('noBranches')}</div>`}</div>
       </section></div>`;
       wireModal();localizeNow(root);
       $('[data-branch-new]',root)?.addEventListener('click',()=>branchModal());
-      $$('[data-branch-edit]',root).forEach(button=>button.onclick=()=>branchModal((rows||[]).find(x=>String(x.id)===String(button.dataset.branchEdit))));
+      $('[data-branch-edit]',root).forEach(button=>button.onclick=()=>branchModal((rows||[]).find(x=>String(x.id)===String(button.dataset.branchEdit))));
+      $('[data-branch-manager]',root).forEach(button=>button.onclick=()=>branchManagerLoginModal((rows||[]).find(x=>String(x.id)===String(button.dataset.branchManager))));
       $$('[data-branch-toggle]',root).forEach(button=>button.onclick=async()=>{
         button.disabled=true;
         try{
