@@ -2,7 +2,7 @@
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import traceback
 from pathlib import Path
-from urllib.parse import urlparse, parse_qs, unquote, urlencode
+from urllib.parse import urlparse, parse_qs, unquote, urlencode, quote
 from urllib.request import Request, urlopen
 from datetime import datetime, timezone, timedelta
 import argparse, base64, hashlib, hmac, io, json, math, os, re, secrets, sqlite3, threading, time, uuid
