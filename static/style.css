@@ -8279,3 +8279,29 @@ html[dir="rtl"] .ops-receipt-language-row{
     justify-content:flex-start!important;
   }
 }
+
+
+/* Receipt label overflow lock — keep long translated labels inside blue cells */
+.ops-receipt-row>span{
+  min-width:0;
+  white-space:normal;
+  overflow-wrap:anywhere;
+  word-break:normal;
+  text-align:center;
+  line-height:1.2;
+}
+.ops-receipt-row.compact>span{
+  padding-inline:10px;
+  font-size:16px;
+}
+@media(max-width:700px){
+  .ops-receipt-row>span{
+    white-space:normal;
+    overflow-wrap:anywhere;
+    line-height:1.18;
+  }
+  .ops-receipt-row.compact>span{
+    font-size:13px;
+    padding-inline:7px;
+  }
+}
