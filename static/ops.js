@@ -1046,6 +1046,16 @@
               <input name="phone" type="tel" required>
               <span>${opsTr('رقم الجوال')}</span>
             </div>
+            <div class="ops-receipt-row">
+              <select name="notification_language">
+                <option value="ar" ${currentLang==='ar'?'selected':''}>${currentLang==='ar'?'العربية':'Arabic'}</option>
+                <option value="en" ${currentLang==='en'?'selected':''}>English</option>
+                <option value="ur" ${currentLang==='ur'?'selected':''}>Urdu</option>
+                <option value="hi" ${currentLang==='hi'?'selected':''}>Hindi</option>
+                <option value="bn" ${currentLang==='bn'?'selected':''}>Bengali</option>
+              </select>
+              <span>${currentLang==='ar'?'لغة رسائل واتساب':'WhatsApp Message Language'}</span>
+            </div>
 
             <div class="ops-receipt-split">
               <div class="ops-receipt-row compact">
@@ -2057,13 +2067,16 @@
     if(['in_transit','awaiting_receipt'].includes(shipment.transfer_status))return `${opsTr('عهدة النقل')}: ${route.driver_name||opsTr('غير معيّن')} · ${route.vehicle_plate||'—'}`;
     return shipment.transfer_status==='planned'?`${opsTr('بانتظار الإرسال')} · ${opsTr(route.origin)}`:opsTr('تم إلغاء التحويل');
   }
-  function canReceiveTransfer(route,shipment){return !!user&&hasPermission('routes.read')&&hasPermission('shipments.status')&&['system_admin','branch_manager','office_employee'].includes(accessRole())&&(transferGlobal()||transferBranches().includes(String(shipment.receiving_branch_id)))&&route.status==='وصلت'&&shipment.transfer_status==='awaiting_receipt'}
+  function transferStaff(){return !!user&&['system_admin','branch_manager','office_employee'].includes(accessRole())}
+  function canDestinationAcknowledge(route,shipment){return transferStaff()&&hasPermission('routes.read')&&(transferGlobal()||transferBranches().includes(String(shipment.receiving_branch_id)))&&['in_transit','awaiting_receipt','received'].includes(shipment.transfer_status)&&!shipment.destination_ack_at}
+  function canReceiveTransfer(route,shipment){return transferStaff()&&hasPermission('routes.read')&&hasPermission('shipments.status')&&(transferGlobal()||transferBranches().includes(String(shipment.receiving_branch_id)))&&route.status==='وصلت'&&shipment.transfer_status==='awaiting_receipt'}
+  function canOriginAcknowledge(route,shipment){return transferStaff()&&hasPermission('routes.read')&&(transferGlobal()||transferBranches().includes(String(shipment.origin_branch_id)))&&shipment.transfer_status==='received'&&!!shipment.received_at&&!shipment.origin_ack_at}
   function canDispatchTransfer(route,shipment){return hasPermission('routes.read')&&hasPermission('routes.manage')&&route.status==='مجدولة'&&shipment.transfer_status==='planned'}
-  function transferButtons(route,shipment){return `${canDispatchTransfer(route,shipment)?`<button class="btn primary small" data-transfer-dispatch="${safe(route.id)}">${opsTr('بدء الرحلة')}</button>`:''}${canReceiveTransfer(route,shipment)?`<button class="btn primary small" data-route-receive="${safe(route.id)}" data-receive-awb="${safe(shipment.awb)}">${opsTr('تأكيد استلام الشحنة')}</button>`:''}`}
+  function transferButtons(route,shipment){return `${canDispatchTransfer(route,shipment)?`<button class="btn primary small" data-transfer-dispatch="${safe(route.id)}">${opsTr('بدء الرحلة')}</button>`:''}${canDestinationAcknowledge(route,shipment)?`<button class="btn light small" data-transfer-ack-destination="${safe(route.id)}" data-transfer-awb="${safe(shipment.awb)}">${currentLang==='ar'?'تأكيد إشعار الإرسال':'Acknowledge Dispatch'}</button>`:''}${canReceiveTransfer(route,shipment)?`<button class="btn primary small" data-route-receive="${safe(route.id)}" data-receive-awb="${safe(shipment.awb)}">${opsTr('تأكيد استلام الشحنة')}</button>`:''}${canOriginAcknowledge(route,shipment)?`<button class="btn light small" data-transfer-ack-origin="${safe(route.id)}" data-transfer-awb="${safe(shipment.awb)}">${currentLang==='ar'?'تأكيد استلام الفرع الآخر':'Acknowledge Received'}</button>`:''}`}
   function transferPanel(){
     if(!hasPermission('routes.read')||accessRole()==='customer')return '';
     const rows=transferRows(state.transferView),receivable=transferRows('incoming').some(({route,shipment})=>canReceiveTransfer(route,shipment));
-    return `<div class="section-title"><h2>${opsTr('تحويلات الشحنات')}</h2>${receivable?`<button class="btn primary small" data-transfer-receive-scan>▦ ${opsTr('مسح بوليصة للاستلام')}</button>`:''}</div><div class="tabs" role="tablist">${[['incoming','التحويلات الواردة'],['outgoing','التحويلات الصادرة']].map(([id,label])=>`<button class="tab ${state.transferView===id?'active':''}" role="tab" aria-selected="${state.transferView===id}" data-transfer-view="${id}">${opsTr(label)} (${transferRows(id).length})</button>`).join('')}</div><div class="ops-route-list">${rows.map(({route,shipment})=>`<article class="card ops-route-card"><header><div><span class="badge ${shipment.transfer_status==='received'?'green':shipment.transfer_status==='in_transit'?'blue':''}">${transferLabel(shipment.transfer_status)}</span><h3>${safe(shipment.awb)}</h3></div><span>${safe(route.code)}</span></header><div class="ops-route-info"><span>${safe(opsTr(route.origin))} → ${safe(opsTr(route.destination))}</span><span>${opsTr('الفرع المرسل')}: <b>${safe(transferBranchName(shipment.origin_branch_id))}</b></span><span>${opsTr('الفرع المستلم')}: <b>${safe(transferBranchName(shipment.receiving_branch_id))}</b></span><span>${safe(transferCustody(route,shipment))}</span></div><div class="ops-route-actions"><button class="btn light small" data-transfer-detail="${safe(route.id)}" data-transfer-awb="${safe(shipment.awb)}">${opsTr('تفاصيل التحويل')}</button>${transferButtons(route,shipment)}</div></article>`).join('')||`<div class="card empty">${opsTr('لا توجد تحويلات ضمن نطاقك')}</div>`}</div>`;
+    return `<div class="section-title"><h2>${opsTr('تحويلات الشحنات')}</h2>${receivable?`<button class="btn primary small" data-transfer-receive-scan>▦ ${opsTr('مسح بوليصة للاستلام')}</button>`:''}</div><div class="tabs" role="tablist">${[['incoming','التحويلات الواردة'],['outgoing','التحويلات الصادرة']].map(([id,label])=>`<button class="tab ${state.transferView===id?'active':''}" role="tab" aria-selected="${state.transferView===id}" data-transfer-view="${id}">${opsTr(label)} (${transferRows(id).length})</button>`).join('')}</div><div class="ops-route-list">${rows.map(({route,shipment})=>`<article class="card ops-route-card"><header><div><span class="badge ${shipment.transfer_status==='received'?'green':shipment.transfer_status==='in_transit'?'blue':''}">${transferLabel(shipment.transfer_status)}</span><h3>${safe(shipment.awb)}</h3></div><span>${safe(route.code)}</span></header><div class="ops-route-info"><span>${safe(opsTr(route.origin))} → ${safe(opsTr(route.destination))}</span><span>${opsTr('الفرع المرسل')}: <b>${safe(transferBranchName(shipment.origin_branch_id))}</b></span><span>${opsTr('الفرع المستلم')}: <b>${safe(transferBranchName(shipment.receiving_branch_id))}</b></span><span>${safe(transferCustody(route,shipment))}</span>${shipment.destination_ack_at?`<span>✓ ${currentLang==='ar'?'تم تأكيد إشعار الإرسال':'Dispatch acknowledged'} · ${safe(shipment.destination_ack_by_name||'')}</span>`:''}${shipment.origin_ack_at?`<span>✓ ${currentLang==='ar'?'تم تأكيد استلام الوجهة':'Destination receipt acknowledged'} · ${safe(shipment.origin_ack_by_name||'')}</span>`:''}</div><div class="ops-route-actions"><button class="btn light small" data-transfer-detail="${safe(route.id)}" data-transfer-awb="${safe(shipment.awb)}">${opsTr('تفاصيل التحويل')}</button>${transferButtons(route,shipment)}</div></article>`).join('')||`<div class="card empty">${opsTr('لا توجد تحويلات ضمن نطاقك')}</div>`}</div>`;
   }
   function normalizeTransferAwb(value){return String(value||'').trim().toUpperCase().match(/(?:^|[/?#=&\s])(GHZ-[A-Z0-9-]+)(?=$|[/?#=&\s])/)?.[1]||''}
   function findTransfer(routeId,awb){
@@ -2147,7 +2160,23 @@
       if(!entry?.shipments?.some(s=>canDispatchTransfer(entry,s)))return;
       b.disabled=true;try{await routeStatus(entry.id,'في الطريق');if(b.isConnected&&state.routes.some(r=>String(r.id)===String(entry.id)&&r.status==='في الطريق'))closeModal()}finally{if(b.isConnected)b.disabled=false}
     });
-    $$('[data-route-receive]',root).forEach(b=>b.onclick=async()=>{
+    $('[data-transfer-ack-destination]',root).forEach(b=>b.onclick=async()=>{
+      b.disabled=true;
+      try{
+        await api(`/api/routes/${b.dataset.transferAckDestination}/ack-destination`,{method:'POST',body:JSON.stringify({awb:b.dataset.transferAwb})});
+        toast(currentLang==='ar'?'تم تأكيد إشعار الإرسال':'Dispatch acknowledged');
+        state.last=0;await refreshOps(true);render();
+      }catch(e){toast(opsTr(e.message))}finally{if(b.isConnected)b.disabled=false}
+    });
+    $('[data-transfer-ack-origin]',root).forEach(b=>b.onclick=async()=>{
+      b.disabled=true;
+      try{
+        await api(`/api/routes/${b.dataset.transferAckOrigin}/ack-origin`,{method:'POST',body:JSON.stringify({awb:b.dataset.transferAwb})});
+        toast(currentLang==='ar'?'تم تأكيد استلام الفرع الآخر':'Destination receipt acknowledged');
+        state.last=0;await refreshOps(true);render();
+      }catch(e){toast(opsTr(e.message))}finally{if(b.isConnected)b.disabled=false}
+    });
+    $('[data-route-receive]',root).forEach(b=>b.onclick=async()=>{
       b.disabled=true;try{if(await confirmTransferReceipt(b.dataset.routeReceive,b.dataset.receiveAwb)){
         const detail=$('#transferHistory');if(detail?.isConnected)await openTransferDetail(b.dataset.routeReceive,b.dataset.receiveAwb);
       }}finally{if(b.isConnected)b.disabled=false}
