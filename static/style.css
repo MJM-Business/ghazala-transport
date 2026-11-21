@@ -8071,3 +8071,184 @@ html[dir="ltr"] .ops-receipt-row input[type="tel"]{
     flex:1 1 100%;
   }
 }
+
+
+/* ============================================================
+   BRANCH WORKSPACE + STAFF MOBILE HARDENING
+   ============================================================ */
+.branch-workspace-banner{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin:0 0 14px;
+  padding:10px 14px;
+  border:1px solid #dbe4ee;
+  border-radius:12px;
+  background:#fff;
+  box-shadow:0 4px 14px rgba(13,30,51,.05);
+}
+.branch-workspace-banner>span{
+  width:36px;
+  height:36px;
+  flex:0 0 36px;
+  display:grid;
+  place-items:center;
+  border-radius:10px;
+  background:#0d2744;
+  color:#fff;
+  font-size:17px;
+}
+.branch-workspace-banner>div{
+  min-width:0;
+  display:grid;
+  gap:2px;
+}
+.branch-workspace-banner b{
+  font-size:13px;
+  color:#0d1e33;
+}
+.branch-workspace-banner small{
+  font-size:10px;
+  color:#738096;
+}
+.branch-workspace-banner.global>span{
+  background:#f97316;
+}
+
+@media(max-width:700px){
+  html,body{
+    max-width:100%;
+    overflow-x:hidden;
+  }
+  .main{
+    width:100%;
+    max-width:100%;
+    margin-inline:0!important;
+    padding:12px 10px 88px!important;
+  }
+  .topbar{
+    padding-inline:10px!important;
+  }
+  .page-head,
+  .section-title,
+  .toolbar,
+  .ops-inline-actions,
+  .ops-route-actions,
+  .ship-bottom{
+    flex-wrap:wrap;
+  }
+  .page-head>*,
+  .toolbar>*{
+    min-width:0;
+  }
+  .grid.kpis,
+  .shipment-grid,
+  .dashboard-grid,
+  .ops-route-list{
+    grid-template-columns:1fr!important;
+  }
+  .kpi,
+  .card,
+  .ops-route-card{
+    min-width:0;
+    max-width:100%;
+  }
+  .tabs{
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:thin;
+  }
+  .tab{
+    flex:0 0 auto;
+    min-height:44px;
+  }
+  .btn,
+  button,
+  .nav-item{
+    min-height:44px;
+  }
+  .ops-route-actions .btn,
+  .ops-inline-actions .btn,
+  .ship-bottom .btn{
+    flex:1 1 140px;
+  }
+  .ops-modal,
+  .modal{
+    width:calc(100vw - 12px)!important;
+    max-width:calc(100vw - 12px)!important;
+    max-height:calc(100dvh - 12px)!important;
+    margin:6px!important;
+    border-radius:14px!important;
+  }
+  .ops-receipt-form{
+    padding:16px 10px 22px!important;
+  }
+  .ops-receipt-body{
+    gap:10px;
+  }
+  .ops-receipt-row,
+  html[dir="rtl"] .ops-receipt-row,
+  html[dir="ltr"] .ops-receipt-row,
+  .ops-receipt-row.compact,
+  .ops-receipt-row.value-row{
+    grid-template-columns:1fr!important;
+  }
+  .ops-receipt-row>span,
+  html[dir="rtl"] .ops-receipt-row>span,
+  html[dir="ltr"] .ops-receipt-row>span{
+    grid-column:1!important;
+    grid-row:1!important;
+    justify-content:flex-start;
+    min-height:38px;
+    border-bottom:1px solid #fff4;
+  }
+  .ops-receipt-row>input,
+  .ops-receipt-row>select,
+  .ops-receipt-row>textarea,
+  html[dir="rtl"] .ops-receipt-row>input,
+  html[dir="rtl"] .ops-receipt-row>select,
+  html[dir="rtl"] .ops-receipt-row>textarea,
+  html[dir="ltr"] .ops-receipt-row>input,
+  html[dir="ltr"] .ops-receipt-row>select,
+  html[dir="ltr"] .ops-receipt-row>textarea{
+    grid-column:1!important;
+    grid-row:2!important;
+    min-height:46px;
+  }
+  .ops-receipt-split,
+  .ops-receipt-payment-line,
+  .ops-receipt-signatures{
+    grid-template-columns:1fr!important;
+  }
+  .ops-receipt-paychecks{
+    flex-direction:column;
+    align-items:stretch;
+  }
+  .ops-receipt-paychecks label{
+    min-height:44px;
+  }
+  .ops-receipt-actions{
+    position:sticky;
+    bottom:0;
+    z-index:4;
+    padding:10px 0 0;
+    background:#fff;
+  }
+  .ops-receipt-actions .btn{
+    flex:1 1 calc(50% - 8px);
+    min-width:0;
+  }
+  .branch-workspace-banner{
+    margin-bottom:10px;
+    padding:9px 10px;
+  }
+}
+@media(max-width:420px){
+  .ops-route-actions .btn,
+  .ops-inline-actions .btn,
+  .ship-bottom .btn,
+  .ops-receipt-actions .btn{
+    flex-basis:100%;
+    width:100%;
+  }
+}
