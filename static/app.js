@@ -814,7 +814,60 @@ function shipmentCard(s){
 }
 function filtered(){return shipments.filter(s=>(filter==='الكل'||s.status===filter)&&(!query||[s.awb,s.recipient,s.phone,s.origin,s.destination].some(x=>String(x).includes(query))))}
 function home(){return `${head('KSA · مركز العمليات','مركز العمليات اللوجستية','إدارة الشحنات بين المدن والفروع',`<button class="btn primary" data-action="create">＋ إنشاء شحنة</button>`)}<div class="grid kpis">${kpi('الشحنات النشطة','1,420','زيادة 12% عن الشهر الماضي','▤')}${kpi('جاهزة للتسليم','215','مع 26 مندوباً','✓','positive')}${kpi('شحنات المسار','384','شبكة الفروع','⇄')}${kpi('تنبيهات لوجستية','04','تحتاج إلى متابعة فورية','⚠','negative')}</div><div class="grid dashboard-grid"><section><div class="dark-card"><div class="eyebrow" style="color:#e7c3a5">KSA · REGIONAL</div><h2>أهلاً بك في غزالا ترانسبورت</h2><p>مركز التشغيل الوطني للفروع والمسارات</p><div class="dark-kpis"><div><b>99.2%</b><span>الالتزام بالمواعيد</span></div><div><b>48</b><span>شحنة هذا اليوم</span></div><div><b>2</b><span>اتجاهاً على المسار</span></div></div></div><div class="section-title"><h2>الشحنات الأخيرة</h2><button class="link" data-page="shipments">عرض الكل ←</button></div><div class="shipment-list">${shipments.slice(0,4).map(shipmentCard).join('')}</div></section><aside><div class="card"><div class="section-title" style="margin-top:0"><h2>حالة العمليات</h2><span class="badge green">نشط</span></div><div class="summary-row"><span>قيد التوصيل</span><b>1,036</b></div><div class="summary-row"><span>في مراكز الفرز</span><b>246</b></div><div class="summary-row"><span>تأخير يحتاج متابعة</span><b class="negative">04</b></div><div class="summary-row"><span>تم التسليم اليوم</span><b class="positive">215</b></div><div style="margin:17px 0 6px;display:flex;justify-content:space-between;font-size:12px"><span>أداء التوصيل اليومي</span><b>94.6%</b></div><div class="progress"><span style="width:94.6%"></span></div></div><div class="card" style="margin-top:13px"><div class="section-title" style="margin-top:0"><h2>إجراءات سريعة</h2></div><div class="grid" style="grid-template-columns:1fr 1fr"><button class="btn light" data-action="create">＋ شحنة جديدة</button><button class="btn light" data-page="tracking">⌕ تتبع شحنة</button><button class="btn light" data-page="dispatch">⇄ إدارة الفروع</button><button class="btn light" data-page="analytics">▥ التقارير</button></div></div><div class="promo" style="margin-top:13px"><h3>شحنك يصل بثقة</h3><p>شبكة تشغيلية قابلة للتوسع في جميع الفروع.</p></div></aside></div>`}
-function shipmentsPage(){const canManage=hasPermission('shipments.create');const actions=`${canManage?'<button class="btn primary" data-action="create">＋ شحنة جديدة</button>':''}${hasPermission('demo.reset')?'<button class="btn danger small" data-action="reset-demo">حذف سجلات العرض فقط</button>':''}`;return `${head('العمليات اليومية','إدارة الشحنات','تابع حالة الشحنات وحدّث بياناتها في مكان واحد',actions)}<div class="grid kpis">${kpi('إجمالي الشحنات',shipments.length,'في قاعدة البيانات','▤')}${kpi('قيد النقل',shipments.filter(s=>s.status==='تم الترحيل للنقل'||s.status==='قيد النقل').length,'تتحرك بين المدن','⇄')}${kpi('تم الاستلام',shipments.filter(isDeliveredRecord).length,'اكتمل التسليم','✓','positive')}${kpi('تحتاج متابعة',shipments.filter(s=>s.status==='تأخير').length,'حالات متأخرة','⚠','negative')}</div><div class="toolbar"><label class="search">⌕ <input id="shipSearch" placeholder="ابحث برقم الشحنة أو اسم المستلم..." value="${esc(query)}"></label>${canManage?'<button class="btn accent" data-action="create">＋ إنشاء شحنة</button>':''}</div><div class="tabs">${['الكل','تم إنشاء الشحنة','تم استلام الشحنة','في مكتب الإرسال','تم الترحيل للنقل','قيد النقل','جاهز للتسليم','قيد التوصيل','تم الاستلام','تأخير'].map(t=>`<button class="tab ${filter===t?'active':''}" data-filter="${t}">${t==='الكل'?phrase(t):shipmentOperationalLabel(t)}${t==='الكل'?` (${shipments.length})`:''}</button>`).join('')}</div><div class="shipment-grid">${filtered().map(shipmentCard).join('')||'<div class="card empty">لا توجد شحنات مطابقة للبحث</div>'}</div>`}
+function simpleShipmentCard(s){
+  const delivered=isDeliveredRecord(s);
+  const payment=s.cod?`${phrase('التحصيل عند الاستلام COD')}: ${money(s.cod)}`:phrase(s.payment_status||'غير مدفوع');
+  return `<article class="card shipment simple-shipment-card">
+    <div class="simple-shipment-head">
+      <div>
+        <span class="awb">${esc(s.awb)}</span>
+        <h3>${esc(s.recipient||phrase('المستلم'))}</h3>
+        <small>${s.phone?esc(s.phone):''}</small>
+      </div>
+      ${badge(s.status)}
+    </div>
+    <div class="simple-shipment-route">
+      <b>${esc(ghazalaCityDisplay(s.origin,currentLang))}</b>
+      <span>→</span>
+      <b>${esc(ghazalaCityDisplay(s.destination,currentLang))}</b>
+    </div>
+    <div class="simple-shipment-meta">
+      <span>${payment}</span>
+      ${!delivered&&s.eta?`<span>${phrase('وقت الوصول المتوقع (ETA)')}: ${esc(phrase(s.eta))}</span>`:''}
+    </div>
+    <div class="simple-shipment-actions">
+      <button class="btn light small" data-track="${esc(s.awb)}">${phrase('تفاصيل التتبع')}</button>
+      ${hasPermission('shipments.status')?`<button class="btn primary small" data-status="${esc(s.awb)}">${phrase('تحديث الحالة')}</button>`:''}
+      ${hasPermission('shipments.assign')?`<button class="btn light small" data-reassign="${esc(s.awb)}">${phrase('السائق / ETA')}</button>`:''}
+    </div>
+  </article>`;
+}
+function shipmentsPage(){
+  const canManage=hasPermission('shipments.create');
+  const delayed=shipments.filter(s=>s.status==='تأخير').length;
+  const inTransit=shipments.filter(s=>['تم الترحيل للنقل','قيد النقل','قيد التوصيل'].includes(s.status)).length;
+  const delivered=shipments.filter(isDeliveredRecord).length;
+  const simpleFilters=['الكل','تم إنشاء الشحنة','قيد النقل','جاهز للتسليم','تم الاستلام','تأخير'];
+  if(!simpleFilters.includes(filter))filter='الكل';
+  const actions=canManage?'<button class="btn primary simple-primary-action" data-action="create">＋ شحنة جديدة</button>':'';
+  return `${head('العمليات اليومية','الشحنات','أنشئ شحنة، ابحث عنها، ثم حدّث حالتها بسهولة',actions)}
+    <div class="simple-shipments-kpis">
+      ${kpi('إجمالي الشحنات',shipments.length,'كل الشحنات','▤')}
+      ${kpi('قيد الحركة',inTransit,'تحت التنفيذ','⇄')}
+      ${kpi('تم التسليم',delivered,'مكتملة','✓','positive')}
+      ${delayed?kpi('تحتاج متابعة',delayed,'تأخير','⚠','negative'):''}
+    </div>
+    <div class="simple-shipment-toolbar">
+      <label class="search simple-shipment-search">⌕ <input id="shipSearch" placeholder="رقم الشحنة أو اسم المستلم" value="${esc(query)}"></label>
+      ${canManage?'<button class="btn accent" data-action="create">＋ إنشاء شحنة</button>':''}
+    </div>
+    <div class="tabs simple-shipment-tabs">
+      ${simpleFilters.map(t=>`<button class="tab ${filter===t?'active':''}" data-filter="${t}">${t==='الكل'?phrase(t):shipmentOperationalLabel(t)}${t==='الكل'?` (${shipments.length})`:''}</button>`).join('')}
+    </div>
+    <div class="shipment-grid simple-shipment-grid">
+      ${filtered().map(simpleShipmentCard).join('')||'<div class="card empty">لا توجد شحنات مطابقة للبحث</div>'}
+    </div>`;
+}
 function trackingPage(){const numbers=[...new Set(tracking.split(/[\s,;]+/).map(x=>x.trim().toLowerCase()).filter(Boolean))];const found=numbers.map(n=>shipments.find(x=>x.awb.toLowerCase()===n)).filter(Boolean);const missing=numbers.filter(n=>!shipments.some(x=>x.awb.toLowerCase()===n));const results=found.map(s=>`<div class="section-title"><h2>${phrase('نتيجة التتبع')} · <span class="awb">${esc(s.awb)}</span></h2></div>${shipmentCard(s)}<div class="card" style="margin-top:14px"><div class="section-title" style="margin-top:0"><h2>${phrase('سجل محطات الرحلة')}</h2>${badge(s.status)}</div><div class="timeline">${(s.events||[]).map(ev=>`<div class="timeline-row"><div class="timeline-dot">✓</div><div class="timeline-text"><b>${esc(phrase(ev.stage||ev.status))}</b><small>${esc(phrase(ev.status))} · ${esc(ghazalaCityDisplay(ev.location||s.origin,currentLang))} · ${esc(ev.created_at||'')}</small></div></div>`).join('')||`<div class="timeline-row"><div class="timeline-dot">•</div><div class="timeline-text"><b>${esc(phrase(s.status))}</b><small>${esc(phrase(s.stage))} · ${esc(ghazalaCityDisplay(s.driver_location||s.origin,currentLang))}</small></div></div>`}</div></div>`).join('');const notFound=missing.map(n=>`<div class="card empty">${phrase('لا توجد شحنة مطابقة لرقم البوليصة:')} <b class="awb">${esc(n)}</b></div>`).join('');return `${head('خدمة العملاء','تتبع الشحنات','أدخل رقم بوليصة واحداً أو أكثر مفصولاً بفاصلة أو مسافة')}<div class="dark-card"><div style="font-size:11px;color:#d6b393">AWB TRACKER · KSA 24/7</div><h2 style="margin-top:7px">تتبع شحنتك خطوة بخطوة</h2><p>استخدم رقم البوليصة الموجود في رسالة تأكيد الشحن.</p><form id="trackForm" class="tracking-input"><input name="awb" value="${esc(tracking)}" placeholder="GHZ-000125, GHZ-000139" aria-label="رقم البوليصة"><button class="btn accent">⌕ تتبع الشحنة</button></form></div>${tracking?`${results}${notFound}`:''}<div class="section-title"><h2>الشحنات النشطة</h2></div><div class="shipment-grid">${shipments.slice(0,4).map(shipmentCard).join('')}</div>`}
 function dispatchPage(){return `${head('المركز الإقليمي · KSA','إدارة الفروع والتوزيع','إدارة الشحنات بين المدن والفروع في الاتجاهين',`<button class="btn primary" data-action="route">⇄ جدولة رحلة</button>`)}<div class="grid kpis">${kpi('الشحنات النشطة','1,420','+12% هذا الشهر','▤')}${kpi('شحنات المسار','384','شبكة الفروع','⇄')}${kpi('جاهزة للتسليم','215','26 مندوباً','✓','positive')}${kpi('تأخير لوجستي','04','معالجة فورية','⚠','negative')}</div><div class="dark-card"><div style="display:flex;justify-content:space-between;align-items:center"><div><span class="badge">رحلة مجدولة</span><h2 style="margin-top:10px">ترحيل شحنات بين الفروع</h2></div><span style="font-size:32px">⇄</span></div><p>مسار النقل: شبكة الفروع</p><div class="dark-kpis"><div><b>35</b><span>طرداً في الرحلة</span></div><div><b>4921</b><span>مركبة النقل</span></div><div><b>14:30</b><span>موعد الانطلاق</span></div></div><button class="btn accent" style="margin-top:14px" data-action="route">⌗ مسح طرود الرحلة (Batch)</button></div><div class="section-title"><h2>الشحنات الواردة والصادرة</h2></div><div class="shipment-grid">${shipments.map(shipmentCard).join('')}</div>`}
 function driversPage(){const canManage=hasPermission('drivers.manage');return `${head('إدارة الأسطول','المناديب والأسطول الميداني','بيانات السائقين وأرقام الهوية والجوال ومواقعهم الحالية',canManage?`<button class="btn primary" data-action="driver">＋ إضافة سائق</button>`:'')}<div class="grid kpis">${kpi('إجمالي السائقين',drivers.length,'في قاعدة البيانات','♙')}${kpi('متاح للتوصيل',drivers.filter(d=>d.status==='متاح').length,'حالة السائق','✓','positive')}${kpi('شحنات بمندوب',shipments.filter(s=>s.driver_id).length,'مُعيّن لها سائق','↗')}${kpi('شحنات بدون مندوب',shipments.filter(s=>!s.driver_id).length,'تحتاج تعييناً','▤')}</div><div class="grid shipment-grid">${drivers.map(d=>`<article class="card"><div class="shipment-top"><span class="icon-square">♙</span><b class="ship-name">${esc(d.name)}</b><span class="badge ${d.status==='متاح'?'green':''} push">${esc(d.status)}</span></div><div class="record-meta"><span>رقم الهوية: <b>${esc(d.national_id)}</b></span><span>رقم الجوال: <b>${esc(d.mobile)}</b></span><span>الفرع: <b>${esc(d.branch)}</b></span><span>${phrase('الموقع الحالي:')} <b>${esc(phrase(d.location_text||'غير محدد'))}</b></span>${d.latitude?`<span>الإحداثيات: <b>${esc(d.latitude)}, ${esc(d.longitude)}</b></span>`:''}<span>آخر تحديث للموقع: <b>${esc(d.updated_at||'—')}</b></span></div><div class="ship-bottom"><button class="btn light small" data-location="${d.id}">تحديث الموقع</button>${canManage?`<button class="btn light small" data-assign-driver="${d.id}">تعديل السائق</button>`:''}</div></article>`).join('')||'<div class="card empty">لا توجد سجلات سائقين. أضف سائقاً لبدء العمل.</div>'}</div><div class="section-title"><h2>الشحنات المسندة</h2></div><div class="shipment-grid">${shipments.map(shipmentCard).join('')||'<div class="card empty">لا توجد شحنات مسندة لهذا السائق</div>'}</div>`}
