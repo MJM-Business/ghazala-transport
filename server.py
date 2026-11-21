@@ -3942,6 +3942,24 @@ def _route_notification_integrity_v20(c):
     )
 
 
+def _jazan_branch_manager_login_v22(c):
+    """Create one dedicated Jazan branch manager test login on existing databases."""
+    branch=c.execute("SELECT id FROM branches WHERE code='JAZ-MAIN' AND is_active=1").fetchone()
+    if not branch:
+        return
+    username="jazan.manager@ghazala.sa"
+    row=c.execute("SELECT id FROM users WHERE lower(username)=lower(?)",(username,)).fetchone()
+    if row:
+        user_id=row["id"]
+    else:
+        cur=c.execute("""INSERT INTO users(username,display_name,role,password_hash,is_active)
+                         VALUES(?,?,?,?,1)""",
+                      (username,"Jazan Branch Manager","manager",password_hash("GhazalaJazan2026!")))
+        user_id=cur.lastrowid
+    foundation_schema_setter=getattr(__import__("foundation_schema"),"set_user_access")
+    foundation_schema_setter(c,user_id,"branch_manager",[branch["id"]],branch["id"],False)
+
+
 MIGRATIONS = (
     (1, "adopt_python_sqlite_baseline", _baseline_schema),
     (2, "persistent_bootstrap_demo_state", _persistent_demo_state),
@@ -3964,6 +3982,7 @@ MIGRATIONS = (
     (19, "invoice_customer_ownership_integrity", _invoice_customer_ownership_integrity_v19),
     (20, "route_notification_exact_duplicate_integrity", _route_notification_integrity_v20),
     (21, "branch_handoff_acknowledgements_whatsapp_language", transfers.migration21),
+    (22, "dedicated_jazan_branch_manager_login", _jazan_branch_manager_login_v22),
 )
 
 
