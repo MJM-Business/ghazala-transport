@@ -388,6 +388,29 @@
     'تعذر فتح الإجراء. أعد تحميل الصفحة وحاول مرة أخرى.':'Could not open the action. Reload the page and try again.',
     'تأكيد التسليم بأمان':'Confirm Delivery Securely',
     'الشحنة المطلوب تسليمها':'Shipment for Delivery',
+    'غزالا ترانسبورت':'Ghazala Transport',
+    'الإدارة':'Administration',
+    'فرع جدة':'Jeddah Branch',
+    'فرع جازان':'Jazan Branch',
+    'سند استلام شحنة':'Shipment Receipt',
+    'رقم الجوال':'Mobile Number',
+    'تاريخ الاستلام':'Receipt Date',
+    'الدفع عند الاستلام':'Cash on Delivery',
+    'الدفع عند التسليم':'Pay on Delivery',
+    'قيمة الشحنة':'Shipment Value',
+    'بيانات التشغيل':'Operational Details',
+    'هوية المرسل':'Sender ID / Iqama',
+    'هوية المستلم':'Recipient ID / Iqama',
+    'عنوان المستلم':'Recipient Address',
+    'فرع الوجهة':'Destination Branch',
+    'مبلغ التحصيل':'Collection Amount',
+    'الشروط':'Terms & Conditions',
+    'استلام العميل لهذه البوليصة يعتبر قبولاً لكل ما جاء بها.':'Receipt of this waybill constitutes acceptance of all terms stated herein.',
+    'يجب أن تكون المنقولات أو الطرود سليمة وخالية من المواد الممنوعة والخطرة، ويتحمل المرسل مسؤولية محتويات الشحنة.':'Parcels must be safe and free from prohibited or dangerous materials. The sender is responsible for the shipment contents.',
+    'المؤسسة غير مسؤولة عن القضاء والقدر والحوادث والكوارث الطبيعية.':'The company is not responsible for force majeure, accidents, or natural disasters.',
+    'يحق للمؤسسة رفض أو تأجيل أي شحنة عند وجود سبب تشغيلي أو أمني.':'The company may reject or delay any shipment for operational or security reasons.',
+    'التوقيع':'Signature',
+    'طباعة':'Print',
     'اسم المستلم الفعلي':'Actual Recipient Name',
     'آخر 4 أرقام من الهوية':'Last 4 ID Digits',
     'رمز التحقق OTP':'One-Time Verification Code (OTP)',
@@ -1006,72 +1029,72 @@
           <header class="ops-receipt-head">
             <img src="/ghazala-logo.png?v=2" alt="Ghazala Transport" class="ops-receipt-logo">
             <div class="ops-receipt-company">
-              <h2>غزالا ترانسبورت</h2>
-              <p>الإدارة / 0126849524</p>
-              <p>فرع جدة / 0509430543</p>
-              <p>فرع جازان / 0531684822</p>
+              <h2>${opsTr('غزالا ترانسبورت')}</h2>
+              <p>${opsTr('الإدارة')} / 0126849524</p>
+              <p>${opsTr('فرع جدة')} / 0509430543</p>
+              <p>${opsTr('فرع جازان')} / 0531684822</p>
             </div>
-            <div class="ops-receipt-title">سند استلام شحنة</div>
+            <div class="ops-receipt-title">${opsTr('سند استلام شحنة')}</div>
           </header>
 
           <section class="ops-receipt-body">
             <div class="ops-receipt-row">
               <input name="recipient" required>
-              <span>اسم المستلم</span>
+              <span>${opsTr('اسم المستلم')}</span>
             </div>
             <div class="ops-receipt-row">
               <input name="phone" type="tel" required>
-              <span>رقم الجوال</span>
+              <span>${opsTr('رقم الجوال')}</span>
             </div>
 
             <div class="ops-receipt-split">
               <div class="ops-receipt-row compact">
                 <input name="pieces" type="number" min="1" max="100" value="1" required>
-                <span>عدد الطرود</span>
+                <span>${opsTr('عدد الطرود')}</span>
               </div>
               <div class="ops-receipt-row compact">
                 <input name="eta" type="datetime-local" value="${localDT(24)}" required>
-                <span>تاريخ الاستلام</span>
+                <span>${opsTr('تاريخ الاستلام')}</span>
               </div>
             </div>
 
             <div class="ops-receipt-payment-line">
               <div class="ops-receipt-paychecks">
-                <label><input type="radio" name="payment_method" value="cod" checked><span></span><b>الدفع عند الاستلام</b></label>
-                <label><input type="radio" name="payment_method" value="sender"><span></span><b>الدفع عند التسليم</b></label>
+                <label><input type="radio" name="payment_method" value="cod" checked><span></span><b>${opsTr('الدفع عند الاستلام')}</b></label>
+                <label><input type="radio" name="payment_method" value="sender"><span></span><b>${opsTr('الدفع عند التسليم')}</b></label>
               </div>
               <div class="ops-receipt-row value-row">
                 <input name="declared_value" type="number" min="0" step="0.01" value="0">
-                <span>قيمة الشحنة</span>
+                <span>${opsTr('قيمة الشحنة')}</span>
               </div>
             </div>
 
-            <div class="ops-receipt-extra-title">بيانات التشغيل</div>
+            <div class="ops-receipt-extra-title">${opsTr('بيانات التشغيل')}</div>
             <div class="ops-receipt-split">
-              <div class="ops-receipt-row compact"><input name="sender_name" required autocomplete="name"><span>اسم المرسل</span></div>
-              <div class="ops-receipt-row compact"><input name="sender_phone" type="tel" required autocomplete="tel"><span>جوال المرسل</span></div>
+              <div class="ops-receipt-row compact"><input name="sender_name" required autocomplete="name"><span>${opsTr('اسم المرسل')}</span></div>
+              <div class="ops-receipt-row compact"><input name="sender_phone" type="tel" required autocomplete="tel"><span>${opsTr('جوال المرسل')}</span></div>
             </div>
             <div class="ops-receipt-split">
-              <div class="ops-receipt-row compact"><input name="sender_id" required inputmode="numeric"><span>هوية المرسل</span></div>
-              <div class="ops-receipt-row compact"><input name="recipient_id" required inputmode="numeric"><span>هوية المستلم</span></div>
+              <div class="ops-receipt-row compact"><input name="sender_id" required inputmode="numeric"><span>${opsTr('هوية المرسل')}</span></div>
+              <div class="ops-receipt-row compact"><input name="recipient_id" required inputmode="numeric"><span>${opsTr('هوية المستلم')}</span></div>
             </div>
-            <div class="ops-receipt-row"><textarea name="sender_address" required></textarea><span>عنوان المرسل</span></div>
-            <div class="ops-receipt-row"><textarea name="recipient_address" required placeholder="${opsTr('الحي، الشارع، رقم المبنى، أقرب علامة')}"></textarea><span>عنوان المستلم</span></div>
+            <div class="ops-receipt-row"><textarea name="sender_address" required></textarea><span>${opsTr('عنوان المرسل')}</span></div>
+            <div class="ops-receipt-row"><textarea name="recipient_address" required placeholder="${opsTr('الحي، الشارع، رقم المبنى، أقرب علامة')}"></textarea><span>${opsTr('عنوان المستلم')}</span></div>
 
             <div class="ops-receipt-split">
-              <div class="ops-receipt-row compact"><select name="origin" required>${cityOptionMarkup(originDefault)}</select><span>من مدينة</span></div>
-              <div class="ops-receipt-row compact"><select name="destination" required>${cityOptionMarkup(destinationDefault)}</select><span>إلى مدينة</span></div>
+              <div class="ops-receipt-row compact"><select name="origin" required>${cityOptionMarkup(originDefault)}</select><span>${opsTr('من مدينة')}</span></div>
+              <div class="ops-receipt-row compact"><select name="destination" required>${cityOptionMarkup(destinationDefault)}</select><span>${opsTr('إلى مدينة')}</span></div>
             </div>
             <div class="ops-receipt-row">
               <select name="recipient_branch">${branchOptions(destinationDefault)}</select>
-              <span>فرع الوجهة</span>
+              <span>${opsTr('فرع الوجهة')}</span>
             </div>
 
             ${hasPermission('shipments.edit')?`<div class="ops-receipt-row"><select name="customer_user_id">${customerAccountOptionMarkup(customerAccounts)}</select><span>${safe(clt('account'))}</span></div>`:''}
 
             <div id="codField" class="ops-receipt-row">
               <input name="cod" type="number" min="0.01" step="0.01" value="">
-              <span>مبلغ التحصيل</span>
+              <span>${opsTr('مبلغ التحصيل')}</span>
             </div>
             <div id="companyField" hidden><input type="hidden" name="company_account" value=""></div>
 
@@ -1086,25 +1109,25 @@
             <div id="quoteSummary" hidden>${quoteMarkup(baseFeeQuote(1,1,0,false,'cod'))}</div>
 
             <section class="ops-receipt-terms">
-              <h3>الشروط</h3>
+              <h3>${opsTr('الشروط')}</h3>
               <ul>
-                <li>استلام العميل لهذه البوليصة يعتبر قبولاً لكل ما جاء بها.</li>
-                <li>يجب أن تكون المنقولات أو الطرود سليمة وخالية من المواد الممنوعة والخطرة، ويتحمل المرسل مسؤولية محتويات الشحنة.</li>
-                <li>المؤسسة غير مسؤولة عن القضاء والقدر والحوادث والكوارث الطبيعية.</li>
-                <li>يحق للمؤسسة رفض أو تأجيل أي شحنة عند وجود سبب تشغيلي أو أمني.</li>
+                <li>${opsTr('استلام العميل لهذه البوليصة يعتبر قبولاً لكل ما جاء بها.')}</li>
+                <li>${opsTr('يجب أن تكون المنقولات أو الطرود سليمة وخالية من المواد الممنوعة والخطرة، ويتحمل المرسل مسؤولية محتويات الشحنة.')}</li>
+                <li>${opsTr('المؤسسة غير مسؤولة عن القضاء والقدر والحوادث والكوارث الطبيعية.')}</li>
+                <li>${opsTr('يحق للمؤسسة رفض أو تأجيل أي شحنة عند وجود سبب تشغيلي أو أمني.')}</li>
               </ul>
             </section>
 
             <div class="ops-receipt-signatures">
-              <label><b>اسم المستلم</b><input name="receipt_receiver_name"></label>
-              <label><b>التوقيع</b><input name="receipt_signature"></label>
+              <label><b>${opsTr('اسم المستلم')}</b><input name="receipt_receiver_name"></label>
+              <label><b>${opsTr('التوقيع')}</b><input name="receipt_signature"></label>
             </div>
 
             <div class="ops-receipt-actions">
               <button class="btn light" type="button" data-close>${opsTr('إلغاء')}</button>
               <button class="btn light" type="button" id="printReceiptBtn">🖨️ ${opsTr('طباعة')}</button>
               <button class="btn light" type="button" id="downloadReceiptPdfBtn">📄 PDF</button>
-              <button class="btn primary">حفظ وإصدار البوليصة</button>
+              <button class="btn primary">${opsTr('حفظ وإصدار البوليصة')}</button>
             </div>
           </section>
         </form>
