@@ -6254,6 +6254,11 @@ class Handler(BaseHTTPRequestHandler):
                 )
 
                 shipment_id=cur.lastrowid
+                notification_language=str(data.get("notification_language") or "ar").strip().lower()
+                if notification_language not in ("ar","en","ur","hi","bn"):
+                    notification_language="ar"
+                c.execute("UPDATE shipments SET notification_language=? WHERE id=?",
+                          (notification_language,shipment_id))
                 redemption_id=record_campaign_redemption(
                     c,quote.get("campaign_id"),user["id"],shipment_id,
                     quote.get("promo_code",""),quote.get("discount_amount",0)
