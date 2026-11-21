@@ -342,7 +342,7 @@ def create_operational_status_notification(con, shipment_id, status):
             (shipment_id,)
         ).fetchone()
         if scope:
-            destination_states={"at_destination","out_for_delivery","delivered","delayed"}
+            destination_states={"dispatched","in_transit","at_destination","out_for_delivery","delivered","delayed"}
             branch_id=(
                 scope["destination_branch_id"]
                 if canonical in destination_states
