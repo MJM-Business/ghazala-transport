@@ -708,6 +708,9 @@ def dispatch_shipment_contact_whatsapp(con,shipment_id,status,tracking_url):
     if not shipment or not str(shipment["phone"] or "").strip():
         return None
     item=dict(shipment)
+    if not tracking_url:
+        base=(os.environ.get("PUBLIC_BASE_URL") or "").strip().rstrip("/")
+        tracking_url=(f"{base}/#track={quote(str(item['awb']))}" if base else str(item["awb"]))
     message=_shipment_whatsapp_text(item,status,tracking_url)
     if not message:
         return None
@@ -5632,7 +5635,7 @@ class Handler(BaseHTTPRequestHandler):
                 payload=[]; ship_pred,ship_args=auth.sql_scope(ctx,'shipments','s')
                 for run in runs:
                     item=dict(run)
-                    children=c.execute('SELECT s.id,s.awb,s.recipient,s.status,s.weight,s.origin,s.destination,t.status AS transfer_status,t.origin_branch_id,t.destination_branch_id AS receiving_branch_id,t.received_at,t.received_by,u.display_name AS received_by_name FROM route_shipments rs JOIN shipments s ON s.id=rs.shipment_id LEFT JOIN shipment_transfers t ON t.route_id=rs.route_id AND t.shipment_id=rs.shipment_id LEFT JOIN users u ON u.id=t.received_by WHERE rs.route_id=? AND ('+ship_pred+') ORDER BY rs.scanned_at',[run['id'],*ship_args]).fetchall()
+                    children=c.execute('SELECT s.id,s.awb,s.recipient,s.status,s.weight,s.origin,s.destination,t.status AS transfer_status,t.origin_branch_id,t.destination_branch_id AS receiving_branch_id,t.received_at,t.received_by,u.display_name AS received_by_name,t.destination_ack_at,t.destination_ack_by,dua.display_name AS destination_ack_by_name,t.origin_ack_at,t.origin_ack_by,oua.display_name AS origin_ack_by_name FROM route_shipments rs JOIN shipments s ON s.id=rs.shipment_id LEFT JOIN shipment_transfers t ON t.route_id=rs.route_id AND t.shipment_id=rs.shipment_id LEFT JOIN users u ON u.id=t.received_by LEFT JOIN users dua ON dua.id=t.destination_ack_by LEFT JOIN users oua ON oua.id=t.origin_ack_by WHERE rs.route_id=? AND ('+ship_pred+') ORDER BY rs.scanned_at',[run['id'],*ship_args]).fetchall()
                     item['shipments']=[dict(r) for r in children]; item['load_kg']=round(sum(float(r['weight'] or 0) for r in children),2)
                     n_pred,n_args=auth.sql_scope(ctx,'notifications','n')
                     item['branches_notified']=c.execute('SELECT count(*) FROM branch_notifications n WHERE n.route_id=? AND ('+n_pred+')',[run['id'],*n_args]).fetchone()[0]
@@ -7227,6 +7230,23 @@ class Handler(BaseHTTPRequestHandler):
                         c.commit()
                         return self.send_json(result,201)
 
+            if len(parts)==4 and parts[:2]==['api','routes'] and parts[3] in ('ack-destination','ack-origin'):
+                ctx=auth.context(c,user)
+                if not auth.allowed(ctx,'routes.read'):
+                    raise auth.AccessDenied("You do not have permission to acknowledge branch transfers.")
+                route=c.execute("SELECT * FROM route_runs WHERE id=?",(parts[2],)).fetchone()
+                if not route:
+                    return self.send_json({"error":"Route not found."},404)
+                awb=str(data.get("awb","")).strip().upper()
+                if not awb:
+                    return self.send_json({"error":"Shipment AWB is required."},400)
+                kind='destination' if parts[3]=='ack-destination' else 'origin'
+                transfer=transfers.authorize_acknowledgement(c,ctx,route,awb,kind)
+                transfers.acknowledge(c,ctx,route,transfer,kind,self)
+                details=transfers.receipt_details(c,route["id"],transfer["shipment_id"])
+                c.commit()
+                return self.send_json({"ok":True,"acknowledgement":kind}|details)
+
             self.prepare_mutation(c,user,'POST',parts,data)
             if len(parts)==4 and parts[:2]==['api','shipments'] and parts[3]=='customer':
                 shipment_for_link=self.mutation_plan['existing']
@@ -7404,6 +7424,11 @@ class Handler(BaseHTTPRequestHandler):
                    dimensions["length_cm"],dimensions["width_cm"],dimensions["height_cm"],dimensions["declared_value"],1 if data.get("insured") else 0,
                    method,quote["shipping_fee"],quote["vat_amount"],quote["cod_fee"],quote["insurance_fee"],quote["total_fee"],payment_status,quote["size_code"],quote["size_fee"],data.get("company_account","")))
                 shipment=c.execute("SELECT id FROM shipments WHERE awb=?",(awb,)).fetchone()
+                notification_language=str(data.get("notification_language") or "ar").strip().lower()
+                if notification_language not in ("ar","en","ur","hi","bn"):
+                    notification_language="ar"
+                c.execute("UPDATE shipments SET notification_language=? WHERE id=?",
+                          (notification_language,shipment["id"]))
                 persist_shipment_offices(
                     c,shipment["id"],data["origin"],data["destination"],data.get("recipient_branch","")
                 )
