@@ -20,7 +20,7 @@ ROLE_PERMISSIONS = {
     "branch_manager": frozenset({
         "shipments.read", "shipments.create", "shipments.edit", "shipments.status", "shipments.assign",
         "drivers.read", "drivers.manage", "drivers.location", "routes.read", "routes.manage",
-        "branches.read", "branches.manage", "clients.read", "clients.manage", "pricing.read", "campaigns.read", "shipments.payment",
+        "branches.read", "clients.read", "clients.manage", "pricing.read", "campaigns.read", "shipments.payment",
         "reports.read", "pod.read", "pod.create", "stats.read", "vehicles.read",
     }),
     "office_employee": frozenset({
