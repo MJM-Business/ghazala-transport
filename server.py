@@ -3960,6 +3960,28 @@ def _jazan_branch_manager_login_v22(c):
     foundation_schema_setter(c,user_id,"branch_manager",[branch["id"]],branch["id"],False)
 
 
+def _jeddah_hq_master_admin_v23(c):
+    """Make the existing system administrator the global Jeddah HQ master admin."""
+    hq=c.execute("SELECT id FROM branches WHERE code='JED-MAIN' ORDER BY id LIMIT 1").fetchone()
+    if not hq:
+        return
+    admin_rows=c.execute("""SELECT u.id FROM users u
+        JOIN user_access a ON a.user_id=u.id
+        WHERE a.role='system_admin' AND u.is_active=1
+        ORDER BY u.id""").fetchall()
+    for row in admin_rows:
+        user_id=row["id"]
+        c.execute("""UPDATE user_access
+            SET primary_branch_id=?,global_scope=1
+            WHERE user_id=? AND role='system_admin'""",(hq["id"],user_id))
+        c.execute("""INSERT INTO user_branches(user_id,branch_id,is_primary)
+            VALUES(?,?,1)
+            ON CONFLICT(user_id,branch_id) DO UPDATE SET is_primary=1""",
+            (user_id,hq["id"]))
+        c.execute("UPDATE user_branches SET is_primary=0 WHERE user_id=? AND branch_id<>?",
+                  (user_id,hq["id"]))
+
+
 MIGRATIONS = (
     (1, "adopt_python_sqlite_baseline", _baseline_schema),
     (2, "persistent_bootstrap_demo_state", _persistent_demo_state),
@@ -3983,6 +4005,7 @@ MIGRATIONS = (
     (20, "route_notification_exact_duplicate_integrity", _route_notification_integrity_v20),
     (21, "branch_handoff_acknowledgements_whatsapp_language", transfers.migration21),
     (22, "dedicated_jazan_branch_manager_login", _jazan_branch_manager_login_v22),
+    (23, "jeddah_hq_master_admin_scope", _jeddah_hq_master_admin_v23),
 )
 
 
