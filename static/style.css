@@ -8252,3 +8252,30 @@ html[dir="ltr"] .ops-receipt-row input[type="tel"]{
     width:100%;
   }
 }
+
+
+/* Keep the WhatsApp language label inside its blue receipt tab. */
+html[dir="ltr"] .ops-receipt-language-row{
+  grid-template-columns:250px minmax(0,1fr);
+}
+html[dir="rtl"] .ops-receipt-language-row{
+  grid-template-columns:minmax(0,1fr) 250px;
+}
+.ops-receipt-language-row>span{
+  white-space:normal;
+  line-height:1.15;
+  text-align:center!important;
+  justify-content:center!important;
+  overflow-wrap:anywhere;
+  word-break:normal;
+}
+@media(max-width:700px){
+  html[dir="ltr"] .ops-receipt-language-row,
+  html[dir="rtl"] .ops-receipt-language-row{
+    grid-template-columns:1fr!important;
+  }
+  .ops-receipt-language-row>span{
+    text-align:start!important;
+    justify-content:flex-start!important;
+  }
+}
