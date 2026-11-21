@@ -125,3 +125,63 @@ def receipt_details(con, route_id, shipment_id):
     if row is None:
         raise ValueError('Shipment is not in this route transfer.')
     return dict(row)
+
+
+def migration21(con):
+    """Explicit destination/origin handoff acknowledgements for branch software."""
+    columns={row["name"] for row in con.execute("PRAGMA table_info(shipment_transfers)").fetchall()}
+    additions={
+        "destination_ack_at":"TEXT",
+        "destination_ack_by":"INTEGER REFERENCES users(id)",
+        "origin_ack_at":"TEXT",
+        "origin_ack_by":"INTEGER REFERENCES users(id)",
+    }
+    for name,definition in additions.items():
+        if name not in columns:
+            con.execute(f"ALTER TABLE shipment_transfers ADD COLUMN {name} {definition}")
+    shipment_columns={row["name"] for row in con.execute("PRAGMA table_info(shipments)").fetchall()}
+    if "notification_language" not in shipment_columns:
+        con.execute("ALTER TABLE shipments ADD COLUMN notification_language TEXT NOT NULL DEFAULT 'ar'")
+
+
+def authorize_acknowledgement(con, ctx, route, awb, kind):
+    if ctx["role"] not in ("system_admin","branch_manager","office_employee"):
+        raise auth.AccessDenied("Branch staff must acknowledge this transfer.")
+    row=con.execute("""SELECT t.* FROM shipment_transfers t JOIN shipments s
+        ON s.id=t.shipment_id WHERE t.route_id=? AND s.awb=?""",(route["id"],awb)).fetchone()
+    if not row:
+        raise ValueError("Shipment is not in this route transfer.")
+    if kind=="destination":
+        if not ctx["global_scope"] and row["destination_branch_id"] not in ctx["branch_ids"]:
+            raise auth.AccessDenied("Only the destination branch can acknowledge dispatch.")
+        if row["status"] not in ("in_transit","awaiting_receipt","received"):
+            raise ValueError("Acknowledge after the shipment has been dispatched.")
+    elif kind=="origin":
+        if not ctx["global_scope"] and row["origin_branch_id"] not in ctx["branch_ids"]:
+            raise auth.AccessDenied("Only the origin branch can acknowledge destination receipt.")
+        if row["status"]!="received":
+            raise ValueError("Origin acknowledgement is available after destination receipt.")
+    else:
+        raise ValueError("Unsupported acknowledgement type.")
+    return row
+
+
+def acknowledge(con, ctx, route, transfer, kind, request=None):
+    if kind=="destination":
+        if transfer["destination_ack_at"]:
+            return False
+        con.execute("""UPDATE shipment_transfers SET destination_ack_at=CURRENT_TIMESTAMP,
+            destination_ack_by=? WHERE route_id=? AND shipment_id=?""",
+            (ctx["user_id"],route["id"],transfer["shipment_id"]))
+        action="transfer.destination_acknowledged"
+        after={"route_id":route["id"],"destination_branch_id":transfer["destination_branch_id"]}
+    else:
+        if transfer["origin_ack_at"]:
+            return False
+        con.execute("""UPDATE shipment_transfers SET origin_ack_at=CURRENT_TIMESTAMP,
+            origin_ack_by=? WHERE route_id=? AND shipment_id=?""",
+            (ctx["user_id"],route["id"],transfer["shipment_id"]))
+        action="transfer.origin_acknowledged"
+        after={"route_id":route["id"],"origin_branch_id":transfer["origin_branch_id"]}
+    write_audit(con,ctx,action,"shipment",transfer["shipment_id"],after=after,request=request)
+    return True
