@@ -5654,6 +5654,14 @@ class Handler(BaseHTTPRequestHandler):
                 for row in rows:
                     item=auth.scoped_shipment(ctx,row); item['tracking_url']=self.tracking_url(row['awb'])
                     item['document_links']=shipment_document_links(row['awb'])
+                    canonical_status=transitions.canonical(row['status'])
+                    destination_branch_id=row['destination_branch_id']
+                    branch_ids=tuple(ctx.get('branch_ids') or ())
+                    item['can_receive_at_branch']=bool(
+                        ctx.get('role')!='system_admin'
+                        and destination_branch_id in branch_ids
+                        and canonical_status in ('dispatched','in_transit','out_for_delivery')
+                    )
                     item['booking_source']='customer' if c.execute(
                         'SELECT 1 FROM customer_shipments WHERE shipment_id=? LIMIT 1',(row['id'],)
                     ).fetchone() else 'staff'
