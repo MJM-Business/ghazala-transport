@@ -5160,7 +5160,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self): return self.handle_api(self._get)
     def do_POST(self): return self.handle_api(self._post,True)
     def do_PATCH(self): return self.handle_api(self._patch,True)
-    def do_DELETE(self): return self.handle_api(lambda:self.send_json({'error':'Deletion is not supported for these records.'},403),True)
+    def do_DELETE(self): return self.handle_api(self._delete,True)
 
     def current_user(self, con):
         raw = self.headers.get("Cookie", "")
@@ -5174,8 +5174,73 @@ class Handler(BaseHTTPRequestHandler):
     def forbidden(self): self.send_json({"error":'ليست لديك صلاحية لهذا الإجراء'},403)
 
     def do_OPTIONS(self):
-        self.send_response(204); self.send_header("Access-Control-Allow-Methods", "GET,POST,PATCH,OPTIONS")
+        self.send_response(204); self.send_header("Access-Control-Allow-Methods", "GET,POST,PATCH,DELETE,OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type"); self.end_headers()
+
+    def _delete(self):
+        url=urlparse(self.path); path=url.path; parts=[unquote(p) for p in path.split('/') if p]
+        if len(parts)!=3 or parts[:2]!=['api','branches']:
+            return self.send_json({'error':'Deletion is not supported for this record.'},403)
+        with connect() as c:
+            c.execute('BEGIN IMMEDIATE')
+            user=self.current_user(c)
+            if not user:
+                return self.unauthorized()
+            ctx=auth.context(c,user)
+            if ctx.get('role')!='system_admin' or ctx.get('global_scope') is not True:
+                raise auth.AccessDenied('Only the Jeddah Headquarters Super Admin can permanently delete a branch.')
+            try:
+                length=int(self.headers.get('Content-Length','0') or 0)
+            except ValueError:
+                length=0
+            raw=self.rfile.read(length) if length>0 else b''
+            try:
+                data=json.loads(raw.decode() or '{}')
+            except (ValueError,UnicodeDecodeError):
+                return self.send_json({'error':'Invalid delete request.'},400)
+            password=str(data.get('password') or '')
+            if not password or not verify_password(password,user.get('password_hash')):
+                return self.send_json({'error':'Super Admin password is incorrect.','code':'password_verification_failed'},403)
+            branch=c.execute('SELECT * FROM branches WHERE id=?',(parts[2],)).fetchone()
+            if not branch:
+                return self.send_json({'error':'Branch not found.'},404)
+            if str(branch['code'] or '').upper()=='JED-MAIN':
+                return self.send_json({'error':'Jeddah Headquarters is the protected master branch and cannot be deleted.','code':'master_branch_protected'},409)
+            if int(branch['is_active'] or 0)!=0:
+                return self.send_json({'error':'Deactivate the branch before permanent deletion.','code':'branch_must_be_inactive'},409)
+
+            dependency_queries={
+                'shipments':("""SELECT COUNT(*) FROM shipment_scope
+                    WHERE origin_branch_id=? OR destination_branch_id=?""",(branch['id'],branch['id'])),
+                'routes':("""SELECT COUNT(*) FROM route_scope
+                    WHERE origin_branch_id=? OR destination_branch_id=?""",(branch['id'],branch['id'])),
+                'users':("SELECT COUNT(*) FROM user_branches WHERE branch_id=?",(branch['id'],)),
+                'drivers':("SELECT COUNT(*) FROM driver_scope WHERE branch_id=?",(branch['id'],)),
+                'vehicles':("SELECT COUNT(*) FROM vehicle_branches WHERE branch_id=?",(branch['id'],)),
+                'pickups':("SELECT COUNT(*) FROM pickup_requests WHERE branch_id=?",(branch['id'],)),
+                'notifications':("SELECT COUNT(*) FROM branch_notifications WHERE branch_id=?",(branch['id'],)),
+            }
+            dependencies={}
+            for key,(sql,args) in dependency_queries.items():
+                try:
+                    count=int(c.execute(sql,args).fetchone()[0])
+                except sqlite3.OperationalError:
+                    count=0
+                if count:
+                    dependencies[key]=count
+            if dependencies:
+                return self.send_json({
+                    'error':'This branch has linked operational or historical records and cannot be permanently deleted. Keep it inactive to preserve history.',
+                    'code':'branch_delete_dependencies',
+                    'dependencies':dependencies,
+                },409)
+
+            before=dict(branch)
+            c.execute('DELETE FROM branches WHERE id=?',(branch['id'],))
+            write_audit(c,ctx,'branch.deleted','branch',branch['id'],before=before,
+                        metadata={'verified_by_password':True,'branch_code':branch['code']},request=self)
+            c.commit()
+            return self.send_json({'ok':True,'deleted_branch_id':branch['id'],'deleted_branch_code':branch['code']})
 
     def _get(self):
         url=urlparse(self.path); path=url.path; parts=[unquote(p) for p in path.split('/') if p]
