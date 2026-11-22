@@ -533,41 +533,72 @@ function head(kicker,title,sub,action=''){return `<div class="page-head"><div><d
 function kpi(label,value,note,ico,cls=''){return `<div class="card kpi"><div class="kpi-top"><span>${label}</span><span class="icon-square">${ico}</span></div><div class="kpi-value ${cls}">${value}</div><div class="kpi-note">${note}</div></div>`}
 function badge(status){let cls=status==='تم الاستلام'?'green':status==='تأخير'?'red':status==='قيد النقل'?'blue':'';return `<span class="badge ${cls}">${esc(phrase(status))}</span>`}
 function shipmentCard(s){
-  const recipientDetails=[s.recipient_id?`${phrase('هوية')} ${esc(s.recipient_id)}`:'',s.phone?esc(s.phone):''].filter(Boolean);
-  const contactLine=[recipientDetails.length?`${phrase('المستلم:')} ${recipientDetails.join(' · ')}`:'',s.eta?`${phrase('وقت الوصول المتوقع (ETA)')}: ${esc(phrase(s.eta))}`:''].filter(Boolean).join(' · ');
-  const senderDetails=[s.sender_name?`<b>${esc(s.sender_name)}</b>`:'',s.sender_id?`${phrase('هوية')} ${esc(s.sender_id)}`:'',s.sender_phone?esc(s.sender_phone):''].filter(Boolean);
-  const metadata=senderDetails.length?[`<span>${phrase('المرسل:')} ${senderDetails.join(' · ')}</span>`]:[];
-  if(hasPermission('drivers.read')){
-    const driverDetails=[`<b>${esc(phrase(s.driver_name||'غير معيّن'))}</b>`,s.driver_national_id?`${phrase('هوية')} ${esc(s.driver_national_id)}`:'',s.driver_mobile?esc(s.driver_mobile):''].filter(Boolean);
-    const hasCoordinates=s.driver_latitude!=null&&s.driver_longitude!=null&&Number.isFinite(Number(s.driver_latitude))&&Number.isFinite(Number(s.driver_longitude));
-    metadata.push(`<span>${phrase('السائق:')} ${driverDetails.join(' · ')}</span>`);
-    metadata.push(`<span>${phrase('الموقع الحالي:')} <b>${esc(phrase(s.driver_location||'غير محدد'))}</b>${hasCoordinates?` · ${esc(s.driver_latitude)}, ${esc(s.driver_longitude)}`:''}</span>`);
-  }
   const activeBranchIds=new Set((user?.branches||[]).map(branch=>String(branch.id)));
   const activeBranchCities=new Set((user?.branches||[]).map(branch=>String(branch.city||'').trim().toLowerCase()).filter(Boolean));
   const activeBranchCodes=new Set((user?.branches||[]).map(branch=>String(branch.code||'').trim().toUpperCase()).filter(Boolean));
   const shipmentDestinationCity=String(s.destination||'').trim().toLowerCase();
   const shipmentOriginCity=String(s.origin||'').trim().toLowerCase();
   const shipmentRecipientBranch=String(s.recipient_branch||'').trim().toUpperCase();
-  const localDestinationMatch=accessRole()!=='system_admin'&&(
+
+  const destinationView=accessRole()!=='system_admin'&&(
+    s.branch_relation==='destination'||
     (s.destination_branch_id!=null&&activeBranchIds.has(String(s.destination_branch_id)))||
     (shipmentRecipientBranch&&activeBranchCodes.has(shipmentRecipientBranch))||
     (shipmentDestinationCity&&activeBranchCities.has(shipmentDestinationCity))
   );
-  const localOriginMatch=accessRole()!=='system_admin'&&(
-    (s.origin_branch_id!=null&&activeBranchIds.has(String(s.origin_branch_id)))||
-    (shipmentOriginCity&&activeBranchCities.has(shipmentOriginCity))
+  const originView=accessRole()==='system_admin'||s.branch_relation==='origin'||(
+    accessRole()!=='system_admin'&&(
+      (s.origin_branch_id!=null&&activeBranchIds.has(String(s.origin_branch_id)))||
+      (shipmentOriginCity&&activeBranchCities.has(shipmentOriginCity))
+    )
   );
-  const destinationView=s.branch_relation==='destination'||localDestinationMatch;
-  const originView=s.branch_relation==='origin'||localOriginMatch;
-  const handoffBadge=(destinationView||originView)?`<span class="badge ${s.destination_received_at?'green':s.destination_acknowledged?'blue':''}">${s.destination_received_at?'Received at Destination':s.destination_acknowledged?'Destination Acknowledged':'Awaiting Destination Acknowledgement'}</span>`:'';
+
   const normalizedStatus=String(s.status||'').trim();
   const outForDelivery=['قيد التوصيل','Out for Delivery'].includes(normalizedStatus);
-  const canLocalReceive=destinationView&&outForDelivery&&!s.destination_received_at;
-  const handoffActions=destinationView&&hasPermission('shipments.status')&&(s.can_receive_at_branch||canLocalReceive)
-    ?`<button class="btn accent small" data-branch-receive="${esc(s.awb)}">Shipment Received</button>`
-    :'';
-  return `<article class="card shipment"><div class="shipment-top"><span class="awb">${esc(s.awb)}</span>${badge(s.status)}${handoffBadge}<span class="push ship-name">${esc(s.recipient)}</span></div>${contactLine?`<div class="ship-phone">${contactLine}</div>`:''}<div class="ship-route"><span>◉ ${esc(phrase(s.origin))}</span><span class="route-arrow">←</span><span>${esc(phrase(s.destination))} ◉</span><span class="push">${s.cod?`${phrase('تحصيل')} ${money(s.cod)}`:phrase(s.payment_status||'غير مدفوع')}</span></div>${metadata.length?`<div class="record-meta">${metadata.join('')}</div>`:''}<div class="ship-bottom"><span class="kpi-note">${esc(phrase(s.stage))}</span><button class="btn light small" data-shipment-details="${esc(s.awb)}">View Shipment Details</button><button class="btn light small" data-track="${esc(s.awb)}">تفاصيل التتبع</button>${hasPermission('shipments.assign')&&!destinationView?`<button class="btn light small" data-reassign="${esc(s.awb)}">السائق / ETA</button>`:''}${hasPermission('shipments.status')?`<button class="btn primary small" data-status="${esc(s.awb)}">تحديث الحالة</button>`:''}${handoffActions}</div></article>`
+  const delivered=['تم الاستلام','Delivered'].includes(normalizedStatus);
+  const canReceive=destinationView&&outForDelivery&&!s.destination_received_at&&hasPermission('shipments.status');
+
+  let nextAction='No action needed';
+  let primaryAction='';
+  if(canReceive){
+    nextAction='Parcel has arrived? Press Shipment Received';
+    primaryAction=`<button class="btn accent small" data-branch-receive="${esc(s.awb)}">Shipment Received</button>`;
+  }else if(delivered){
+    nextAction='Completed';
+  }else if(originView&&hasPermission('shipments.status')){
+    nextAction='Update shipment status when it moves to the next stage';
+    primaryAction=`<button class="btn primary small" data-status="${esc(s.awb)}">Update Status</button>`;
+  }else if(destinationView){
+    nextAction=outForDelivery?'Waiting for parcel arrival':'Waiting for origin branch update';
+  }
+
+  const paymentText=s.cod?`COD: ${money(s.cod)}`:phrase(s.payment_status||'Unpaid');
+  const handoffState=s.destination_received_at?'Received at Destination':(destinationView&&outForDelivery?'Ready to Receive':'');
+  return `<article class="card shipment simple-shipment-card">
+    <div class="shipment-top">
+      <span class="awb">${esc(s.awb)}</span>
+      ${badge(s.status)}
+      <span class="push ship-name">${esc(s.recipient)}</span>
+    </div>
+    <div class="ship-route simple-route">
+      <strong>${esc(phrase(s.origin))}</strong>
+      <span class="route-arrow">→</span>
+      <strong>${esc(phrase(s.destination))}</strong>
+    </div>
+    <div class="simple-shipment-meta">
+      <span>${esc(paymentText)}</span>
+      ${s.eta?`<span>ETA: ${esc(phrase(s.eta))}</span>`:''}
+      ${handoffState?`<span class="badge ${s.destination_received_at?'green':'blue'}">${handoffState}</span>`:''}
+    </div>
+    <div class="next-action-box">
+      <small>Next Action</small>
+      <b>${esc(nextAction)}</b>
+    </div>
+    <div class="ship-bottom simple-actions">
+      <button class="btn light small" data-shipment-details="${esc(s.awb)}">View Details</button>
+      ${primaryAction}
+    </div>
+  </article>`
 }
 
 function shipmentDetailsModal(awb){
