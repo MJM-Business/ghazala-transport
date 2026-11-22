@@ -3987,6 +3987,37 @@ def _jeddah_hq_master_admin_v23(c):
                   (user_id,hq["id"]))
 
 
+
+def _shipment_branch_handoff_v24(c):
+    """Simple shipment-level branch handoff, independent of route manifests."""
+    c.execute("""CREATE TABLE IF NOT EXISTS shipment_branch_handoffs (
+        shipment_id INTEGER PRIMARY KEY REFERENCES shipments(id) ON DELETE CASCADE,
+        origin_branch_id INTEGER NOT NULL REFERENCES branches(id),
+        destination_branch_id INTEGER NOT NULL REFERENCES branches(id),
+        acknowledged_at TEXT,
+        acknowledged_by INTEGER REFERENCES users(id),
+        received_at TEXT,
+        received_by INTEGER REFERENCES users(id),
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )""")
+    c.execute("""INSERT OR IGNORE INTO shipment_branch_handoffs(
+        shipment_id,origin_branch_id,destination_branch_id
+    )
+    SELECT shipment_id,origin_branch_id,destination_branch_id
+      FROM shipment_scope
+     WHERE origin_branch_id IS NOT NULL AND destination_branch_id IS NOT NULL""")
+
+def ensure_shipment_branch_handoff(c, shipment_id):
+    scope=c.execute("""SELECT origin_branch_id,destination_branch_id
+        FROM shipment_scope WHERE shipment_id=?""",(shipment_id,)).fetchone()
+    if not scope or scope["origin_branch_id"] is None or scope["destination_branch_id"] is None:
+        return None
+    c.execute("""INSERT OR IGNORE INTO shipment_branch_handoffs(
+        shipment_id,origin_branch_id,destination_branch_id
+    ) VALUES(?,?,?)""",(shipment_id,scope["origin_branch_id"],scope["destination_branch_id"]))
+    return c.execute("SELECT * FROM shipment_branch_handoffs WHERE shipment_id=?",(shipment_id,)).fetchone()
+
+
 MIGRATIONS = (
     (1, "adopt_python_sqlite_baseline", _baseline_schema),
     (2, "persistent_bootstrap_demo_state", _persistent_demo_state),
@@ -4011,6 +4042,7 @@ MIGRATIONS = (
     (21, "branch_handoff_acknowledgements_whatsapp_language", transfers.migration21),
     (22, "dedicated_jazan_branch_manager_login", _jazan_branch_manager_login_v22),
     (23, "jeddah_hq_master_admin_scope", _jeddah_hq_master_admin_v23),
+    (24, "shipment_level_branch_handoff", _shipment_branch_handoff_v24),
 )
 
 
@@ -5656,11 +5688,23 @@ class Handler(BaseHTTPRequestHandler):
                     item['document_links']=shipment_document_links(row['awb'])
                     canonical_status=transitions.canonical(row['status'])
                     destination_branch_id=row['destination_branch_id']
+                    origin_branch_id=row['origin_branch_id']
                     branch_ids=tuple(ctx.get('branch_ids') or ())
+                    is_global=ctx.get('role')=='system_admin' and ctx.get('global_scope') is True
+                    is_destination=destination_branch_id in branch_ids
+                    is_origin=origin_branch_id in branch_ids
+                    handoff=ensure_shipment_branch_handoff(c,row['id'])
+                    item['branch_relation']='global' if is_global else ('destination' if is_destination else ('origin' if is_origin else ''))
+                    item['destination_acknowledged']=bool(handoff and handoff['acknowledged_at'])
+                    item['destination_acknowledged_at']=handoff['acknowledged_at'] if handoff else None
+                    item['destination_received_at']=handoff['received_at'] if handoff else None
+                    item['can_acknowledge_at_branch']=bool(
+                        not is_global and is_destination and canonical_status!='delivered'
+                        and handoff and not handoff['acknowledged_at']
+                    )
                     item['can_receive_at_branch']=bool(
-                        ctx.get('role')!='system_admin'
-                        and destination_branch_id in branch_ids
-                        and canonical_status in ('dispatched','in_transit','out_for_delivery')
+                        not is_global and is_destination and canonical_status!='delivered'
+                        and handoff and handoff['acknowledged_at'] and not handoff['received_at']
                     )
                     item['booking_source']='customer' if c.execute(
                         'SELECT 1 FROM customer_shipments WHERE shipment_id=? LIMIT 1',(row['id'],)
@@ -7374,53 +7418,84 @@ class Handler(BaseHTTPRequestHandler):
                 c.commit()
                 return self.send_json({"ok":True,"acknowledgement":kind}|details)
 
-            if len(parts)==4 and parts[:2]==['api','shipments'] and parts[3]=='receive-branch':
+            if len(parts)==4 and parts[:2]==['api','shipments'] and parts[3] in ('acknowledge-branch','receive-branch'):
                 ctx=auth.context(c,user)
                 if not auth.allowed(ctx,'shipments.status'):
-                    raise auth.AccessDenied("You do not have permission to receive shipments.")
+                    raise auth.AccessDenied("You do not have permission to update shipment handoff status.")
                 awb=str(parts[2] or '').strip().upper()
                 shipment=c.execute("SELECT * FROM shipments WHERE awb=?",(awb,)).fetchone()
                 if not shipment:
                     return self.send_json({"error":"Shipment not found."},404)
-                scope=c.execute("""SELECT origin_branch_id,destination_branch_id
-                    FROM shipment_scope WHERE shipment_id=?""",(shipment["id"],)).fetchone()
-                if not scope:
+                handoff=ensure_shipment_branch_handoff(c,shipment["id"])
+                if not handoff:
                     return self.send_json({"error":"Shipment branch scope is missing."},409)
                 is_global=ctx.get('role')=='system_admin' and ctx.get('global_scope') is True
-                destination_allowed=scope["destination_branch_id"] in tuple(ctx.get("branch_ids") or ())
+                destination_allowed=handoff["destination_branch_id"] in tuple(ctx.get("branch_ids") or ())
                 if not (is_global or destination_allowed):
-                    raise auth.AccessDenied("Only the destination branch can receive this shipment.")
-                canonical=transitions.canonical(shipment["status"])
-                if canonical=='delivered':
+                    raise auth.AccessDenied("Only the destination branch can perform this shipment handoff action.")
+                destination_branch=c.execute("SELECT id,code,name,city FROM branches WHERE id=?",(handoff["destination_branch_id"],)).fetchone()
+
+                if parts[3]=='acknowledge-branch':
+                    if not handoff["acknowledged_at"]:
+                        c.execute("""UPDATE shipment_branch_handoffs
+                            SET acknowledged_at=CURRENT_TIMESTAMP,acknowledged_by=?
+                            WHERE shipment_id=?""",(user["id"],shipment["id"]))
+                        write_audit(
+                            c,ctx,'shipment.destination_acknowledged','shipment',shipment["id"],
+                            metadata={"awb":awb,"destination_branch_id":handoff["destination_branch_id"]},
+                            request=self
+                        )
                     c.commit()
-                    return self.send_json({"ok":True,"awb":awb,"status":shipment["status"],"already_received":True})
-                if canonical not in ('dispatched','in_transit','out_for_delivery'):
+                    updated=ensure_shipment_branch_handoff(c,shipment["id"])
                     return self.send_json({
-                        "error":"Mark the shipment as Dispatched for Delivery before the destination branch receives it.",
-                        "code":"shipment_not_dispatched"
+                        "ok":True,"awb":awb,"acknowledged":True,
+                        "acknowledged_at":updated["acknowledged_at"],
+                        "destination_branch":dict(destination_branch) if destination_branch else None
+                    })
+
+                if not handoff["acknowledged_at"]:
+                    return self.send_json({
+                        "error":"Destination branch must acknowledge this shipment before receiving it.",
+                        "code":"shipment_not_acknowledged"
                     },409)
-                validate_shipment_transition(c,shipment,'تم الاستلام',source='transfer')
-                destination_branch=c.execute("SELECT name,city FROM branches WHERE id=?",(scope["destination_branch_id"],)).fetchone()
-                stage='Delivered'
-                c.execute("""UPDATE shipments
-                    SET status='تم الاستلام',stage=?,updated_at=CURRENT_TIMESTAMP
-                    WHERE id=?""",(stage,shipment["id"]))
-                add_shipment_event(
-                    c,shipment["id"],'تم الاستلام',stage,
-                    destination_branch["city"] if destination_branch else shipment["destination"],
-                    user["display_name"]
-                )
+                canonical=transitions.canonical(shipment["status"])
+                if handoff["received_at"]:
+                    c.commit()
+                    return self.send_json({
+                        "ok":True,"awb":awb,"status":shipment["status"],
+                        "already_received":True,"received_at":handoff["received_at"]
+                    })
+                if canonical=='delivered':
+                    return self.send_json({"error":"Delivered shipments cannot be received into a branch again."},409)
+
+                destination_status=transitions.storage_status('at_destination')
+                stage=transitions.STATUS_STAGES['at_destination']
+                if canonical!='at_destination':
+                    validate_shipment_transition(c,shipment,destination_status,source='transfer')
+                    c.execute("""UPDATE shipments
+                        SET status=?,stage=?,updated_at=CURRENT_TIMESTAMP
+                        WHERE id=?""",(destination_status,stage,shipment["id"]))
+                    add_shipment_event(
+                        c,shipment["id"],destination_status,stage,
+                        destination_branch["city"] if destination_branch else shipment["destination"],
+                        user["display_name"]
+                    )
+                c.execute("""UPDATE shipment_branch_handoffs
+                    SET received_at=CURRENT_TIMESTAMP,received_by=?
+                    WHERE shipment_id=?""",(user["id"],shipment["id"]))
                 write_audit(
                     c,ctx,'shipment.destination_received','shipment',shipment["id"],
                     before={"status":shipment["status"],"stage":shipment["stage"]},
-                    after={"status":'تم الاستلام',"stage":stage},
-                    metadata={"awb":awb,"destination_branch_id":scope["destination_branch_id"]},
+                    after={"status":destination_status,"stage":stage},
+                    metadata={"awb":awb,"destination_branch_id":handoff["destination_branch_id"]},
                     request=self
                 )
                 c.commit()
+                updated=ensure_shipment_branch_handoff(c,shipment["id"])
                 return self.send_json({
-                    "ok":True,"awb":awb,"status":'تم الاستلام',
-                    "stage":stage,"received_branch":dict(destination_branch) if destination_branch else None
+                    "ok":True,"awb":awb,"status":destination_status,"stage":stage,
+                    "received_at":updated["received_at"],
+                    "destination_branch":dict(destination_branch) if destination_branch else None
                 })
 
             self.prepare_mutation(c,user,'POST',parts,data)
