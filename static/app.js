@@ -831,16 +831,7 @@ function canUpdateAtCurrentBranch(s){
 }
 function canReceiveAtCurrentBranch(s){
   if(!user||accessRole()==='customer'||!hasPermission('shipments.status'))return false;
-  if(!['تم الترحيل للنقل','قيد النقل','قيد التوصيل'].includes(s.status))return false;
-  if(accessRole()==='system_admin'&&user.global_scope===true)return false;
-  const branchIds=Array.isArray(user.branch_ids)?user.branch_ids.map(Number):[];
-  const destinationBranchId=Number(s.destination_branch_id||0);
-  if(destinationBranchId&&branchIds.includes(destinationBranchId))return true;
-  const branches=Array.isArray(user.branches)?user.branches:[];
-  const recipientCode=String(s.recipient_branch||'').trim().toUpperCase();
-  if(recipientCode&&branches.some(branch=>String(branch.code||'').trim().toUpperCase()===recipientCode))return true;
-  const normalizeCity=value=>String(value||'').trim().toLowerCase().replace(/^jaazan$/,'jazan').replace(/^جازان$/,'jazan');
-  return branches.some(branch=>normalizeCity(branch.city)===normalizeCity(s.destination));
+  return s.can_receive_at_branch===true;
 }
 async function receiveShipmentAtBranch(awb){
   const s=shipments.find(item=>item.awb===awb);
