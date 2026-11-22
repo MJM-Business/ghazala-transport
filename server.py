@@ -7702,14 +7702,19 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send_json({"ok":True,"awb":awb,"route":route["code"]},201)
             if len(parts)==4 and parts[:2]==['api','routes'] and parts[3]=='receive':
                 route=self.mutation_plan['existing']; transfer=self.mutation_plan['receipt_transfer']
-                if transfer['status']=='received':
-                    self._audit_pending=False
-                    return self.send_json({'ok':True,'shipments_updated':0}|transfers.receipt_details(c,route['id'],transfer['shipment_id']))
-                if route['status']!='وصلت' or transfer['status']!='awaiting_receipt':
-                    return self.send_json({'error':'Confirm receipt after the vehicle has arrived.','code':'transfer_receipt'},409)
                 shipment=c.execute('SELECT * FROM shipments WHERE id=?',(transfer['shipment_id'],)).fetchone()
                 changed=transitions.canonical(shipment['status'])!='delivered'
                 delivered_status=transitions.storage_status('delivered')
+                if transfer['status']=='received':
+                    self._audit_pending=False
+                    if changed:
+                        validate_shipment_transition(c,shipment,delivered_status,source='transfer')
+                        stage=transitions.STATUS_STAGES['delivered']
+                        c.execute("UPDATE shipments SET status=?,stage=?,updated_at=CURRENT_TIMESTAMP WHERE id=?",(delivered_status,stage,shipment['id']))
+                        add_shipment_event(c,shipment['id'],delivered_status,stage,route['destination'],user['display_name'])
+                    return self.send_json({'ok':True,'shipments_updated':int(changed)}|transfers.receipt_details(c,route['id'],transfer['shipment_id']))
+                if route['status']!='وصلت' or transfer['status']!='awaiting_receipt':
+                    return self.send_json({'error':'Confirm receipt after the vehicle has arrived.','code':'transfer_receipt'},409)
                 if changed: validate_shipment_transition(c,shipment,delivered_status,source='transfer')
                 transfers.receive(c,self.auth_ctx,route,transfer,self)
                 if changed:
