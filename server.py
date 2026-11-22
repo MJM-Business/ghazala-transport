@@ -4185,18 +4185,11 @@ def shipment_query():
         WHEN s.status IN ('جاهز للتسليم','في الفرع','قيد التوصيل','تم الاستلام','تم التسليم')
           THEN s.destination
         WHEN s.status IN ('قيد النقل','في الطريق')
-          THEN COALESCE(
-            NULLIF(TRIM(d.location_text),''),
-            (SELECT e.location FROM shipment_events e
-             WHERE e.shipment_id=s.id AND trim(COALESCE(e.location,''))<>''
-             ORDER BY e.id DESC LIMIT 1),
-            s.origin
-          )
+          THEN s.origin
         ELSE COALESCE(
           (SELECT e.location FROM shipment_events e
            WHERE e.shipment_id=s.id AND trim(COALESCE(e.location,''))<>''
            ORDER BY e.id DESC LIMIT 1),
-          NULLIF(TRIM(d.location_text),''),
           s.origin,
           s.destination
         )
@@ -5397,7 +5390,7 @@ class Handler(BaseHTTPRequestHandler):
                 # Do not keep advertising an old ETA or the courier's later
                 # branch location after the parcel has already been delivered.
                 proof=c.execute(
-                    """SELECT latitude,longitude,verified_at
+                    """SELECT verified_at
                        FROM pod_records WHERE shipment_id=? ORDER BY id DESC LIMIT 1""",
                     (row['id'],)
                 ).fetchone()
@@ -5408,9 +5401,6 @@ class Handler(BaseHTTPRequestHandler):
                        ORDER BY created_at DESC,id DESC LIMIT 1""",
                     (row['id'],)
                 ).fetchone() if delivered else None
-
-                delivery_latitude=proof['latitude'] if proof else None
-                delivery_longitude=proof['longitude'] if proof else None
                 delivered_at=(proof['verified_at'] if proof else None) or (
                     delivery_event['created_at'] if delivery_event else None
                 )
@@ -5426,12 +5416,10 @@ class Handler(BaseHTTPRequestHandler):
                         (row['id'],)
                     ).fetchone()
 
-                if delivered and delivery_event and str(delivery_event['location'] or '').strip():
-                    current_location=delivery_event['location']
-                elif delivered:
-                    current_location=row['destination']
-                else:
-                    current_location=(row['operational_location'] or row['driver_location'] or row['origin'] or row['destination'])
+                current_location=row['destination'] if delivered else (
+                    row['origin'] if transitions.canonical(row['status']) in ('created','received','at_origin','dispatched','in_transit')
+                    else row['destination']
+                )
 
                 return self.send_json({
                     'awb':row['awb'],'status':row['status'],'stage':row['stage'],
@@ -7701,7 +7689,7 @@ class Handler(BaseHTTPRequestHandler):
                 except DeliveryPolicyError as exc:
                     c.rollback()
                     return self.send_json({"error":str(exc)},409)
-                location=(f"GPS {latitude:.5f}, {longitude:.5f}" if latitude is not None else shipment["destination"])
+                location=shipment["destination"]
                 active_attempt=_delivery_open_attempt(c,shipment["id"])
                 if active_attempt:
                     c.execute(
