@@ -1091,7 +1091,7 @@
             <div class="ops-receipt-payment-line">
               <div class="ops-receipt-paychecks">
                 <label><input type="radio" name="payment_method" value="cod" checked><span></span><b>${opsTr('الدفع عند الاستلام')}</b></label>
-                <label><input type="radio" name="payment_method" value="sender"><span></span><b>${opsTr('الدفع عند التسليم')}</b></label>
+                <label><input type="radio" name="payment_method" value="sender"><span></span><b>${opsTr('يدفع المرسل')}</b></label>
               </div>
               <div class="ops-receipt-row value-row">
                 <input name="declared_value" type="number" min="0" step="0.01" value="0">
