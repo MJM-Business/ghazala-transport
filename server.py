@@ -4070,6 +4070,8 @@ def safe_user(row, con):
 
 def shipment_query():
     return """SELECT s.*,
+      (SELECT ss.origin_branch_id FROM shipment_scope ss WHERE ss.shipment_id=s.id) AS origin_branch_id,
+      (SELECT ss.destination_branch_id FROM shipment_scope ss WHERE ss.shipment_id=s.id) AS destination_branch_id,
       cs.customer_user_id,cu.display_name AS customer_account_name,
       cu.username AS customer_account_username,cu.mobile AS customer_account_mobile,
       d.name AS driver_name,d.national_id AS driver_national_id,d.mobile AS driver_mobile,d.location_text AS driver_location,
