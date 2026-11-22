@@ -1074,7 +1074,6 @@
     };
   }
   function wireModal(){if(typeof window.wireModal==='function')window.wireModal();else $$('[data-close]',$('#modalRoot')).forEach(b=>b.onclick=closeModal)}
-  function gps(callback){if(!navigator.geolocation)return toast(opsTr('الموقع غير متاح في هذا المتصفح'));navigator.geolocation.getCurrentPosition(p=>callback(p.coords.latitude.toFixed(6),p.coords.longitude.toFixed(6)),()=>toast(opsTr('تعذر الحصول على GPS. تحقق من HTTPS وصلاحية الموقع.')),{enableHighAccuracy:true,timeout:15000,maximumAge:10000})}
   function notificationUnread(n){
     if(!n)return false;
     if(Object.prototype.hasOwnProperty.call(n,'is_read'))return !(n.is_read===true||n.is_read===1||n.is_read==='1');
