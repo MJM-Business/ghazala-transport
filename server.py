@@ -4007,6 +4007,38 @@ def _shipment_branch_handoff_v24(c):
       FROM shipment_scope
      WHERE origin_branch_id IS NOT NULL AND destination_branch_id IS NOT NULL""")
 
+def create_branch_handoff_notification(c, shipment_id, branch_id, kind, awb, destination_name):
+    if not c.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='operational_notifications'"
+    ).fetchone():
+        return None
+    notification_type=f"shipment_handoff_{kind}"
+    title=(
+        f"Shipment {awb} acknowledged by destination branch"
+        if kind=="acknowledged"
+        else f"Shipment {awb} received at destination branch"
+    )
+    message=(
+        f"{destination_name} acknowledged incoming shipment {awb}."
+        if kind=="acknowledged"
+        else f"{destination_name} confirmed physical receipt of shipment {awb}."
+    )
+    c.execute("""INSERT INTO operational_notifications(
+        notification_type,shipment_id,branch_id,title,message
+    ) VALUES(?,?,?,?,?)
+    ON CONFLICT(notification_type,shipment_id) DO UPDATE SET
+      branch_id=excluded.branch_id,title=excluded.title,message=excluded.message,
+      created_at=CURRENT_TIMESTAMP""",
+      (notification_type,shipment_id,branch_id,title,message))
+    row=c.execute("""SELECT id FROM operational_notifications
+        WHERE notification_type=? AND shipment_id=?""",
+        (notification_type,shipment_id)).fetchone()
+    if row:
+        c.execute("DELETE FROM operational_notification_reads WHERE notification_id=?",(row["id"],))
+        return row["id"]
+    return None
+
+
 def ensure_shipment_branch_handoff(c, shipment_id):
     scope=c.execute("""SELECT origin_branch_id,destination_branch_id
         FROM shipment_scope WHERE shipment_id=?""",(shipment_id,)).fetchone()
@@ -7445,6 +7477,10 @@ class Handler(BaseHTTPRequestHandler):
                             metadata={"awb":awb,"destination_branch_id":handoff["destination_branch_id"]},
                             request=self
                         )
+                        create_branch_handoff_notification(
+                            c,shipment["id"],handoff["origin_branch_id"],"acknowledged",awb,
+                            destination_branch["name"] if destination_branch else shipment["destination"]
+                        )
                     c.commit()
                     updated=ensure_shipment_branch_handoff(c,shipment["id"])
                     return self.send_json({
@@ -7489,6 +7525,10 @@ class Handler(BaseHTTPRequestHandler):
                     after={"status":destination_status,"stage":stage},
                     metadata={"awb":awb,"destination_branch_id":handoff["destination_branch_id"]},
                     request=self
+                )
+                create_branch_handoff_notification(
+                    c,shipment["id"],handoff["origin_branch_id"],"received",awb,
+                    destination_branch["name"] if destination_branch else shipment["destination"]
                 )
                 c.commit()
                 updated=ensure_shipment_branch_handoff(c,shipment["id"])
