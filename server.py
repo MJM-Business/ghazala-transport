@@ -5789,13 +5789,10 @@ class Handler(BaseHTTPRequestHandler):
                     item['destination_acknowledged']=bool(handoff and handoff['acknowledged_at'])
                     item['destination_acknowledged_at']=handoff['acknowledged_at'] if handoff else None
                     item['destination_received_at']=handoff['received_at'] if handoff else None
-                    item['can_acknowledge_at_branch']=bool(
-                        not is_global and is_destination and canonical_status!='delivered'
-                        and handoff and not handoff['acknowledged_at']
-                    )
+                    item['can_acknowledge_at_branch']=False
                     item['can_receive_at_branch']=bool(
-                        not is_global and is_destination and canonical_status!='delivered'
-                        and handoff and handoff['acknowledged_at'] and not handoff['received_at']
+                        not is_global and is_destination and canonical_status=='out_for_delivery'
+                        and handoff and not handoff['received_at']
                     )
                     item['booking_source']='customer' if c.execute(
                         'SELECT 1 FROM customer_shipments WHERE shipment_id=? LIMIT 1',(row['id'],)
@@ -5836,13 +5833,10 @@ class Handler(BaseHTTPRequestHandler):
                     item['destination_acknowledged']=bool(handoff and handoff['acknowledged_at'])
                     item['destination_acknowledged_at']=handoff['acknowledged_at'] if handoff else None
                     item['destination_received_at']=handoff['received_at'] if handoff else None
-                    item['can_acknowledge_at_branch']=bool(
-                        not is_global and is_destination and canonical_status!='delivered'
-                        and handoff and not handoff['acknowledged_at']
-                    )
+                    item['can_acknowledge_at_branch']=False
                     item['can_receive_at_branch']=bool(
-                        not is_global and is_destination and canonical_status!='delivered'
-                        and handoff and handoff['acknowledged_at'] and not handoff['received_at']
+                        not is_global and is_destination and canonical_status=='out_for_delivery'
+                        and handoff and not handoff['received_at']
                     )
                     item['booking_source']='customer' if c.execute(
                         'SELECT 1 FROM customer_shipments WHERE shipment_id=? LIMIT 1',(row['id'],)
@@ -7543,10 +7537,10 @@ class Handler(BaseHTTPRequestHandler):
                 c.commit()
                 return self.send_json({"ok":True,"acknowledgement":kind}|details)
 
-            if len(parts)==4 and parts[:2]==['api','shipments'] and parts[3] in ('acknowledge-branch','receive-branch'):
+            if len(parts)==4 and parts[:2]==['api','shipments'] and parts[3]=='receive-branch':
                 ctx=auth.context(c,user)
                 if not auth.allowed(ctx,'shipments.status'):
-                    raise auth.AccessDenied("You do not have permission to update shipment handoff status.")
+                    raise auth.AccessDenied("You do not have permission to update shipment status.")
                 awb=str(parts[2] or '').strip().upper()
                 shipment=c.execute("SELECT * FROM shipments WHERE awb=?",(awb,)).fetchone()
                 if not shipment:
@@ -7554,68 +7548,49 @@ class Handler(BaseHTTPRequestHandler):
                 handoff=ensure_shipment_branch_handoff(c,shipment["id"])
                 if not handoff:
                     return self.send_json({"error":"Shipment branch scope is missing."},409)
-                is_global=ctx.get('role')=='system_admin' and ctx.get('global_scope') is True
                 destination_allowed=handoff["destination_branch_id"] in tuple(ctx.get("branch_ids") or ())
-                if not (is_global or destination_allowed):
-                    raise auth.AccessDenied("Only the destination branch can perform this shipment handoff action.")
-                destination_branch=c.execute("SELECT id,code,name,city FROM branches WHERE id=?",(handoff["destination_branch_id"],)).fetchone()
+                if not destination_allowed:
+                    raise auth.AccessDenied("Only the destination branch can receive this shipment.")
 
-                if parts[3]=='acknowledge-branch':
-                    if not handoff["acknowledged_at"]:
-                        c.execute("""UPDATE shipment_branch_handoffs
-                            SET acknowledged_at=CURRENT_TIMESTAMP,acknowledged_by=?
-                            WHERE shipment_id=?""",(user["id"],shipment["id"]))
-                        write_audit(
-                            c,ctx,'shipment.destination_acknowledged','shipment',shipment["id"],
-                            metadata={"awb":awb,"destination_branch_id":handoff["destination_branch_id"]},
-                            request=self
-                        )
-                        create_branch_handoff_notification(
-                            c,shipment["id"],handoff["origin_branch_id"],"acknowledged",awb,
-                            destination_branch["name"] if destination_branch else shipment["destination"]
-                        )
-                    c.commit()
-                    updated=ensure_shipment_branch_handoff(c,shipment["id"])
-                    return self.send_json({
-                        "ok":True,"awb":awb,"acknowledged":True,
-                        "acknowledged_at":updated["acknowledged_at"],
-                        "destination_branch":dict(destination_branch) if destination_branch else None
-                    })
-
-                if not handoff["acknowledged_at"]:
-                    return self.send_json({
-                        "error":"Destination branch must acknowledge this shipment before receiving it.",
-                        "code":"shipment_not_acknowledged"
-                    },409)
                 canonical=transitions.canonical(shipment["status"])
-                if handoff["received_at"]:
-                    c.commit()
+                if canonical=='delivered':
                     return self.send_json({
                         "ok":True,"awb":awb,"status":shipment["status"],
                         "already_received":True,"received_at":handoff["received_at"]
                     })
-                if canonical=='delivered':
-                    return self.send_json({"error":"Delivered shipments cannot be received into a branch again."},409)
+                if canonical!='out_for_delivery':
+                    return self.send_json({
+                        "error":"Shipment can be received only after the origin branch marks it Out for Delivery.",
+                        "code":"shipment_not_out_for_delivery"
+                    },409)
 
-                destination_status=transitions.storage_status('at_destination')
-                stage=transitions.STATUS_STAGES['at_destination']
-                if canonical!='at_destination':
-                    validate_shipment_transition(c,shipment,destination_status,source='transfer')
-                    c.execute("""UPDATE shipments
-                        SET status=?,stage=?,updated_at=CURRENT_TIMESTAMP
-                        WHERE id=?""",(destination_status,stage,shipment["id"]))
-                    add_shipment_event(
-                        c,shipment["id"],destination_status,stage,
-                        destination_branch["city"] if destination_branch else shipment["destination"],
-                        user["display_name"]
-                    )
+                delivered_status=transitions.storage_status('delivered')
+                delivered_stage=transitions.STATUS_STAGES['delivered']
+                validate_shipment_transition(c,shipment,delivered_status,source='transfer')
+                destination_branch=c.execute(
+                    "SELECT id,code,name,city FROM branches WHERE id=?",
+                    (handoff["destination_branch_id"],)
+                ).fetchone()
+
+                c.execute("""UPDATE shipments
+                    SET status=?,stage=?,updated_at=CURRENT_TIMESTAMP
+                    WHERE id=?""",(delivered_status,delivered_stage,shipment["id"]))
+                add_shipment_event(
+                    c,shipment["id"],delivered_status,delivered_stage,
+                    destination_branch["city"] if destination_branch else shipment["destination"],
+                    user["display_name"]
+                )
                 c.execute("""UPDATE shipment_branch_handoffs
-                    SET received_at=CURRENT_TIMESTAMP,received_by=?
-                    WHERE shipment_id=?""",(user["id"],shipment["id"]))
+                    SET acknowledged_at=COALESCE(acknowledged_at,CURRENT_TIMESTAMP),
+                        acknowledged_by=COALESCE(acknowledged_by,?),
+                        received_at=CURRENT_TIMESTAMP,
+                        received_by=?
+                    WHERE shipment_id=?""",
+                    (user["id"],user["id"],shipment["id"]))
                 write_audit(
                     c,ctx,'shipment.destination_received','shipment',shipment["id"],
                     before={"status":shipment["status"],"stage":shipment["stage"]},
-                    after={"status":destination_status,"stage":stage},
+                    after={"status":delivered_status,"stage":delivered_stage},
                     metadata={"awb":awb,"destination_branch_id":handoff["destination_branch_id"]},
                     request=self
                 )
@@ -7626,7 +7601,7 @@ class Handler(BaseHTTPRequestHandler):
                 c.commit()
                 updated=ensure_shipment_branch_handoff(c,shipment["id"])
                 return self.send_json({
-                    "ok":True,"awb":awb,"status":destination_status,"stage":stage,
+                    "ok":True,"awb":awb,"status":delivered_status,"stage":delivered_stage,
                     "received_at":updated["received_at"],
                     "destination_branch":dict(destination_branch) if destination_branch else None
                 })
