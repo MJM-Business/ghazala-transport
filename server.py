@@ -5762,8 +5762,28 @@ class Handler(BaseHTTPRequestHandler):
                     origin_branch_id=row['origin_branch_id']
                     branch_ids=tuple(ctx.get('branch_ids') or ())
                     is_global=ctx.get('role')=='system_admin' and ctx.get('global_scope') is True
-                    is_destination=destination_branch_id in branch_ids
-                    is_origin=origin_branch_id in branch_ids
+                    destination_match=c.execute(
+                        """SELECT 1 FROM branches
+                           WHERE id IN ({})
+                             AND is_active=1
+                             AND (
+                               id=? OR code=? OR city=?
+                             )
+                           LIMIT 1""".format(",".join("?" for _ in branch_ids)),
+                        [*branch_ids,destination_branch_id,str(row['recipient_branch'] or '').strip().upper(),row['destination']]
+                    ).fetchone() if branch_ids else None
+                    origin_match=c.execute(
+                        """SELECT 1 FROM branches
+                           WHERE id IN ({})
+                             AND is_active=1
+                             AND (
+                               id=? OR city=?
+                             )
+                           LIMIT 1""".format(",".join("?" for _ in branch_ids)),
+                        [*branch_ids,origin_branch_id,row['origin']]
+                    ).fetchone() if branch_ids else None
+                    is_destination=bool(destination_match)
+                    is_origin=bool(origin_match)
                     handoff=ensure_shipment_branch_handoff(c,row['id'])
                     item['branch_relation']='global' if is_global else ('destination' if is_destination else ('origin' if is_origin else ''))
                     item['destination_acknowledged']=bool(handoff and handoff['acknowledged_at'])
@@ -5790,6 +5810,40 @@ class Handler(BaseHTTPRequestHandler):
                     row=c.execute(shipment_query()+' WHERE s.id=?',(shipment['id'],)).fetchone()
                     item=auth.scoped_shipment(ctx,row)|{'tracking_url':self.tracking_url(row['awb'])}
                     item['document_links']=shipment_document_links(row['awb'])
+                    branch_ids=tuple(ctx.get('branch_ids') or ())
+                    is_global=ctx.get('role')=='system_admin' and ctx.get('global_scope') is True
+                    handoff=ensure_shipment_branch_handoff(c,row['id'])
+                    destination_match=c.execute(
+                        """SELECT 1 FROM branches
+                           WHERE id IN ({})
+                             AND is_active=1
+                             AND (id=? OR code=? OR city=?)
+                           LIMIT 1""".format(",".join("?" for _ in branch_ids)),
+                        [*branch_ids,row['destination_branch_id'],str(row['recipient_branch'] or '').strip().upper(),row['destination']]
+                    ).fetchone() if branch_ids else None
+                    origin_match=c.execute(
+                        """SELECT 1 FROM branches
+                           WHERE id IN ({})
+                             AND is_active=1
+                             AND (id=? OR city=?)
+                           LIMIT 1""".format(",".join("?" for _ in branch_ids)),
+                        [*branch_ids,row['origin_branch_id'],row['origin']]
+                    ).fetchone() if branch_ids else None
+                    is_destination=bool(destination_match)
+                    is_origin=bool(origin_match)
+                    canonical_status=transitions.canonical(row['status'])
+                    item['branch_relation']='global' if is_global else ('destination' if is_destination else ('origin' if is_origin else ''))
+                    item['destination_acknowledged']=bool(handoff and handoff['acknowledged_at'])
+                    item['destination_acknowledged_at']=handoff['acknowledged_at'] if handoff else None
+                    item['destination_received_at']=handoff['received_at'] if handoff else None
+                    item['can_acknowledge_at_branch']=bool(
+                        not is_global and is_destination and canonical_status!='delivered'
+                        and handoff and not handoff['acknowledged_at']
+                    )
+                    item['can_receive_at_branch']=bool(
+                        not is_global and is_destination and canonical_status!='delivered'
+                        and handoff and handoff['acknowledged_at'] and not handoff['received_at']
+                    )
                     item['booking_source']='customer' if c.execute(
                         'SELECT 1 FROM customer_shipments WHERE shipment_id=? LIMIT 1',(row['id'],)
                     ).fetchone() else 'staff'
