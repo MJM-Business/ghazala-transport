@@ -7364,6 +7364,55 @@ class Handler(BaseHTTPRequestHandler):
                 c.commit()
                 return self.send_json({"ok":True,"acknowledgement":kind}|details)
 
+            if len(parts)==4 and parts[:2]==['api','shipments'] and parts[3]=='receive-branch':
+                ctx=auth.context(c,user)
+                if not auth.allowed(ctx,'shipments.status'):
+                    raise auth.AccessDenied("You do not have permission to receive shipments.")
+                awb=str(parts[2] or '').strip().upper()
+                shipment=c.execute("SELECT * FROM shipments WHERE awb=?",(awb,)).fetchone()
+                if not shipment:
+                    return self.send_json({"error":"Shipment not found."},404)
+                scope=c.execute("""SELECT origin_branch_id,destination_branch_id
+                    FROM shipment_scope WHERE shipment_id=?""",(shipment["id"],)).fetchone()
+                if not scope:
+                    return self.send_json({"error":"Shipment branch scope is missing."},409)
+                is_global=ctx.get('role')=='system_admin' and ctx.get('global_scope') is True
+                destination_allowed=scope["destination_branch_id"] in tuple(ctx.get("branch_ids") or ())
+                if not (is_global or destination_allowed):
+                    raise auth.AccessDenied("Only the destination branch can receive this shipment.")
+                canonical=transitions.canonical(shipment["status"])
+                if canonical in ('at_destination','out_for_delivery','delivered'):
+                    c.commit()
+                    return self.send_json({"ok":True,"awb":awb,"status":shipment["status"],"already_received":True})
+                if canonical not in ('dispatched','in_transit'):
+                    return self.send_json({
+                        "error":"Mark the shipment as Dispatched for Delivery before the destination branch receives it.",
+                        "code":"shipment_not_dispatched"
+                    },409)
+                validate_shipment_transition(c,shipment,'جاهز للتسليم',source='transfer')
+                destination_branch=c.execute("SELECT name,city FROM branches WHERE id=?",(scope["destination_branch_id"],)).fetchone()
+                stage='Received at Destination Branch'
+                c.execute("""UPDATE shipments
+                    SET status='جاهز للتسليم',stage=?,updated_at=CURRENT_TIMESTAMP
+                    WHERE id=?""",(stage,shipment["id"]))
+                add_shipment_event(
+                    c,shipment["id"],'جاهز للتسليم',stage,
+                    destination_branch["city"] if destination_branch else shipment["destination"],
+                    user["display_name"]
+                )
+                write_audit(
+                    c,ctx,'shipment.destination_received','shipment',shipment["id"],
+                    before={"status":shipment["status"],"stage":shipment["stage"]},
+                    after={"status":'جاهز للتسليم',"stage":stage},
+                    metadata={"awb":awb,"destination_branch_id":scope["destination_branch_id"]},
+                    request=self
+                )
+                c.commit()
+                return self.send_json({
+                    "ok":True,"awb":awb,"status":'جاهز للتسليم',
+                    "stage":stage,"received_branch":dict(destination_branch) if destination_branch else None
+                })
+
             self.prepare_mutation(c,user,'POST',parts,data)
             if len(parts)==4 and parts[:2]==['api','shipments'] and parts[3]=='customer':
                 shipment_for_link=self.mutation_plan['existing']
