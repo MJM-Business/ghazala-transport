@@ -543,10 +543,27 @@ function shipmentCard(s){
     metadata.push(`<span>${phrase('السائق:')} ${driverDetails.join(' · ')}</span>`);
     metadata.push(`<span>${phrase('الموقع الحالي:')} <b>${esc(phrase(s.driver_location||'غير محدد'))}</b>${hasCoordinates?` · ${esc(s.driver_latitude)}, ${esc(s.driver_longitude)}`:''}</span>`);
   }
-  const destinationView=s.branch_relation==='destination';
-  const originView=s.branch_relation==='origin';
+  const activeBranchIds=new Set((user?.branches||[]).map(branch=>String(branch.id)));
+  const activeBranchCities=new Set((user?.branches||[]).map(branch=>String(branch.city||'').trim().toLowerCase()).filter(Boolean));
+  const activeBranchCodes=new Set((user?.branches||[]).map(branch=>String(branch.code||'').trim().toUpperCase()).filter(Boolean));
+  const shipmentDestinationCity=String(s.destination||'').trim().toLowerCase();
+  const shipmentOriginCity=String(s.origin||'').trim().toLowerCase();
+  const shipmentRecipientBranch=String(s.recipient_branch||'').trim().toUpperCase();
+  const localDestinationMatch=accessRole()!=='system_admin'&&(
+    (s.destination_branch_id!=null&&activeBranchIds.has(String(s.destination_branch_id)))||
+    (shipmentRecipientBranch&&activeBranchCodes.has(shipmentRecipientBranch))||
+    (shipmentDestinationCity&&activeBranchCities.has(shipmentDestinationCity))
+  );
+  const localOriginMatch=accessRole()!=='system_admin'&&(
+    (s.origin_branch_id!=null&&activeBranchIds.has(String(s.origin_branch_id)))||
+    (shipmentOriginCity&&activeBranchCities.has(shipmentOriginCity))
+  );
+  const destinationView=s.branch_relation==='destination'||localDestinationMatch;
+  const originView=s.branch_relation==='origin'||localOriginMatch;
   const handoffBadge=(destinationView||originView)?`<span class="badge ${s.destination_received_at?'green':s.destination_acknowledged?'blue':''}">${s.destination_received_at?'Received at Destination':s.destination_acknowledged?'Destination Acknowledged':'Awaiting Destination Acknowledgement'}</span>`:'';
-  const handoffActions=destinationView&&hasPermission('shipments.status')?`${s.can_acknowledge_at_branch?`<button class="btn light small" data-branch-ack="${esc(s.awb)}">Acknowledge Shipment</button>`:''}${s.can_receive_at_branch?`<button class="btn accent small" data-branch-receive="${esc(s.awb)}">Shipment Received</button>`:''}`:'';
+  const canLocalAcknowledge=destinationView&&!s.destination_acknowledged&&!s.destination_received_at&&String(s.status||'')!=='تم الاستلام';
+  const canLocalReceive=destinationView&&!!s.destination_acknowledged&&!s.destination_received_at&&String(s.status||'')!=='تم الاستلام';
+  const handoffActions=destinationView&&hasPermission('shipments.status')?`${(s.can_acknowledge_at_branch||canLocalAcknowledge)?`<button class="btn light small" data-branch-ack="${esc(s.awb)}">Acknowledge Shipment</button>`:''}${(s.can_receive_at_branch||canLocalReceive)?`<button class="btn accent small" data-branch-receive="${esc(s.awb)}">Shipment Received</button>`:''}`:'';
   return `<article class="card shipment"><div class="shipment-top"><span class="awb">${esc(s.awb)}</span>${badge(s.status)}${handoffBadge}<span class="push ship-name">${esc(s.recipient)}</span></div>${contactLine?`<div class="ship-phone">${contactLine}</div>`:''}<div class="ship-route"><span>◉ ${esc(phrase(s.origin))}</span><span class="route-arrow">←</span><span>${esc(phrase(s.destination))} ◉</span><span class="push">${s.cod?`${phrase('تحصيل')} ${money(s.cod)}`:phrase(s.payment_status||'غير مدفوع')}</span></div>${metadata.length?`<div class="record-meta">${metadata.join('')}</div>`:''}<div class="ship-bottom"><span class="kpi-note">${esc(phrase(s.stage))}</span><button class="btn light small" data-shipment-details="${esc(s.awb)}">View Shipment Details</button><button class="btn light small" data-track="${esc(s.awb)}">تفاصيل التتبع</button>${hasPermission('shipments.assign')&&!destinationView?`<button class="btn light small" data-reassign="${esc(s.awb)}">السائق / ETA</button>`:''}${hasPermission('shipments.status')?`<button class="btn primary small" data-status="${esc(s.awb)}">تحديث الحالة</button>`:''}${handoffActions}</div></article>`
 }
 
