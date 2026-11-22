@@ -7381,7 +7381,7 @@ class Handler(BaseHTTPRequestHandler):
                 if not (is_global or destination_allowed):
                     raise auth.AccessDenied("Only the destination branch can receive this shipment.")
                 canonical=transitions.canonical(shipment["status"])
-                if canonical in ('at_destination','out_for_delivery','delivered'):
+                if canonical=='delivered':
                     c.commit()
                     return self.send_json({"ok":True,"awb":awb,"status":shipment["status"],"already_received":True})
                 if canonical not in ('dispatched','in_transit','out_for_delivery'):
@@ -7389,27 +7389,27 @@ class Handler(BaseHTTPRequestHandler):
                         "error":"Mark the shipment as Dispatched for Delivery before the destination branch receives it.",
                         "code":"shipment_not_dispatched"
                     },409)
-                validate_shipment_transition(c,shipment,'جاهز للتسليم',source='transfer')
+                validate_shipment_transition(c,shipment,'تم الاستلام',source='transfer')
                 destination_branch=c.execute("SELECT name,city FROM branches WHERE id=?",(scope["destination_branch_id"],)).fetchone()
-                stage='Received at Destination Branch'
+                stage='Delivered'
                 c.execute("""UPDATE shipments
-                    SET status='جاهز للتسليم',stage=?,updated_at=CURRENT_TIMESTAMP
+                    SET status='تم الاستلام',stage=?,updated_at=CURRENT_TIMESTAMP
                     WHERE id=?""",(stage,shipment["id"]))
                 add_shipment_event(
-                    c,shipment["id"],'جاهز للتسليم',stage,
+                    c,shipment["id"],'تم الاستلام',stage,
                     destination_branch["city"] if destination_branch else shipment["destination"],
                     user["display_name"]
                 )
                 write_audit(
                     c,ctx,'shipment.destination_received','shipment',shipment["id"],
                     before={"status":shipment["status"],"stage":shipment["stage"]},
-                    after={"status":'جاهز للتسليم',"stage":stage},
+                    after={"status":'تم الاستلام',"stage":stage},
                     metadata={"awb":awb,"destination_branch_id":scope["destination_branch_id"]},
                     request=self
                 )
                 c.commit()
                 return self.send_json({
-                    "ok":True,"awb":awb,"status":'جاهز للتسليم',
+                    "ok":True,"awb":awb,"status":'تم الاستلام',
                     "stage":stage,"received_branch":dict(destination_branch) if destination_branch else None
                 })
 
