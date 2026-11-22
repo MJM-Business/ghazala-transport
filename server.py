@@ -4177,8 +4177,8 @@ def shipment_query():
       ) AS destination_branch_id,
       cs.customer_user_id,cu.display_name AS customer_account_name,
       cu.username AS customer_account_username,cu.mobile AS customer_account_mobile,
-      d.name AS driver_name,d.national_id AS driver_national_id,d.mobile AS driver_mobile,d.location_text AS driver_location,
-      d.latitude AS driver_latitude,d.longitude AS driver_longitude,d.updated_at AS driver_location_updated,
+      d.name AS driver_name,d.national_id AS driver_national_id,d.mobile AS driver_mobile,NULL AS driver_location,
+      NULL AS driver_latitude,NULL AS driver_longitude,NULL AS driver_location_updated,
       CASE
         WHEN s.status IN ('تم إنشاء الشحنة','تم استلام الشحنة','تم الاستلام في المكتب','في مكتب الإرسال','تم الترحيل للنقل')
           THEN s.origin
@@ -5426,9 +5426,7 @@ class Handler(BaseHTTPRequestHandler):
                         (row['id'],)
                     ).fetchone()
 
-                if delivered and delivery_latitude is not None and delivery_longitude is not None:
-                    current_location=f"GPS {float(delivery_latitude):.6f}, {float(delivery_longitude):.6f}"
-                elif delivered and delivery_event and str(delivery_event['location'] or '').strip():
+                if delivered and delivery_event and str(delivery_event['location'] or '').strip():
                     current_location=delivery_event['location']
                 elif delivered:
                     current_location=row['destination']
@@ -5442,10 +5440,7 @@ class Handler(BaseHTTPRequestHandler):
                     # but never expose it as a live ETA after final delivery.
                     'eta':'' if delivered else row['eta'],
                     'is_delivered':delivered,
-                    'delivered_at':delivered_at,
-                    'delivery_latitude':delivery_latitude,
-                    'delivery_longitude':delivery_longitude,
-                    'current_location':current_location,
+                    'delivered_at':delivered_at,                    'current_location':current_location,
                     # A future retry is meaningful only while the shipment is
                     # still unresolved. Once delivered, never expose stale retry data.
                     'next_attempt_at':(
