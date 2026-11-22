@@ -50,7 +50,7 @@ def check_transition(con, shipment, next_status, source='status'):
     # Older dispatch screens permit reloading undelivered parcels. This exception
     # belongs only to a validated route action and is captured in its audit event.
     if source=='route' and next_state in ('in_transit','at_destination'): return True
-    if source=='transfer' and next_state=='at_destination': return True
+    if source=='transfer' and next_state in ('at_destination','delivered'): return True
     if current=='delayed':
         events=con.execute('SELECT status FROM shipment_events WHERE shipment_id=? ORDER BY id DESC',(shipment['id'],)).fetchall()
         prior=next((canonical(r['status']) for r in events if canonical(r['status']) not in (None,'delayed')),None)
