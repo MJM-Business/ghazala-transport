@@ -845,6 +845,87 @@ async function receiveShipmentAtBranch(awb){
   }catch(error){toast(error.message)}
 }
 
+function shipmentPaymentIsPaid(s){
+  const value=String(s?.payment_status||'').trim();
+  return ['مدفوع','تم التحصيل عند التسليم'].includes(value);
+}
+function shipmentPaymentMethodLabel(s){
+  const method=String(s?.payment_method||'').trim();
+  if(currentLang==='ar'){
+    return method==='cod'?'الدفع عند الاستلام':method==='sender'?'يدفع المرسل':method==='company'?'حساب شركة':method||'—';
+  }
+  return method==='cod'?'Cash on Delivery':method==='sender'?'Sender Pays':method==='company'?'Company Account':method||'—';
+}
+function shipmentDetailRow(label,value){
+  return `<div style="display:flex;justify-content:space-between;gap:16px;padding:9px 0;border-bottom:1px solid var(--line)"><span style="color:var(--muted)">${esc(label)}</span><b style="text-align:right">${esc(value===undefined||value===null||value===''?'—':String(value))}</b></div>`;
+}
+async function markShipmentPaid(awb){
+  const s=shipments.find(item=>item.awb===awb);
+  if(!s||!hasPermission('shipments.payment'))return toast(phrase('ليست لديك صلاحية لهذا الإجراء'));
+  const paymentStatus=s.payment_method==='cod'?'تم التحصيل عند التسليم':'مدفوع';
+  try{
+    await api('/api/shipments/'+encodeURIComponent(awb),{method:'PATCH',body:JSON.stringify({payment_status:paymentStatus})});
+    toast(currentLang==='ar'?'تم تسجيل الدفع':'Payment marked as paid');
+    closeModal();
+    await load();
+    shipmentDetailsModal(awb);
+  }catch(error){toast(error.message)}
+}
+function shipmentDetailsModal(awb){
+  const s=shipments.find(item=>item.awb===awb);
+  if(!s)return;
+  const ar=currentLang==='ar';
+  const paid=shipmentPaymentIsPaid(s);
+  const total=Number(s.total_fee||0);
+  const shipping=Number(s.shipping_fee||0);
+  const cod=Number(s.cod||0);
+  const root=document.querySelector('#modalRoot');
+  root.innerHTML=`<div class="modal-backdrop" data-close><section class="modal" style="max-width:720px">
+    <div class="modal-head"><div><div class="eyebrow">${esc(s.awb)}</div><h2>${ar?'تفاصيل الشحنة':'Shipment Details'}</h2></div><button class="icon-btn" type="button" data-close>×</button></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 22px">
+      <div>
+        ${shipmentDetailRow(ar?'اسم المرسل':'Sender Name',s.sender_name)}
+        ${shipmentDetailRow(ar?'جوال المرسل':'Sender Mobile',s.sender_phone)}
+        ${shipmentDetailRow(ar?'هوية المرسل':'Sender ID / Iqama',s.sender_id)}
+        ${shipmentDetailRow(ar?'مدينة الإرسال':'Origin',ghazalaCityDisplay(s.origin,currentLang))}
+        ${shipmentDetailRow(ar?'عنوان الاستلام':'Pickup Address',s.sender_address)}
+      </div>
+      <div>
+        ${shipmentDetailRow(ar?'اسم المستلم':'Recipient Name',s.recipient)}
+        ${shipmentDetailRow(ar?'جوال المستلم':'Recipient Mobile',s.phone)}
+        ${shipmentDetailRow(ar?'هوية المستلم':'Recipient ID / Iqama',s.recipient_id)}
+        ${shipmentDetailRow(ar?'مدينة الوصول':'Destination',ghazalaCityDisplay(s.destination,currentLang))}
+        ${shipmentDetailRow(ar?'عنوان المستلم':'Recipient Address',s.recipient_address)}
+      </div>
+    </div>
+    <div style="margin-top:16px;padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--soft,#f8fafc)">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 22px">
+        <div>
+          ${shipmentDetailRow(ar?'محتوى الشحنة':'Shipment Contents',s.package_description||s.package_type)}
+          ${shipmentDetailRow(ar?'نوع الشحنة':'Package Type',s.package_type)}
+          ${shipmentDetailRow(ar?'عدد القطع':'Pieces',s.pieces)}
+          ${shipmentDetailRow(ar?'الوزن':'Weight',s.weight?String(s.weight)+' kg':'—')}
+          ${shipmentDetailRow(ar?'الحالة':'Shipment Status',phrase(s.status))}
+        </div>
+        <div>
+          ${shipmentDetailRow(ar?'طريقة الدفع':'Payment Method',shipmentPaymentMethodLabel(s))}
+          ${shipmentDetailRow(ar?'حالة الدفع':'Payment Status',paid?(ar?'مدفوع':'Paid'):(ar?'غير مدفوع':'Unpaid'))}
+          ${shipmentDetailRow(ar?'رسوم الشحن':'Shipping Fee',shipping.toFixed(2)+' SAR')}
+          ${shipmentDetailRow(ar?'التحصيل عند الاستلام':'COD Amount',cod.toFixed(2)+' SAR')}
+          ${shipmentDetailRow(ar?'الإجمالي':'Total',total.toFixed(2)+' SAR')}
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:18px;flex-wrap:wrap">
+      ${!paid&&hasPermission('shipments.payment')?`<button class="btn accent" type="button" data-mark-paid="${esc(s.awb)}">✓ ${ar?'تسجيل كمدفوع':'Mark as Paid'}</button>`:''}
+      <button class="btn light" type="button" data-close>${ar?'إغلاق':'Close'}</button>
+    </div>
+  </section></div>`;
+  wireModal();
+  const mark=root.querySelector('[data-mark-paid]');
+  if(mark)mark.onclick=()=>markShipmentPaid(mark.dataset.markPaid);
+}
+
 function simpleShipmentCard(s){
   const delivered=isDeliveredRecord(s);
   const payment=s.cod?`${phrase('التحصيل عند الاستلام COD')}: ${money(s.cod)}`:phrase(s.payment_status||'غير مدفوع');
@@ -867,6 +948,7 @@ function simpleShipmentCard(s){
       ${!delivered&&s.eta?`<span>${phrase('وقت الوصول المتوقع (ETA)')}: ${esc(phrase(s.eta))}</span>`:''}
     </div>
     <div class="simple-shipment-actions">
+      <button class="btn light small" data-shipment-details="${esc(s.awb)}">${currentLang==='ar'?'عرض تفاصيل الشحنة':'View Shipment Details'}</button>
       ${canReceiveAtCurrentBranch(s)?`<button class="btn accent small" data-receive-branch="${esc(s.awb)}">${currentLang==='ar'?'تم استلام الشحنة':'Shipment Received'}</button>`:''}
       ${canUpdateAtCurrentBranch(s)?`<button class="btn primary small" data-status="${esc(s.awb)}">${phrase('تحديث الحالة')}</button>`:''}
     </div>
@@ -1254,7 +1336,7 @@ function render(){
   const topbar=document.querySelector('.topbar');
   if(topbar) topbar.hidden=false;
 
-  applyLanguage();if(!user&&page!=='business')page='landing';if(user&&page==='business')page='home';if(user&&!canPage(page))page=canPage('home')?'home':'landing';if(user&&accessRole()!=='customer'&&GHZ_STAFF_PAGES.has(page))rememberStaffPage(page);document.body.classList.toggle('guest',!user||page==='landing');document.body.classList.toggle('guest-login',!user&&page==='business');document.body.classList.toggle('authenticated-customer',!!user&&accessRole()==='customer');document.querySelector('.sidebar').hidden=!user||page==='landing';document.querySelector('#mobileNav').hidden=!user||page==='landing';document.querySelector('#globalSearch').hidden=!user||page==='landing';document.querySelector('#logoutBtn').hidden=!user||(page==='landing'&&accessRole()!=='customer');document.querySelector('.notice').hidden=!user||page==='landing'||!hasPermission('routes.read');document.querySelector('#passwordBtn').hidden=!user||(page==='landing'&&accessRole()!=='customer');document.querySelector('#sessionLabel').textContent=user&&(page!=='landing'||accessRole()==='customer')?sessionContext():phrase('شبكة الفروع · خدمة الشحن');document.querySelector('#logoutBtn').textContent=user&&(page!=='landing'||accessRole()==='customer')?'⇥':'';layoutNav();const pages={landing:window.landingPage||landingPage,home:window.home||home,shipments:window.shipmentsPage||shipmentsPage,tracking:window.trackingPage||trackingPage,dispatch:window.dispatchPage||dispatchPage,drivers:window.driversPage||driversPage,clients:window.clientsPage||clientsPage,pricing:window.pricingPage||pricingPage,campaigns:window.campaignsPage||campaignsPage,analytics:window.analyticsPage||analyticsPage,staff:window.staffPage||staffPage,proof:window.proofPage||proofPage,business:businessPage};app.innerHTML=branchWorkspaceBanner()+(pages[page]||home)();localize(app);localize(document.querySelector('.topbar'));localize(document.querySelector('.sidebar'));localize(document.querySelector('#sideNav'));localize(document.querySelector('#mobileNav'));applyPermissionControls(app);document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>go(b.dataset.page));document.querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>{filter=b.dataset.filter;render()});document.querySelectorAll('[data-action]').forEach(b=>b.onclick=()=>window.action?.(b.dataset.action,b));document.querySelectorAll('[data-track]').forEach(b=>b.onclick=()=>{tracking=b.dataset.track;go('tracking')});document.querySelectorAll('[data-status]').forEach(b=>b.onclick=()=>statusModal(b.dataset.status));document.querySelectorAll('[data-receive-branch]').forEach(b=>b.onclick=()=>receiveShipmentAtBranch(b.dataset.receiveBranch));document.querySelectorAll('[data-location]').forEach(b=>b.onclick=()=>locationModal(b.dataset.location));document.querySelectorAll('[data-assign-driver]').forEach(b=>b.onclick=()=>driverModal(Number(b.dataset.assignDriver)));const brandLink=document.querySelector('#brandHomeLink');if(brandLink){const handleBrandClick=e=>{e.preventDefault();if(page==='landing'){window.scrollTo({top:0,behavior:'smooth'})}else{go('landing')}};brandLink.onclick=handleBrandClick;brandLink.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();handleBrandClick(e)}}};const input=document.querySelector('#shipSearch');if(input)input.oninput=()=>{query=input.value;const pos=input.selectionStart;const list=document.querySelector('.shipment-grid');list.innerHTML=filtered().map(page==='shipments'?simpleShipmentCard:shipmentCard).join('')||`<div class="card empty">${esc(phrase('لا توجد شحنات مطابقة للبحث'))}</div>`;localize(list);bindShipmentButtons();input.focus();input.setSelectionRange(pos,pos)};const tf=document.querySelector('#trackForm');if(tf)tf.onsubmit=e=>{e.preventDefault();tracking=new FormData(tf).get('awb');render()};const weight=document.querySelector('#weight');if(weight)weight.oninput=calcPrice;const otp=document.querySelector('#sendOtp');if(otp)otp.onclick=()=>toast('تم إرسال رمز التحقق التجريبي: 7392');const pod=document.querySelector('#confirmPod');if(pod)pod.onclick=confirmPod;const login=document.querySelector('#loginForm');if(login)login.onsubmit=doLogin;document.querySelector('#logoutBtn').onclick=doLogout;document.querySelector('#sideLogoutBtn').onclick=doLogout;document.querySelector('#menuToggle').onclick=()=>{sidebarOpen=!sidebarOpen;document.querySelector('#sidebar').classList.toggle('open',sidebarOpen)};
+  applyLanguage();if(!user&&page!=='business')page='landing';if(user&&page==='business')page='home';if(user&&!canPage(page))page=canPage('home')?'home':'landing';if(user&&accessRole()!=='customer'&&GHZ_STAFF_PAGES.has(page))rememberStaffPage(page);document.body.classList.toggle('guest',!user||page==='landing');document.body.classList.toggle('guest-login',!user&&page==='business');document.body.classList.toggle('authenticated-customer',!!user&&accessRole()==='customer');document.querySelector('.sidebar').hidden=!user||page==='landing';document.querySelector('#mobileNav').hidden=!user||page==='landing';document.querySelector('#globalSearch').hidden=!user||page==='landing';document.querySelector('#logoutBtn').hidden=!user||(page==='landing'&&accessRole()!=='customer');document.querySelector('.notice').hidden=!user||page==='landing'||!hasPermission('routes.read');document.querySelector('#passwordBtn').hidden=!user||(page==='landing'&&accessRole()!=='customer');document.querySelector('#sessionLabel').textContent=user&&(page!=='landing'||accessRole()==='customer')?sessionContext():phrase('شبكة الفروع · خدمة الشحن');document.querySelector('#logoutBtn').textContent=user&&(page!=='landing'||accessRole()==='customer')?'⇥':'';layoutNav();const pages={landing:window.landingPage||landingPage,home:window.home||home,shipments:window.shipmentsPage||shipmentsPage,tracking:window.trackingPage||trackingPage,dispatch:window.dispatchPage||dispatchPage,drivers:window.driversPage||driversPage,clients:window.clientsPage||clientsPage,pricing:window.pricingPage||pricingPage,campaigns:window.campaignsPage||campaignsPage,analytics:window.analyticsPage||analyticsPage,staff:window.staffPage||staffPage,proof:window.proofPage||proofPage,business:businessPage};app.innerHTML=branchWorkspaceBanner()+(pages[page]||home)();localize(app);localize(document.querySelector('.topbar'));localize(document.querySelector('.sidebar'));localize(document.querySelector('#sideNav'));localize(document.querySelector('#mobileNav'));applyPermissionControls(app);document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>go(b.dataset.page));document.querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>{filter=b.dataset.filter;render()});document.querySelectorAll('[data-action]').forEach(b=>b.onclick=()=>window.action?.(b.dataset.action,b));document.querySelectorAll('[data-track]').forEach(b=>b.onclick=()=>{tracking=b.dataset.track;go('tracking')});document.querySelectorAll('[data-status]').forEach(b=>b.onclick=()=>statusModal(b.dataset.status));document.querySelectorAll('[data-shipment-details]').forEach(b=>b.onclick=()=>shipmentDetailsModal(b.dataset.shipmentDetails));document.querySelectorAll('[data-receive-branch]').forEach(b=>b.onclick=()=>receiveShipmentAtBranch(b.dataset.receiveBranch));document.querySelectorAll('[data-location]').forEach(b=>b.onclick=()=>locationModal(b.dataset.location));document.querySelectorAll('[data-assign-driver]').forEach(b=>b.onclick=()=>driverModal(Number(b.dataset.assignDriver)));const brandLink=document.querySelector('#brandHomeLink');if(brandLink){const handleBrandClick=e=>{e.preventDefault();if(page==='landing'){window.scrollTo({top:0,behavior:'smooth'})}else{go('landing')}};brandLink.onclick=handleBrandClick;brandLink.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();handleBrandClick(e)}}};const input=document.querySelector('#shipSearch');if(input)input.oninput=()=>{query=input.value;const pos=input.selectionStart;const list=document.querySelector('.shipment-grid');list.innerHTML=filtered().map(page==='shipments'?simpleShipmentCard:shipmentCard).join('')||`<div class="card empty">${esc(phrase('لا توجد شحنات مطابقة للبحث'))}</div>`;localize(list);bindShipmentButtons();input.focus();input.setSelectionRange(pos,pos)};const tf=document.querySelector('#trackForm');if(tf)tf.onsubmit=e=>{e.preventDefault();tracking=new FormData(tf).get('awb');render()};const weight=document.querySelector('#weight');if(weight)weight.oninput=calcPrice;const otp=document.querySelector('#sendOtp');if(otp)otp.onclick=()=>toast('تم إرسال رمز التحقق التجريبي: 7392');const pod=document.querySelector('#confirmPod');if(pod)pod.onclick=confirmPod;const login=document.querySelector('#loginForm');if(login)login.onsubmit=doLogin;document.querySelector('#logoutBtn').onclick=doLogout;document.querySelector('#sideLogoutBtn').onclick=doLogout;document.querySelector('#menuToggle').onclick=()=>{sidebarOpen=!sidebarOpen;document.querySelector('#sidebar').classList.toggle('open',sidebarOpen)};
   const topbarGuestNav = document.querySelector('#topbarGuestNav');
   if (topbarGuestNav) topbarGuestNav.hidden = (!!user && page !== 'landing');
   if (page === 'landing') bindLandingInteractions();
@@ -3653,7 +3735,7 @@ async function customerLogout(){
 }
 
 
-function bindShipmentButtons(){document.querySelectorAll('[data-track]').forEach(b=>b.onclick=()=>{tracking=b.dataset.track;go('tracking')});document.querySelectorAll('[data-status]').forEach(b=>b.onclick=()=>statusModal(b.dataset.status));window.bindOps?.()}
+function bindShipmentButtons(){document.querySelectorAll('[data-track]').forEach(b=>b.onclick=()=>{tracking=b.dataset.track;go('tracking')});document.querySelectorAll('[data-status]').forEach(b=>b.onclick=()=>statusModal(b.dataset.status));document.querySelectorAll('[data-shipment-details]').forEach(b=>b.onclick=()=>shipmentDetailsModal(b.dataset.shipmentDetails));document.querySelectorAll('[data-receive-branch]').forEach(b=>b.onclick=()=>receiveShipmentAtBranch(b.dataset.receiveBranch));window.bindOps?.()}
 function go(id){if(!canPage(id))return toast(phrase('ليست لديك صلاحية لهذا الإجراء'));page=id;if(user&&accessRole()!=='customer')rememberStaffPage(id);sidebarOpen=false;document.querySelector('#sidebar').classList.remove('open');render();window.scrollTo(0,0)}
 function toast(text){const root=document.querySelector('#toastRoot');const shown=customerMode?customerTranslate(text):phrase(text);root.innerHTML=`<div class="toast">${esc(shown)}</div>`;setTimeout(()=>root.innerHTML='',2800)}
 function action(type){if(!canAction(type))return toast(phrase('ليست لديك صلاحية لهذا الإجراء'));const titles={route:'جدولة رحلة نقل',client:'إضافة عميل جديد',contract:'إنشاء عقد جديد',campaign:'إنشاء حملة ترويجية',quote:'عرض سعر',contact:'التواصل مع المندوب',export:'تصدير التقرير'};if(type==='create')return createModal();if(type==='driver')return driverModal();if(type==='staff')return userModal();if(type==='reset-demo')return resetDemo();if(type==='route'||type==='quote'||type==='campaign'||type==='client'||type==='contract'||type==='contact'||type==='export')return toast(type==='export'?phrase('تم تجهيز التقرير للتنزيل التجريبي'):`${phrase(titles[type])} — ${phrase('هذه الخاصية جاهزة للربط بالخدمة المناسبة')}`)}
