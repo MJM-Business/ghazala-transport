@@ -282,7 +282,7 @@
     'الموارد البشرية':'Human Resources',
     'إدارة الموارد البشرية':'Human Resources Management',
     'إثبات التسليم الذكي (POD)':'Smart Proof of Delivery (POD)',
-    'بيانات السائقين وأرقام التواصل والمواقع الحالية':'Driver records, contact details and current locations',
+    'بيانات السائقين وأرقام التواصل وحالة العمل':'Driver records, contact details and current locations',
     'ملفات السائقين وأرقام التواصل والحسابات المرتبطة':'Driver profiles, contact numbers and linked accounts',
     'حسابات المستخدمين والصلاحيات':'User Accounts & Permissions',
     'إضافة عميل جديد':'Add New Client',
@@ -1385,8 +1385,8 @@
     delivered:{ar:'تم التسليم',en:'Delivered'},
     driver:{ar:'المندوب',en:'Courier'},
     recipient:{ar:'المستلم',en:'Recipient'},
-    location:{ar:'الموقع الحالي',en:'Current Location'},
-    useGps:{ar:'استخدام GPS الحالي',en:'Use Current GPS'},
+    location:{ar:'حالة التسليم',en:'Delivery Status'},
+    
     note:{ar:'ملاحظة',en:'Note'},
     startNow:{ar:'بدء التوصيل الآن',en:'Start Delivery Now'},
     failureReason:{ar:'سبب تعذر التسليم',en:'Failure Reason'},
@@ -2071,7 +2071,7 @@
       <div class="section-title"><div><h2>${ft('fleet')}</h2><p>${ft('fleetSub')}</p></div><div class="ops-inline-actions"><button class="btn light small" data-fleet-refresh>↻ ${ft('refresh')}</button>${canFleet?`<button class="btn primary small" data-fleet-add>＋ ${ft('addVehicle')}</button>`:''}</div></div>
       <div class="grid shipment-grid fleet-grid">${fleet.map(fleetVehicleCard).join('')||`<div class="card empty">${ft('noVehicles')}</div>`}</div>
       <div class="section-title"><div><h2>${opsTr('ملفات السائقين')}</h2><p>${opsTr('بيانات السائقين وأرقام التواصل والمواقع الحالية')}</p></div></div>
-      <div class="grid shipment-grid">${rows.map(d=>`<article class="card"><div class="shipment-top"><span class="avatar">${safe(d.name?.[0]||'♙')}</span><div class="ship-name">${safe(d.name)}<div class="ship-phone">${safe(d.branch)} · ${safe(d.national_id)}</div></div><span class="badge ${d.status==='متاح'?'green':'blue'} push">${opsTr(d.status)}</span></div><div class="record-meta"><span>${opsTr('رقم الجوال')}: <b>${safe(d.mobile)}</b></span><span>${opsTr('الموقع الحالي')}: <b>${safe(d.location_text||'—')}</b></span></div><div class="ship-bottom">${hasPermission('drivers.location')?`<button class="btn light small" data-location="${d.id}">${opsTr('تحديث الموقع')}</button>`:''}${canDrivers?`<button class="btn light small" data-assign-driver="${d.id}">${opsTr('تعديل السائق')}</button>`:''}</div></article>`).join('')||`<div class="card empty">${opsTr('لا توجد سجلات سائقين')}</div>`}</div>`;
+      <div class="grid shipment-grid">${rows.map(d=>`<article class="card"><div class="shipment-top"><span class="avatar">${safe(d.name?.[0]||'♙')}</span><div class="ship-name">${safe(d.name)}<div class="ship-phone">${safe(d.branch)} · ${safe(d.national_id)}</div></div><span class="badge ${d.status==='متاح'?'green':'blue'} push">${opsTr(d.status)}</span></div><div class="record-meta"><span>${opsTr('رقم الجوال')}: <b>${safe(d.mobile)}</b></span></div><div class="ship-bottom">${canDrivers?`<button class="btn light small" data-assign-driver="${d.id}">${opsTr('تعديل السائق')}</button>`:''}</div></article>`).join('')||`<div class="card empty">${opsTr('لا توجد سجلات سائقين')}</div>`}</div>`;
   }
 
   async function fleetRefresh(repaint=true){if(!hasPermission('vehicles.read'))return;const [vehicles,summary]=await Promise.all([api('/api/vehicles'),api('/api/fleet/summary')]);state.vehicles=Array.isArray(vehicles)?vehicles:[];state.fleetSummary=summary||{};state.last=Date.now();if(repaint&&page==='drivers')render()}
@@ -2786,8 +2786,8 @@
         <div class="section-title"><h2>${rt('drivers')}</h2></div>
         <div class="grid shipment-grid">${rows.map(d=>`<article class="card">
           <div class="shipment-top"><span class="avatar">${safe(d.name?.[0]||'♙')}</span><div class="ship-name">${safe(d.name)}<div class="ship-phone">${safe(d.branch)} · ${safe(d.national_id)}</div></div><span class="badge ${d.status==='متاح'?'green':'blue'} push">${opsTr(d.status)}</span></div>
-          <div class="ship-route"><span>${opsTr('الموقع الحالي')}</span><b>${safe(d.location_text||'—')}</b></div>
-          <div class="ship-bottom"><a class="btn light small" href="tel:${safe(d.mobile)}">☎ ${safe(d.mobile)}</a><button class="btn light small" data-location="${d.id}">${opsTr('تحديث الموقع')}</button></div>
+          
+          <div class="ship-bottom"><a class="btn light small" href="tel:${safe(d.mobile)}">☎ ${safe(d.mobile)}</a></div>
         </article>`).join('')||`<div class="card empty">${opsTr('لا توجد سجلات سائقين')}</div>`}</div>`;
     }
     return `${header}<div class="grid kpis">
