@@ -5277,7 +5277,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def _delete(self):
         url=urlparse(self.path); path=url.path; parts=[unquote(p) for p in path.split('/') if p]
-        if len(parts)!=3 or parts[:2]!=['api','branches']:
+        if len(parts)!=3 or parts[:2] not in (['api','branches'],['api','shipments']):
             return self.send_json({'error':'Deletion is not supported for this record.'},403)
         with connect() as c:
             c.execute('BEGIN IMMEDIATE')
@@ -5286,7 +5286,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self.unauthorized()
             ctx=auth.context(c,user)
             if ctx.get('role')!='system_admin' or ctx.get('global_scope') is not True:
-                raise auth.AccessDenied('Only the Jeddah Headquarters Super Admin can permanently delete a branch.')
+                raise auth.AccessDenied('Only the Jeddah Headquarters Super Admin can permanently delete records.')
             try:
                 length=int(self.headers.get('Content-Length','0') or 0)
             except ValueError:
@@ -5299,6 +5299,26 @@ class Handler(BaseHTTPRequestHandler):
             password=str(data.get('password') or '')
             if not password or not verify_password(password,user.get('password_hash')):
                 return self.send_json({'error':'Super Admin password is incorrect.','code':'password_verification_failed'},403)
+
+            if parts[:2]==['api','shipments']:
+                awb=str(parts[2] or '').strip().upper()
+                shipment=c.execute('SELECT * FROM shipments WHERE awb=?',(awb,)).fetchone()
+                if not shipment:
+                    return self.send_json({'error':'Shipment not found.'},404)
+                before=dict(shipment)
+                shipment_id=shipment['id']
+                write_audit(
+                    c,ctx,'shipment.deleted','shipment',shipment_id,before=before,
+                    metadata={'awb':awb,'verified_by_password':True},request=self
+                )
+                c.execute('DELETE FROM shipments WHERE id=?',(shipment_id,))
+                c.commit()
+                return self.send_json({
+                    'ok':True,
+                    'deleted_shipment_id':shipment_id,
+                    'deleted_awb':awb
+                })
+
             branch=c.execute('SELECT * FROM branches WHERE id=?',(parts[2],)).fetchone()
             if not branch:
                 return self.send_json({'error':'Branch not found.'},404)
