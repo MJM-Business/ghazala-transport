@@ -19,11 +19,14 @@ ALIASES.update({'Shipment Created':'created','Shipment Received':'received',
     'Out for Delivery':'out_for_delivery','Delivered':'delivered',
     'وصلت إلى مكتب الوجهة':'at_destination'})
 GRAPH = {
-    'created':{'received','at_origin','dispatched','in_transit'},
-    'received':{'at_origin','dispatched','in_transit'},
-    'at_origin':{'dispatched','in_transit'}, 'dispatched':{'in_transit'},
-    'in_transit':{'at_destination'}, 'at_destination':{'out_for_delivery'},
-    'out_for_delivery':{'delivered'}, 'delivered':set(),
+    'created':{'received','at_origin','dispatched','in_transit','out_for_delivery'},
+    'received':{'at_origin','dispatched','in_transit','out_for_delivery'},
+    'at_origin':{'dispatched','in_transit','out_for_delivery'},
+    'dispatched':{'in_transit','out_for_delivery'},
+    'in_transit':{'at_destination','out_for_delivery'},
+    'at_destination':{'out_for_delivery','delivered'},
+    'out_for_delivery':{'at_destination','delivered'},
+    'delivered':set(),
 }
 
 def canonical(value):
