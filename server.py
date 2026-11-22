@@ -7384,7 +7384,7 @@ class Handler(BaseHTTPRequestHandler):
                 if canonical in ('at_destination','out_for_delivery','delivered'):
                     c.commit()
                     return self.send_json({"ok":True,"awb":awb,"status":shipment["status"],"already_received":True})
-                if canonical not in ('dispatched','in_transit'):
+                if canonical not in ('dispatched','in_transit','out_for_delivery'):
                     return self.send_json({
                         "error":"Mark the shipment as Dispatched for Delivery before the destination branch receives it.",
                         "code":"shipment_not_dispatched"
