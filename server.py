@@ -435,12 +435,12 @@ def validate_coordinates(latitude, longitude):
 
 
 def validate_shipment_transition(con, shipment, next_status, source="status"):
-    """One completion rule, shared by status changes, POD and trip propagation.
+    """Validate lifecycle changes while keeping branch receipt and customer POD separate.
 
-    Historical delivered rows remain valid even if they predate POD enforcement.
-    A new delivery requires persisted signature evidence and a verified OTP in
-    the same transaction; client payload flags can never authorize completion.
-    Returns False for an unchanged historical completed status.
+    Destination-branch receipt actions use source='transfer' and may complete the
+    shipment without OTP/signature. Customer/courier delivery completion continues
+    to require the normal POD, OTP and payment eligibility checks.
+    Historical delivered rows remain valid and cannot be reopened.
     """
     if shipment["status"] == 'تم الاستلام':
         if next_status != 'تم الاستلام':
@@ -450,7 +450,7 @@ def validate_shipment_transition(con, shipment, next_status, source="status"):
         changed=transitions.check_transition(con,shipment,next_status,source=source)
     except ValueError as exc: raise DeliveryPolicyError(str(exc)) from None
     if not changed: return False
-    if next_status == 'تم الاستلام':
+    if next_status == 'تم الاستلام' and source != 'transfer':
         require_delivery_eligible(shipment)
         proof = con.execute("SELECT recipient_name,signature_data FROM pod_records WHERE shipment_id=?",(shipment["id"],)).fetchone()
         verified = con.execute("SELECT 1 FROM delivery_otps WHERE shipment_id=? AND verified_at IS NOT NULL AND verified_at<=expires_at LIMIT 1",(shipment["id"],)).fetchone()
