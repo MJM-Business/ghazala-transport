@@ -845,9 +845,7 @@ function simpleShipmentCard(s){
       ${!delivered&&s.eta?`<span>${phrase('وقت الوصول المتوقع (ETA)')}: ${esc(phrase(s.eta))}</span>`:''}
     </div>
     <div class="simple-shipment-actions">
-      <button class="btn light small" data-track="${esc(s.awb)}">${phrase('تفاصيل التتبع')}</button>
       ${hasPermission('shipments.status')?`<button class="btn primary small" data-status="${esc(s.awb)}">${phrase('تحديث الحالة')}</button>`:''}
-      ${hasPermission('shipments.assign')?`<button class="btn light small" data-reassign="${esc(s.awb)}">${phrase('السائق / ETA')}</button>`:''}
     </div>
   </article>`;
 }
