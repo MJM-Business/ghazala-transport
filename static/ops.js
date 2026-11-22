@@ -2434,6 +2434,39 @@
     if(title)title.textContent=currentLang==='ar'?('إنشاء مدير فرع · '+(branch.name||branch.code)):('Create Branch Manager · '+(branch.name||branch.code));
   }
 
+  function branchDeleteModal(branch){
+    if(!branch||branch.is_active!==0)return;
+    const ar=currentLang==='ar';
+    const root=$('#modalRoot');
+    root.innerHTML=`<div class="modal-backdrop" data-close><section class="modal ops-modal" style="max-width:520px">
+      <div class="modal-head"><div><div class="eyebrow">GHAZALA NETWORK</div><h2>${ar?'حذف الفرع نهائياً':'Permanently Delete Branch'}</h2></div><button class="icon-btn" data-close>×</button></div>
+      <div class="notice-warning" style="margin-bottom:14px">${ar?'سيتم حذف الفرع نهائياً فقط إذا لم تكن هناك سجلات تشغيلية أو تاريخية مرتبطة به.':'The branch will be permanently deleted only if no operational or historical records are linked to it.'}</div>
+      <div class="card" style="padding:12px;box-shadow:none;margin-bottom:14px"><b>${safe(branch.name)}</b><div class="ship-phone">${safe(branch.code)} · ${safe(cityDisplayName(branch.city))}</div></div>
+      <form id="branchDeleteForm" class="form-grid">
+        <label class="field span-2"><span>${ar?'كلمة مرور المدير العام':'Super Admin Password'} *</span>
+          <div style="position:relative"><input name="password" type="password" required autocomplete="current-password" style="padding-right:78px"><button type="button" class="btn light small" data-delete-password-toggle style="position:absolute;right:8px;top:50%;transform:translateY(-50%);padding:5px 10px;min-height:auto">${ar?'إظهار':'Show'}</button></div>
+        </label>
+        <div class="field span-2"><small>${ar?'هذا الإجراء دائم ولا يمكن التراجع عنه.':'This action is permanent and cannot be undone.'}</small></div>
+        <div class="field span-2 ops-form-actions"><button type="button" class="btn light" data-close>${ar?'إلغاء':'Cancel'}</button><button class="btn danger" type="submit">${ar?'حذف الفرع نهائياً':'Delete Branch Permanently'}</button></div>
+      </form>
+    </section></div>`;
+    wireModal();
+    const form=$('#branchDeleteForm',root),password=form.elements.password,toggle=$('[data-delete-password-toggle]',root);
+    if(toggle)toggle.onclick=()=>{const show=password.type==='password';password.type=show?'text':'password';toggle.textContent=ar?(show?'إخفاء':'إظهار'):(show?'Hide':'Show')};
+    form.onsubmit=async event=>{
+      event.preventDefault();
+      const button=form.querySelector('[type="submit"]');button.disabled=true;
+      try{
+        await api(`/api/branches/${encodeURIComponent(branch.id)}`,{method:'DELETE',body:JSON.stringify({password:password.value})});
+        closeModal();toast(ar?'تم حذف الفرع نهائياً':'Branch deleted permanently');await refreshSharedNetwork();await branchManagementModal();
+      }catch(error){
+        const deps=error?.dependencies?Object.entries(error.dependencies).map(([key,value])=>`${key}: ${value}`).join(' · '):'';
+        toast((error?.message||String(error))+(deps?` · ${deps}`:''));
+        button.disabled=false;
+      }
+    };
+  }
+
   async function branchManagementModal(){
     if(!requirePermission('branches.manage'))return;
     const root=$('#modalRoot');
@@ -2446,13 +2479,14 @@
         <div class="grid shipment-grid">${(rows||[]).map(branch=>`<article class="card">
           <div class="shipment-top"><span class="icon-square">⌂</span><div class="ship-name">${safe(branch.name)}<div class="ship-phone">${safe(branch.code)} · ${safe(opsTr(branch.city))}</div></div><span class="badge ${branch.is_active!==0?'green':'red'} push">${branch.is_active!==0?bt('active'):bt('inactive')}</span></div>
           <div class="record-meta"><span>${bt('phone')}: <b>${safe(branch.phone||'—')}</b></span><span>${bt('coverage')}: <b>${safe(branch.coverage||'—')}</b></span><span>${bt('address')}: <b>${safe(branch.address||'—')}</b></span></div>
-          <div class="ship-bottom"><button class="btn light small" data-branch-edit="${safe(branch.id)}">${bt('edit')}</button>${branch.is_active!==0?`<button class="btn light small" data-branch-manager="${safe(branch.id)}">♙ ${currentLang==='ar'?'إنشاء دخول مدير الفرع':'Create Manager Login'}</button>`:''}<button class="btn ${branch.is_active!==0?'danger':'primary'} small" data-branch-toggle="${safe(branch.id)}" data-next-active="${branch.is_active===0?'true':'false'}">${branch.is_active!==0?(currentLang==='ar'?'إزالة الفرع':'Remove Branch'):bt('activate')}</button></div>
+          <div class="ship-bottom"><button class="btn light small" data-branch-edit="${safe(branch.id)}">${bt('edit')}</button>${branch.is_active!==0?`<button class="btn light small" data-branch-manager="${safe(branch.id)}">♙ ${currentLang==='ar'?'إنشاء دخول مدير الفرع':'Create Manager Login'}</button>`:''}<button class="btn ${branch.is_active!==0?'danger':'primary'} small" data-branch-toggle="${safe(branch.id)}" data-next-active="${branch.is_active===0?'true':'false'}">${branch.is_active!==0?(currentLang==='ar'?'إزالة الفرع':'Remove Branch'):bt('activate')}</button>${branch.is_active===0?`<button class="btn danger small" data-branch-delete="${safe(branch.id)}">${currentLang==='ar'?'حذف الفرع':'Delete Branch'}</button>`:''}</div>
         </article>`).join('')||`<div class="card empty">${bt('noBranches')}</div>`}</div>
       </section></div>`;
       wireModal();localizeNow(root);
       $('[data-branch-new]',root)?.addEventListener('click',()=>branchModal());
       $$('[data-branch-edit]',root).forEach(button=>button.onclick=()=>branchModal((rows||[]).find(x=>String(x.id)===String(button.dataset.branchEdit))));
-      $$('[data-branch-manager]',root).forEach(button=>button.onclick=()=>branchManagerLoginModal((rows||[]).find(x=>String(x.id)===String(button.dataset.branchManager))));
+      $('[data-branch-manager]',root).forEach(button=>button.onclick=()=>branchManagerLoginModal((rows||[]).find(x=>String(x.id)===String(button.dataset.branchManager))));
+      $('[data-branch-delete]',root).forEach(button=>button.onclick=()=>branchDeleteModal((rows||[]).find(x=>String(x.id)===String(button.dataset.branchDelete))));
       $$('[data-branch-toggle]',root).forEach(button=>button.onclick=async()=>{
         button.disabled=true;
         try{
