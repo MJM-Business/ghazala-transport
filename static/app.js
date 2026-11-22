@@ -831,7 +831,7 @@ function canUpdateAtCurrentBranch(s){
 }
 function canReceiveAtCurrentBranch(s){
   if(!user||accessRole()==='customer'||!hasPermission('shipments.status'))return false;
-  if(!['تم الترحيل للنقل','قيد النقل'].includes(s.status))return false;
+  if(!['تم الترحيل للنقل','قيد النقل','قيد التوصيل'].includes(s.status))return false;
   if(accessRole()==='system_admin'&&user.global_scope===true)return false;
   const branches=Array.isArray(user.branches)?user.branches:[];
   return branches.some(branch=>String(branch.city||'').trim()===String(s.destination||'').trim());
@@ -870,7 +870,7 @@ function simpleShipmentCard(s){
       ${!delivered&&s.eta?`<span>${phrase('وقت الوصول المتوقع (ETA)')}: ${esc(phrase(s.eta))}</span>`:''}
     </div>
     <div class="simple-shipment-actions">
-      ${canReceiveAtCurrentBranch(s)?`<button class="btn accent small" data-receive-branch="${esc(s.awb)}">${currentLang==='ar'?'استلام الشحنة':'Receive Shipment'}</button>`:''}
+      ${canReceiveAtCurrentBranch(s)?`<button class="btn accent small" data-receive-branch="${esc(s.awb)}">${currentLang==='ar'?'تم استلام الشحنة':'Shipment Received'}</button>`:''}
       ${canUpdateAtCurrentBranch(s)?`<button class="btn primary small" data-status="${esc(s.awb)}">${phrase('تحديث الحالة')}</button>`:''}
     </div>
   </article>`;
