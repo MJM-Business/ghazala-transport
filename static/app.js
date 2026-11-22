@@ -775,7 +775,7 @@ const SHIPMENT_OPERATIONAL_EN={
   'تم استلام الشحنة':'Shipment Received',
   'تم الاستلام في المكتب':'Received at Origin Office',
   'في مكتب الإرسال':'At Origin Office',
-  'تم الترحيل للنقل':'Dispatched for Transport',
+  'تم الترحيل للنقل':'Dispatched for Delivery',
   'قيد النقل':'In Transit',
   'في الطريق':'In Transit',
   'جاهز للتسليم':'Ready for Delivery',
@@ -823,6 +823,12 @@ function shipmentCard(s){
 }
 function filtered(){return shipments.filter(s=>(filter==='الكل'||s.status===filter)&&(!query||[s.awb,s.recipient,s.phone,s.origin,s.destination].some(x=>String(x).includes(query))))}
 function home(){return `${head('KSA · مركز العمليات','مركز العمليات اللوجستية','إدارة الشحنات بين المدن والفروع',`<button class="btn primary" data-action="create">＋ إنشاء شحنة</button>`)}<div class="grid kpis">${kpi('الشحنات النشطة','1,420','زيادة 12% عن الشهر الماضي','▤')}${kpi('جاهزة للتسليم','215','مع 26 مندوباً','✓','positive')}${kpi('شحنات المسار','384','شبكة الفروع','⇄')}${kpi('تنبيهات لوجستية','04','تحتاج إلى متابعة فورية','⚠','negative')}</div><div class="grid dashboard-grid"><section><div class="dark-card"><div class="eyebrow" style="color:#e7c3a5">KSA · REGIONAL</div><h2>أهلاً بك في غزالا ترانسبورت</h2><p>مركز التشغيل الوطني للفروع والمسارات</p><div class="dark-kpis"><div><b>99.2%</b><span>الالتزام بالمواعيد</span></div><div><b>48</b><span>شحنة هذا اليوم</span></div><div><b>2</b><span>اتجاهاً على المسار</span></div></div></div><div class="section-title"><h2>الشحنات الأخيرة</h2><button class="link" data-page="shipments">عرض الكل ←</button></div><div class="shipment-list">${shipments.slice(0,4).map(shipmentCard).join('')}</div></section><aside><div class="card"><div class="section-title" style="margin-top:0"><h2>حالة العمليات</h2><span class="badge green">نشط</span></div><div class="summary-row"><span>قيد التوصيل</span><b>1,036</b></div><div class="summary-row"><span>في مراكز الفرز</span><b>246</b></div><div class="summary-row"><span>تأخير يحتاج متابعة</span><b class="negative">04</b></div><div class="summary-row"><span>تم التسليم اليوم</span><b class="positive">215</b></div><div style="margin:17px 0 6px;display:flex;justify-content:space-between;font-size:12px"><span>أداء التوصيل اليومي</span><b>94.6%</b></div><div class="progress"><span style="width:94.6%"></span></div></div><div class="card" style="margin-top:13px"><div class="section-title" style="margin-top:0"><h2>إجراءات سريعة</h2></div><div class="grid" style="grid-template-columns:1fr 1fr"><button class="btn light" data-action="create">＋ شحنة جديدة</button><button class="btn light" data-page="tracking">⌕ تتبع شحنة</button><button class="btn light" data-page="dispatch">⇄ إدارة الفروع</button><button class="btn light" data-page="analytics">▥ التقارير</button></div></div><div class="promo" style="margin-top:13px"><h3>شحنك يصل بثقة</h3><p>شبكة تشغيلية قابلة للتوسع في جميع الفروع.</p></div></aside></div>`}
+function canUpdateAtCurrentBranch(s){
+  if(!user||accessRole()==='customer'||!hasPermission('shipments.status'))return false;
+  if(accessRole()==='system_admin'&&user.global_scope===true)return true;
+  const branches=Array.isArray(user.branches)?user.branches:[];
+  return branches.some(branch=>String(branch.city||'').trim()===String(s.origin||'').trim());
+}
 function canReceiveAtCurrentBranch(s){
   if(!user||accessRole()==='customer'||!hasPermission('shipments.status'))return false;
   if(!['تم الترحيل للنقل','قيد النقل'].includes(s.status))return false;
@@ -865,7 +871,7 @@ function simpleShipmentCard(s){
     </div>
     <div class="simple-shipment-actions">
       ${canReceiveAtCurrentBranch(s)?`<button class="btn accent small" data-receive-branch="${esc(s.awb)}">${currentLang==='ar'?'استلام الشحنة':'Receive Shipment'}</button>`:''}
-      ${hasPermission('shipments.status')?`<button class="btn primary small" data-status="${esc(s.awb)}">${phrase('تحديث الحالة')}</button>`:''}
+      ${canUpdateAtCurrentBranch(s)?`<button class="btn primary small" data-status="${esc(s.awb)}">${phrase('تحديث الحالة')}</button>`:''}
     </div>
   </article>`;
 }
