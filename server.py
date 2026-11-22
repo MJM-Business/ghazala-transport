@@ -7709,12 +7709,13 @@ class Handler(BaseHTTPRequestHandler):
                     return self.send_json({'error':'Confirm receipt after the vehicle has arrived.','code':'transfer_receipt'},409)
                 shipment=c.execute('SELECT * FROM shipments WHERE id=?',(transfer['shipment_id'],)).fetchone()
                 changed=transitions.canonical(shipment['status'])!='delivered'
-                if changed: validate_shipment_transition(c,shipment,'جاهز للتسليم',source='transfer')
+                delivered_status=transitions.storage_status('delivered')
+                if changed: validate_shipment_transition(c,shipment,delivered_status,source='transfer')
                 transfers.receive(c,self.auth_ctx,route,transfer,self)
                 if changed:
-                    stage=transitions.STATUS_STAGES['at_destination']
-                    c.execute("UPDATE shipments SET status='جاهز للتسليم',stage=?,updated_at=CURRENT_TIMESTAMP WHERE id=?",(stage,shipment['id']))
-                    add_shipment_event(c,shipment['id'],'جاهز للتسليم',stage,route['destination'],user['display_name'])
+                    stage=transitions.STATUS_STAGES['delivered']
+                    c.execute("UPDATE shipments SET status=?,stage=?,updated_at=CURRENT_TIMESTAMP WHERE id=?",(delivered_status,stage,shipment['id']))
+                    add_shipment_event(c,shipment['id'],delivered_status,stage,route['destination'],user['display_name'])
                 return self.send_json({'ok':True,'shipments_updated':int(changed)}|transfers.receipt_details(c,route['id'],transfer['shipment_id']))
             if len(parts)==3 and parts[:2]==["api","routes"]:
                 route=c.execute("SELECT * FROM route_runs WHERE id=?",(parts[2],)).fetchone()
