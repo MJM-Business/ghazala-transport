@@ -8295,12 +8295,6 @@ class Handler(BaseHTTPRequestHandler):
                     allowed={transitions.STATUS_NAMES[key]:stage for key,stage in transitions.STATUS_STAGES.items()}
                     if data["status"] not in allowed: return self.send_json({"error":"Invalid status"},400)
                     target_canonical=transitions.canonical(data["status"])
-                    effective_driver_id=data.get("driver_id",row["driver_id"])
-                    if target_canonical=="out_for_delivery" and not effective_driver_id:
-                        return self.send_json({
-                            "error":"Assign a courier/driver before changing the shipment to Out for Delivery.",
-                            "code":"driver_required"
-                        },409)
                     try: changed=validate_shipment_transition(c,row,data["status"])
                     except DeliveryPolicyError as exc: return self.send_json({"error":str(exc),"code":"delivery_policy"},409)
                     if changed:
