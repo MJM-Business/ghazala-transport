@@ -4422,7 +4422,7 @@ async function shareLabel(){
     $$('[data-fleet-refresh]',app).forEach(b=>b.onclick=async()=>{b.disabled=true;try{await fleetRefresh(true)}catch(err){toast(opsTr(err.message))}finally{if(b.isConnected)b.disabled=false}});
     $$('[data-branch-manage]',app).forEach(button=>button.onclick=()=>branchManagementModal());
     const refresh=$('[data-route-refresh]',app);if(refresh)refresh.onclick=()=>{state.last=0;refreshOps(true)};
-    $$('[data-driver-location]',app).forEach(b=>b.onclick=()=>{const d=drivers.find(x=>x.user_id===user?.id)||drivers[0];if(d)locationModal(d.id);else toast(opsTr('لا يوجد حساب سائق مرتبط بهذا المستخدم'))});
+    
     const pf=$('#podForm');if(pf)bindPodForm(pf);
     const pricingForm=$('#pricingSettingsForm');if(pricingForm)pricingForm.onsubmit=async e=>{e.preventDefault();if(!requirePermission('pricing.manage'))return;const d=Object.fromEntries(new FormData(pricingForm));Object.keys(d).forEach(k=>d[k]=Number(d[k]));d.vat_rate/=100;d.insurance_rate/=100;try{state.pricing=await api('/api/pricing',{method:'PATCH',body:JSON.stringify(d)});toast(opsTr('تم حفظ إعدادات التسعير'));render()}catch(err){toast(opsTr(err.message))}};
     const quoteForm=$('#pricingQuoteForm');if(quoteForm){
