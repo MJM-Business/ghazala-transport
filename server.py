@@ -4040,13 +4040,45 @@ def create_branch_handoff_notification(c, shipment_id, branch_id, kind, awb, des
 
 
 def ensure_shipment_branch_handoff(c, shipment_id):
+    shipment=c.execute("""SELECT id,origin,destination,recipient_branch
+        FROM shipments WHERE id=?""",(shipment_id,)).fetchone()
+    if not shipment:
+        return None
+
     scope=c.execute("""SELECT origin_branch_id,destination_branch_id
         FROM shipment_scope WHERE shipment_id=?""",(shipment_id,)).fetchone()
-    if not scope or scope["origin_branch_id"] is None or scope["destination_branch_id"] is None:
+
+    origin_branch_id=scope["origin_branch_id"] if scope else None
+    destination_branch_id=scope["destination_branch_id"] if scope else None
+
+    if origin_branch_id is None:
+        origin=active_branch_for_city(c,shipment["origin"])
+        origin_branch_id=origin["id"] if origin else None
+    if destination_branch_id is None:
+        destination=active_branch_for_city(
+            c,shipment["destination"],shipment["recipient_branch"]
+        )
+        destination_branch_id=destination["id"] if destination else None
+
+    if origin_branch_id is None or destination_branch_id is None:
         return None
-    c.execute("""INSERT OR IGNORE INTO shipment_branch_handoffs(
+
+    c.execute("""INSERT INTO shipment_scope(
         shipment_id,origin_branch_id,destination_branch_id
-    ) VALUES(?,?,?)""",(shipment_id,scope["origin_branch_id"],scope["destination_branch_id"]))
+    ) VALUES(?,?,?)
+    ON CONFLICT(shipment_id) DO UPDATE SET
+      origin_branch_id=COALESCE(shipment_scope.origin_branch_id,excluded.origin_branch_id),
+      destination_branch_id=COALESCE(shipment_scope.destination_branch_id,excluded.destination_branch_id)""",
+      (shipment_id,origin_branch_id,destination_branch_id))
+
+    c.execute("""INSERT INTO shipment_branch_handoffs(
+        shipment_id,origin_branch_id,destination_branch_id
+    ) VALUES(?,?,?)
+    ON CONFLICT(shipment_id) DO UPDATE SET
+      origin_branch_id=excluded.origin_branch_id,
+      destination_branch_id=excluded.destination_branch_id""",
+      (shipment_id,origin_branch_id,destination_branch_id))
+
     return c.execute("SELECT * FROM shipment_branch_handoffs WHERE shipment_id=?",(shipment_id,)).fetchone()
 
 
@@ -4134,8 +4166,15 @@ def safe_user(row, con):
 
 def shipment_query():
     return """SELECT s.*,
-      (SELECT ss.origin_branch_id FROM shipment_scope ss WHERE ss.shipment_id=s.id) AS origin_branch_id,
-      (SELECT ss.destination_branch_id FROM shipment_scope ss WHERE ss.shipment_id=s.id) AS destination_branch_id,
+      COALESCE(
+        (SELECT ss.origin_branch_id FROM shipment_scope ss WHERE ss.shipment_id=s.id),
+        (SELECT b.id FROM branches b WHERE b.city=s.origin AND b.is_active=1 ORDER BY b.id LIMIT 1)
+      ) AS origin_branch_id,
+      COALESCE(
+        (SELECT ss.destination_branch_id FROM shipment_scope ss WHERE ss.shipment_id=s.id),
+        (SELECT b.id FROM branches b WHERE b.code=s.recipient_branch AND b.is_active=1 ORDER BY b.id LIMIT 1),
+        (SELECT b.id FROM branches b WHERE b.city=s.destination AND b.is_active=1 ORDER BY b.id LIMIT 1)
+      ) AS destination_branch_id,
       cs.customer_user_id,cu.display_name AS customer_account_name,
       cu.username AS customer_account_username,cu.mobile AS customer_account_mobile,
       d.name AS driver_name,d.national_id AS driver_national_id,d.mobile AS driver_mobile,d.location_text AS driver_location,
