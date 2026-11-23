@@ -4281,6 +4281,41 @@ async function shareLabel(){
       ${kpi(et('discounts'),execMoney(finance.discounts||0),et('finance'),'％')}
     </div>${methods.length?`<div class="section-title"><h3>${et('paymentMethods')}</h3></div>${methods.map(row=>`<div class="summary-row"><span>${safe(execPaymentMethodLabel(row.method))}</span><b>${fmt(row.count)} · ${execMoney(row.amount)}</b></div>`).join('')}`:''}`;
   }
+  function deliveryIncomeMarkup(){
+    const delivered=(Array.isArray(shipments)?shipments:[])
+      .filter(isDeliveredShipment)
+      .slice()
+      .sort((a,b)=>String(b.updated_at||b.created_at||'').localeCompare(String(a.updated_at||a.created_at||'')));
+    const total=delivered.reduce((sum,s)=>sum+Number(s.total_fee||0),0);
+    const average=delivered.length?total/delivered.length:0;
+    return `
+      <div class="section-title"><div><h2>Delivery Income</h2><p>Har delivered shipment ki earning alag aur total income ek jagah.</p></div></div>
+      <div class="grid kpis">
+        ${kpi('Collective Income',execMoney(total),`${fmt(delivered.length)} delivered shipments`,'ر.س','positive')}
+        ${kpi('Average Income / Delivery',execMoney(average),'Per delivered shipment','ر.س')}
+      </div>
+      <section class="card delivery-income-card">
+        <div class="section-title" style="margin-top:0">
+          <h3>Income by Shipment</h3>
+          <span class="badge">${fmt(delivered.length)} deliveries</span>
+        </div>
+        <div class="delivery-income-list">
+          ${delivered.map(s=>`
+            <div class="delivery-income-row">
+              <div class="delivery-income-main">
+                <strong class="awb">${safe(s.awb||'')}</strong>
+                <small>${safe(opsTr(s.origin||''))} → ${safe(opsTr(s.destination||''))} · ${safe(s.recipient||'')}</small>
+              </div>
+              <div class="delivery-income-meta">
+                <span>${safe(opsTr(s.payment_status||''))}</span>
+                <b>${execMoney(Number(s.total_fee||0))}</b>
+              </div>
+            </div>
+          `).join('')||`<div class="card empty">No delivered shipments yet.</div>`}
+        </div>
+      </section>`;
+  }
+
   function managementReportsMarkup(report){
     const opsData=report?.operations||{},k=opsData.kpis||{};
     return `${head((OPS_UI_OVERRIDES?.[currentLang]?.exec?.reportingEyebrow||'KSA · MANAGEMENT REPORTING'),et('reports'),et('reportsSub'),hasPermission('reports.read')?`<div class="ops-inline-actions"><button class="btn light" data-exec-export="pdf">▧ ${et('shipmentPdf')}</button><button class="btn light" data-exec-export="xlsx">▦ ${et('shipmentExcel')}</button><button class="btn primary" data-exec-refresh>↻ ${et('refresh')}</button></div>`:`<button class="btn primary" data-exec-refresh>↻ ${et('refresh')}</button>`)}
@@ -4295,6 +4330,7 @@ async function shareLabel(){
         <section class="card"><div class="section-title" style="margin-top:0"><h2>${et('trend')}</h2></div>${execTrendChart(opsData.trend)}</section>
         <section class="card"><div class="section-title" style="margin-top:0"><h2>${et('status')}</h2></div>${execStatusMarkup(opsData.status_distribution)}</section>
       </div>
+      ${deliveryIncomeMarkup()}
       <div class="section-title"><h2>${et('finance')}</h2></div><section class="card">${reportFinanceMarkup(report?.finance)}</section>
       <div class="section-title"><h2>${et('branches')}</h2></div>${execBranchMarkup(report?.branch_performance)}
       <div class="grid dashboard-grid" style="margin-top:16px">
