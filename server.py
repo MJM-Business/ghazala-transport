@@ -3988,6 +3988,42 @@ def _jeddah_hq_master_admin_v23(c):
 
 
 
+def _pos_test_logins_v25(c):
+    """Create dedicated branch-scoped POS test accounts for Jeddah and Jazan."""
+    setter=getattr(__import__("foundation_schema"),"set_user_access")
+    accounts=(
+        ("JED-MAIN","pos.jeddah","Jeddah POS","POSJeddah2026!"),
+        ("JAZ-MAIN","pos.jazan","Jazan POS","POSJazan2026!"),
+    )
+    for branch_code,username,display_name,password in accounts:
+        branch=c.execute(
+            "SELECT id FROM branches WHERE code=? AND is_active=1 ORDER BY id LIMIT 1",
+            (branch_code,)
+        ).fetchone()
+        if not branch:
+            continue
+        row=c.execute(
+            "SELECT id FROM users WHERE lower(username)=lower(?)",
+            (username,)
+        ).fetchone()
+        if row:
+            user_id=row["id"]
+            c.execute(
+                """UPDATE users
+                   SET display_name=?,role='employee',password_hash=?,is_active=1
+                   WHERE id=?""",
+                (display_name,password_hash(password),user_id)
+            )
+        else:
+            cur=c.execute(
+                """INSERT INTO users(username,display_name,role,password_hash,is_active)
+                   VALUES(?,?, 'employee', ?,1)""",
+                (username,display_name,password_hash(password))
+            )
+            user_id=cur.lastrowid
+        setter(c,user_id,"office_employee",[branch["id"]],branch["id"],False)
+
+
 def _shipment_branch_handoff_v24(c):
     """Simple shipment-level branch handoff, independent of route manifests."""
     c.execute("""CREATE TABLE IF NOT EXISTS shipment_branch_handoffs (
@@ -4107,6 +4143,7 @@ MIGRATIONS = (
     (22, "dedicated_jazan_branch_manager_login", _jazan_branch_manager_login_v22),
     (23, "jeddah_hq_master_admin_scope", _jeddah_hq_master_admin_v23),
     (24, "shipment_level_branch_handoff", _shipment_branch_handoff_v24),
+    (25, "dedicated_pos_test_logins", _pos_test_logins_v25),
 )
 
 
