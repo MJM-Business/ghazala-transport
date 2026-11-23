@@ -7631,3 +7631,29 @@ body.guest .landing-hero .landing-actions .ops-track-form:focus-within,
     width:100%!important;
   }
 }
+
+
+/* =========================================================
+   DELIVERY INCOME ANALYTICS
+   ========================================================= */
+.delivery-income-card{margin-top:12px!important}
+.delivery-income-list{display:grid!important;gap:10px!important}
+.delivery-income-row{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:16px!important;
+  padding:13px 14px!important;
+  border:1px solid #e6edf4!important;
+  border-radius:12px!important;
+  background:#fbfdff!important;
+}
+.delivery-income-main{display:grid!important;gap:4px!important;min-width:0!important}
+.delivery-income-main small{color:#6b7c90!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+.delivery-income-meta{display:flex!important;align-items:center!important;gap:14px!important;flex:0 0 auto!important}
+.delivery-income-meta span{font-size:11px!important;color:#73849a!important}
+.delivery-income-meta b{font-size:14px!important;color:#0b7a53!important}
+@media(max-width:760px){
+  .delivery-income-row{align-items:flex-start!important;flex-direction:column!important}
+  .delivery-income-meta{width:100%!important;justify-content:space-between!important}
+}
