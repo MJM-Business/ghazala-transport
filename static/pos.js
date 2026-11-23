@@ -22,6 +22,24 @@ const api=async(path,options={})=>{
   if(!res.ok)throw new Error(data.error||('Request failed ('+res.status+')'));
   return data;
 };
+function validateShipmentForm(form){
+ const required=Array.prototype.slice.call(form.querySelectorAll('[required]'));
+ for(var i=0;i<required.length;i++){
+   var el=required[i];
+   if(el.type==='radio')continue;
+   if(String(el.value||'').trim()===''){
+     try{el.focus();}catch(_){}
+     toast('Please complete all required shipment fields.');
+     return false;
+   }
+ }
+ var checked=form.querySelector('[name="payment_method"]:checked');
+ if(!checked){
+   toast('Please select a payment method.');
+   return false;
+ }
+ return true;
+}
 function formObject(form){
  const data={};
  const els=Array.prototype.slice.call(form.elements||[]);
@@ -123,7 +141,25 @@ function createPanel(){
  const syncDest=()=>{f.recipient_branch.innerHTML=branchOptions(f.destination.value);if(f.elements.origin.value===f.destination.value){const other=Array.from(f.destination.options).find(o=>o.value!==f.elements.origin.value);if(other)f.destination.value=other.value;f.recipient_branch.innerHTML=branchOptions(f.destination.value)}};
  f.destination.onchange=syncDest;
  f.querySelectorAll('[name=payment_method]').forEach(x=>x.onchange=()=>{const cod=f.payment_method.value==='cod';$('#codWrap').style.display=cod?'grid':'none';f.cod.required=cod;if(!cod)f.cod.value='0'});
- async function saveAndPrint(){if(!f.reportValidity())return;const b=f.querySelector('button[type=submit]');b.disabled=true;b.textContent=t('creating');try{const data=formObject(f);['declared_value','cod','pieces','weight','length_cm','width_cm','height_cm'].forEach(k=>data[k]=Number(data[k]||0));if(data.payment_method!=='cod')data.cod=0;data.pos_device_id=deviceId;const created=await api('/api/shipments',{method:'POST',body:JSON.stringify(data)});toast(t('created')+': '+created.awb);await refresh();await printWaybill(created.awb);showSuccess(created.awb)}catch(err){toast(err.message);b.disabled=false;b.textContent=t('createPrint')}}
+ async function saveAndPrint(){
+ if(!validateShipmentForm(f))return;
+ const b=f.querySelector('button[type=submit]');
+ b.disabled=true;b.textContent=t('creating');
+ try{
+   const data=formObject(f);
+   ['declared_value','cod','pieces','weight','length_cm','width_cm','height_cm'].forEach(k=>data[k]=Number(data[k]||0));
+   if(data.payment_method!=='cod')data.cod=0;
+   data.pos_device_id=deviceId;
+   const created=await api('/api/shipments',{method:'POST',body:JSON.stringify(data)});
+   toast(t('created')+': '+created.awb);
+   await refresh();
+   showSuccess(created.awb);
+   setTimeout(function(){printWaybill(created.awb)},250);
+ }catch(err){
+   toast('Create failed: '+(err&&err.message?err.message:String(err)));
+   b.disabled=false;b.textContent=t('createPrint');
+ }
+}
  f.onsubmit=e=>{e.preventDefault();saveAndPrint()};
 }
 function showSuccess(awb){
