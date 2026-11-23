@@ -4286,14 +4286,62 @@ async function shareLabel(){
       .filter(isDeliveredShipment)
       .slice()
       .sort((a,b)=>String(b.updated_at||b.created_at||'').localeCompare(String(a.updated_at||a.created_at||'')));
+
     const total=delivered.reduce((sum,s)=>sum+Number(s.total_fee||0),0);
     const average=delivered.length?total/delivered.length:0;
+
+    const branchMap=new Map();
+    const knownBranches=(Array.isArray(state.branchDirectory)?state.branchDirectory:[]);
+    const branchLabel=s=>{
+      const destinationId=s.destination_branch_id!=null?String(s.destination_branch_id):'';
+      const destinationCode=String(s.recipient_branch||'').trim().toUpperCase();
+      const city=String(s.destination||'').trim();
+      const match=knownBranches.find(branch=>
+        (destinationId&&String(branch.id)===destinationId)||
+        (destinationCode&&String(branch.code||'').trim().toUpperCase()===destinationCode)||
+        (city&&String(branch.city||'').trim()===city)
+      );
+      return match?.name||match?.city||city||'Unassigned Branch';
+    };
+
+    delivered.forEach(s=>{
+      const name=branchLabel(s);
+      if(!branchMap.has(name))branchMap.set(name,{name,income:0,deliveries:0});
+      const row=branchMap.get(name);
+      row.income+=Number(s.total_fee||0);
+      row.deliveries+=1;
+    });
+
+    const branchRows=[...branchMap.values()].sort((a,b)=>b.income-a.income);
+
     return `
-      <div class="section-title"><div><h2>Delivery Income</h2><p>Har delivered shipment ki earning alag aur total income ek jagah.</p></div></div>
+      <div class="section-title"><div><h2>Delivery Income</h2><p>Har branch ki income alag aur sab branches ka combined total ek jagah.</p></div></div>
       <div class="grid kpis">
-        ${kpi('Collective Income',execMoney(total),`${fmt(delivered.length)} delivered shipments`,'ر.س','positive')}
+        ${kpi('All Branches Income',execMoney(total),`${fmt(delivered.length)} delivered shipments`,'ر.س','positive')}
         ${kpi('Average Income / Delivery',execMoney(average),'Per delivered shipment','ر.س')}
       </div>
+
+      <section class="card delivery-income-card">
+        <div class="section-title" style="margin-top:0">
+          <h3>Branch Income Breakdown</h3>
+          <span class="badge">${fmt(branchRows.length)} branches</span>
+        </div>
+        <div class="delivery-income-list">
+          ${branchRows.map(branch=>`
+            <div class="delivery-income-row">
+              <div class="delivery-income-main">
+                <strong>${safe(branch.name)}</strong>
+                <small>${fmt(branch.deliveries)} delivered shipments</small>
+              </div>
+              <div class="delivery-income-meta">
+                <span>Branch Income</span>
+                <b>${execMoney(branch.income)}</b>
+              </div>
+            </div>
+          `).join('')||`<div class="card empty">No branch income yet.</div>`}
+        </div>
+      </section>
+
       <section class="card delivery-income-card">
         <div class="section-title" style="margin-top:0">
           <h3>Income by Shipment</h3>
@@ -4304,7 +4352,7 @@ async function shareLabel(){
             <div class="delivery-income-row">
               <div class="delivery-income-main">
                 <strong class="awb">${safe(s.awb||'')}</strong>
-                <small>${safe(opsTr(s.origin||''))} → ${safe(opsTr(s.destination||''))} · ${safe(s.recipient||'')}</small>
+                <small>${safe(branchLabel(s))} · ${safe(opsTr(s.origin||''))} → ${safe(opsTr(s.destination||''))} · ${safe(s.recipient||'')}</small>
               </div>
               <div class="delivery-income-meta">
                 <span>${safe(opsTr(s.payment_status||''))}</span>
