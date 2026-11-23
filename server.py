@@ -5363,7 +5363,9 @@ class Handler(BaseHTTPRequestHandler):
     def _get(self):
         url=urlparse(self.path); path=url.path; parts=[unquote(p) for p in path.split('/') if p]
         if not path.startswith('/api/'):
-            static=ROOT/'static'; file=static/('index.html' if path=='/' else path.lstrip('/'))
+            static=ROOT/'static'
+            static_path='index.html' if path=='/' else ('pos.html' if path in ('/pos','/pos/') else path.lstrip('/'))
+            file=static/static_path
             if not file.resolve().is_relative_to(static.resolve()) or not file.is_file(): return self.send_error(404)
             data=file.read_bytes(); mime={'.html':'text/html','.css':'text/css','.js':'text/javascript'}.get(file.suffix,'application/octet-stream')
             self.send_response(200); self.send_header('Content-Type',mime+'; charset=utf-8'); self.send_header('Content-Length',str(len(data))); self.send_header('Cache-Control','no-store'); self.send_header('X-Content-Type-Options','nosniff'); self.end_headers(); self.wfile.write(data); return
