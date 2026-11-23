@@ -1002,11 +1002,11 @@
     $('#modalRoot').innerHTML=`<div class="modal-backdrop" data-close><section class="modal ops-modal"><div class="modal-head"><div><div class="eyebrow">${opsTr('إنشاء شحنة')}</div><h2>${opsTr('بيانات الشحنة الجديدة')}</h2></div><button class="icon-btn" data-close>×</button></div>
       <form id="createForm" class="form-grid ops-form">
         <h3 class="field span-2">${opsTr('بيانات المرسل')}</h3>
-        <label class="field"><span>${opsTr('اسم المرسل')} *</span><input name="sender_name" required autocomplete="name"></label><label class="field"><span>${opsTr('رقم هوية المرسل')} *</span><input name="sender_id" required inputmode="numeric"></label>
-        <label class="field"><span>${opsTr('جوال المرسل')} *</span><input name="sender_phone" type="tel" required autocomplete="tel"></label><label class="field span-2"><span>${opsTr('عنوان المرسل')} *</span><textarea name="sender_address" required></textarea></label>
+        <label class="field"><span>${opsTr('اسم المرسل')} *</span><input name="sender_name" required autocomplete="name"></label><label class="field"><span>${opsTr('رقم هوية المرسل')} (${safe(clt('optional'))})</span><input name="sender_id" inputmode="numeric"></label>
+        <label class="field"><span>${opsTr('جوال المرسل')} *</span><input name="sender_phone" type="tel" required autocomplete="tel"></label>
         ${hasPermission('shipments.edit')?`<h3 class="field span-2">${safe(clt('account'))}</h3><label class="field span-2"><span>${safe(clt('optional'))}</span><select name="customer_user_id">${customerAccountOptionMarkup(customerAccounts)}</select></label>`:''}
         <h3 class="field span-2">${opsTr('بيانات المستلم ووجهة الوصول')}</h3>
-        <label class="field"><span>${opsTr('اسم المستلم')} *</span><input name="recipient" required></label><label class="field"><span>${opsTr('رقم هوية المستلم')} *</span><input name="recipient_id" required inputmode="numeric"></label>
+        <label class="field"><span>${opsTr('اسم المستلم')} *</span><input name="recipient" required></label><label class="field"><span>${opsTr('رقم هوية المستلم')} (${safe(clt('optional'))})</span><input name="recipient_id" inputmode="numeric"></label>
         <label class="field"><span>${opsTr('جوال المستلم')} *</span><input name="phone" type="tel" required></label><label class="field"><span>${opsTr('من مدينة')}</span><select name="origin" required>${cityOptionMarkup(originDefault)}</select></label>
         <label class="field"><span>${opsTr('إلى مدينة')}</span><select name="destination" required>${cityOptionMarkup(destinationDefault)}</select></label><label class="field"><span>${opsTr('فرع الوجهة')}</span><select name="recipient_branch">${branchOptions(destinationDefault)}</select></label>
         <label class="field span-2"><span>${opsTr('عنوان المستلم بالتفصيل')} *</span><textarea name="recipient_address" required placeholder="${opsTr('الحي، الشارع، رقم المبنى، أقرب علامة')}"></textarea></label>
