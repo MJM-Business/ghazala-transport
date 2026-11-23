@@ -46,7 +46,7 @@ function recentPanel(){
  const draw=()=>{const q=$('#search').value.trim().toLowerCase();const data=rows.filter(s=>!q||[s.awb,s.recipient,s.phone].some(v=>String(v||'').toLowerCase().includes(q)));$('#list').innerHTML=data.length?data.map(s=>'<article class="shipment"><div class="shipment-head"><div><div class="awb">'+esc(s.awb)+'</div><b>'+esc(s.recipient||'')+'</b></div><span class="badge">'+esc(s.status||'Created')+'</span></div><p>'+esc(s.origin||'')+' → '+esc(s.destination||'')+' · '+esc(s.phone||'')+'</p><div class="mini-actions"><button class="btn light" data-view="'+esc(s.awb)+'">View</button><button class="btn orange" data-print="'+esc(s.awb)+'">Print / Reprint</button></div></article>').join(''):'<div class="empty">No shipments found.</div>';document.querySelectorAll('[data-print]').forEach(b=>b.onclick=()=>printWaybill(b.dataset.print));document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>window.open('/#track='+encodeURIComponent(b.dataset.view),'_blank'))};
  $('#search').oninput=draw;draw();
 }
-async function codeSvg(awb,type){const r=await fetch('/api/shipments/'+encodeURIComponent(awb)+'/codes/'+type,{credentials:'same-origin'});if(!r.ok)throw new Error('Could not generate '+type);return await r.text()}
+async function codeSvg(awb,type){const r=await fetch('/api/shipments/'+encodeURIComponent(awb)+'/'+type,{credentials:'same-origin'});if(!r.ok)throw new Error('Could not generate '+type);return await r.text()}
 async function printWaybill(awb){
  try{
    const [doc,qr,bar]=await Promise.all([api('/api/shipments/'+encodeURIComponent(awb)+'/documents'),codeSvg(awb,'qr'),codeSvg(awb,'barcode')]);
