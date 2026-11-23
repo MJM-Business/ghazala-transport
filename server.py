@@ -4024,6 +4024,22 @@ def _pos_test_logins_v25(c):
         setter(c,user_id,"office_employee",[branch["id"]],branch["id"],False)
 
 
+def _pos_records_profile_v26(c):
+    """Persist POS-created shipment ownership and print history."""
+    c.execute("""CREATE TABLE IF NOT EXISTS pos_shipment_records(
+      id INTEGER PRIMARY KEY,
+      shipment_id INTEGER NOT NULL UNIQUE REFERENCES shipments(id) ON DELETE CASCADE,
+      pos_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+      branch_id INTEGER NOT NULL REFERENCES branches(id) ON DELETE RESTRICT,
+      device_id TEXT NOT NULL DEFAULT '',
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      print_count INTEGER NOT NULL DEFAULT 0,
+      last_printed_at TEXT
+    )""")
+    c.execute("CREATE INDEX IF NOT EXISTS idx_pos_records_user_created ON pos_shipment_records(pos_user_id,created_at DESC,id DESC)")
+    c.execute("CREATE INDEX IF NOT EXISTS idx_pos_records_branch_created ON pos_shipment_records(branch_id,created_at DESC,id DESC)")
+
+
 def _shipment_branch_handoff_v24(c):
     """Simple shipment-level branch handoff, independent of route manifests."""
     c.execute("""CREATE TABLE IF NOT EXISTS shipment_branch_handoffs (
@@ -4144,6 +4160,7 @@ MIGRATIONS = (
     (23, "jeddah_hq_master_admin_scope", _jeddah_hq_master_admin_v23),
     (24, "shipment_level_branch_handoff", _shipment_branch_handoff_v24),
     (25, "dedicated_pos_test_logins", _pos_test_logins_v25),
+    (26, "pos_records_profile_persistence", _pos_records_profile_v26),
 )
 
 
@@ -5508,6 +5525,30 @@ class Handler(BaseHTTPRequestHandler):
                 })
             if not user: return self.unauthorized()
             ctx=auth.context(c,user)
+            if parts[:2]==['api','pos']:
+                if not str(user.get("username") or "").strip().lower().startswith("pos."):
+                    return self.forbidden()
+                if parts==['api','pos','profile']:
+                    profile=safe_user(user,c)
+                    branch=None
+                    if profile.get("primary_branch_id"):
+                        row=c.execute(
+                            "SELECT id,code,name,city,address,phone FROM branches WHERE id=?",
+                            (profile["primary_branch_id"],)
+                        ).fetchone()
+                        branch=dict(row) if row else None
+                    return self.send_json({"user":profile,"branch":branch})
+                if parts==['api','pos','records']:
+                    rows=c.execute("""SELECT pr.id,pr.device_id,pr.created_at AS pos_created_at,
+                               pr.print_count,pr.last_printed_at,
+                               s.awb,s.recipient,s.phone,s.origin,s.destination,s.recipient_branch,
+                               s.status,s.stage,s.payment_method,s.payment_status,s.cod,
+                               s.shipping_fee,s.total_fee,s.created_at
+                          FROM pos_shipment_records pr
+                          JOIN shipments s ON s.id=pr.shipment_id
+                         WHERE pr.pos_user_id=?
+                         ORDER BY pr.id DESC""",(user["id"],)).fetchall()
+                    return self.send_json([dict(row) for row in rows])
             if parts[:2]==['api','customer']:
                 customers.require_customer(c,user)
                 if parts==['api','customer','profile']: return self.send_json(customers.profile(c,user))
@@ -6226,6 +6267,51 @@ class Handler(BaseHTTPRequestHandler):
             user=self.current_user(c)
             if not user: return self.unauthorized()
             parts=[unquote(p) for p in path.split("/") if p]
+
+            if path=="/api/pos/profile":
+                if not str(user.get("username") or "").strip().lower().startswith("pos."):
+                    return self.forbidden()
+                display_name=str(data.get("display_name") or "").strip()
+                current_password=str(data.get("current_password") or "")
+                new_password=str(data.get("new_password") or "")
+                if not display_name:
+                    return self.send_json({"error":"Name is required."},400)
+                before={"display_name":user.get("display_name","")}
+                c.execute("UPDATE users SET display_name=? WHERE id=?",(display_name,user["id"]))
+                password_changed=False
+                if new_password:
+                    if not current_password or not verify_password(current_password,user.get("password_hash")):
+                        return self.send_json({"error":"Current password is incorrect."},403)
+                    try:
+                        validate_password(new_password)
+                    except ValueError as exc:
+                        return self.send_json({"error":str(exc)},400)
+                    c.execute("UPDATE users SET password_hash=? WHERE id=?",(password_hash(new_password),user["id"]))
+                    password_changed=True
+                    c.execute("DELETE FROM sessions WHERE user_id=? AND token_hash<>?",(
+                        user["id"],
+                        hashlib.sha256(next((p.strip().split("=",1)[1] for p in self.headers.get("Cookie","").split(";") if p.strip().startswith("ghz_session=")),"").encode()).hexdigest()
+                    ))
+                updated=c.execute("SELECT * FROM users WHERE id=?",(user["id"],)).fetchone()
+                write_audit(c,auth.context(c,user),"pos.profile.updated","user",user["id"],
+                            before=before,after={"display_name":display_name},
+                            metadata={"password_changed":password_changed},request=self)
+                c.commit()
+                return self.send_json({"ok":True,"user":safe_user(updated,c)})
+
+            if len(parts)==5 and parts[:3]==['api','pos','records'] and parts[4]=='printed':
+                if not str(user.get("username") or "").strip().lower().startswith("pos."):
+                    return self.forbidden()
+                awb=str(parts[3] or "").strip().upper()
+                row=c.execute("""SELECT pr.id FROM pos_shipment_records pr
+                    JOIN shipments s ON s.id=pr.shipment_id
+                    WHERE s.awb=? AND pr.pos_user_id=?""",(awb,user["id"])).fetchone()
+                if not row:
+                    return self.send_json({"error":"POS shipment record not found."},404)
+                c.execute("""UPDATE pos_shipment_records SET print_count=print_count+1,
+                    last_printed_at=CURRENT_TIMESTAMP WHERE id=?""",(row["id"],))
+                c.commit()
+                return self.send_json({"ok":True})
 
             if path=="/api/customer/coupons/validate":
                 customers.require_customer(c,user)
@@ -7822,6 +7908,16 @@ class Handler(BaseHTTPRequestHandler):
                    dimensions["length_cm"],dimensions["width_cm"],dimensions["height_cm"],dimensions["declared_value"],1 if data.get("insured") else 0,
                    method,quote["shipping_fee"],quote["vat_amount"],quote["cod_fee"],quote["insurance_fee"],quote["total_fee"],payment_status,quote["size_code"],quote["size_fee"],data.get("company_account","")))
                 shipment=c.execute("SELECT id FROM shipments WHERE awb=?",(awb,)).fetchone()
+                if str(user.get("username") or "").strip().lower().startswith("pos."):
+                    pos_ctx=auth.context(c,user)
+                    branch_id=pos_ctx.get("primary_branch_id")
+                    if not branch_id:
+                        return self.send_json({"error":"POS account is not assigned to a branch."},403)
+                    c.execute("""INSERT OR REPLACE INTO pos_shipment_records(
+                        shipment_id,pos_user_id,branch_id,device_id,created_at,print_count,last_printed_at
+                    ) VALUES(?,?,?,?,CURRENT_TIMESTAMP,0,NULL)""",(
+                        shipment["id"],user["id"],branch_id,str(data.get("pos_device_id") or "")[:120]
+                    ))
                 notification_language=str(data.get("notification_language") or "ar").strip().lower()
                 if notification_language not in ("ar","en","ur","hi","bn"):
                     notification_language="ar"
