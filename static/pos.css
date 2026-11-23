@@ -4,3 +4,68 @@
 .pos-language{min-height:40px;border:1.5px solid #cbd5df;border-radius:10px;background:#fff;color:var(--navy);padding:6px 9px;font-size:12px;font-weight:800;outline:none}.pos-language:focus{border-color:var(--blue);box-shadow:0 0 0 3px #343d9818}.login-language{display:flex;justify-content:flex-end;margin-bottom:8px}.top-controls{margin-inline-start:auto;display:flex;align-items:center;gap:7px}.top-controls .logout{margin-inline-start:0}.top-controls .pos-language{width:92px}.top .identity{flex:1}.top-controls{flex:0 0 auto}html[dir="rtl"] .top,html[dir="rtl"] .head,html[dir="rtl"] .field,html[dir="rtl"] .section-title,html[dir="rtl"] .check{text-align:right}html[dir="rtl"] .field input,html[dir="rtl"] .field select,html[dir="rtl"] .field textarea{text-align:right}html[dir="rtl"] .success-card{text-align:center}@media(max-width:420px){.top{gap:6px;padding-inline:8px}.top img{width:38px;height:38px}.top .identity b{font-size:12px}.top .identity small{font-size:9px;max-width:120px}.top-controls{gap:5px}.top-controls .pos-language{width:82px;padding-inline:6px;font-size:11px}.top-controls .logout{padding-inline:8px;font-size:11px}}
 
 .pos-nav{position:sticky;top:63px;z-index:18;display:grid;grid-template-columns:repeat(3,1fr);gap:7px;padding:8px 12px;background:#fff;border-bottom:1px solid var(--line)}.nav-btn{min-height:42px;border:1.5px solid #cbd5df;border-radius:10px;background:#fff;color:var(--navy);font-weight:900;font-size:12px}.nav-btn.active{background:var(--navy);color:#fff;border-color:var(--navy)}.record-meta{display:flex;flex-wrap:wrap;gap:6px 12px;margin:8px 0 10px;color:var(--muted);font-size:11px}.settings-note{margin:8px 0 12px;padding:9px 10px;border-radius:10px;background:#f8fafc;border:1px solid var(--line);color:var(--muted);font-size:11px;line-height:1.5}html[dir="rtl"] .record-meta{direction:rtl}@media(max-width:420px){.pos-nav{top:58px;padding:7px 8px;gap:5px}.nav-btn{font-size:11px;padding-inline:6px}}
+
+
+/* POS BIDIRECTIONAL LOCK */
+html[dir="ltr"] .pos-shell{direction:ltr}
+html[dir="rtl"] .pos-shell{direction:rtl}
+html[dir="ltr"] .top{direction:ltr}
+html[dir="rtl"] .top{direction:rtl}
+html[dir="ltr"] .top .identity{text-align:left}
+html[dir="rtl"] .top .identity{text-align:right}
+html[dir="ltr"] .top-controls{margin-left:auto;margin-right:0;direction:ltr}
+html[dir="rtl"] .top-controls{margin-right:auto;margin-left:0;direction:rtl}
+html[dir="ltr"] .login-language{justify-content:flex-end}
+html[dir="rtl"] .login-language{justify-content:flex-start}
+html[dir="ltr"] .pos-nav{direction:ltr}
+html[dir="rtl"] .pos-nav{direction:rtl}
+html[dir="ltr"] .nav-btn{text-align:center}
+html[dir="rtl"] .nav-btn{text-align:center}
+html[dir="ltr"] .panel,
+html[dir="ltr"] .section-title,
+html[dir="ltr"] .field,
+html[dir="ltr"] .settings-note,
+html[dir="ltr"] .shipment,
+html[dir="ltr"] .record-meta{text-align:left;direction:ltr}
+html[dir="rtl"] .panel,
+html[dir="rtl"] .section-title,
+html[dir="rtl"] .field,
+html[dir="rtl"] .settings-note,
+html[dir="rtl"] .shipment,
+html[dir="rtl"] .record-meta{text-align:right;direction:rtl}
+html[dir="ltr"] .split,
+html[dir="ltr"] .checks{direction:ltr}
+html[dir="rtl"] .split,
+html[dir="rtl"] .checks{direction:rtl}
+html[dir="ltr"] .field input,
+html[dir="ltr"] .field textarea,
+html[dir="ltr"] .field select{text-align:left;direction:ltr}
+html[dir="rtl"] .field input,
+html[dir="rtl"] .field textarea,
+html[dir="rtl"] .field select{text-align:right;direction:rtl}
+html[dir="ltr"] .field input[type="tel"],
+html[dir="ltr"] .field input[type="number"],
+html[dir="rtl"] .field input[type="tel"],
+html[dir="rtl"] .field input[type="number"]{direction:ltr}
+html[dir="rtl"] .field input[type="tel"],
+html[dir="rtl"] .field input[type="number"]{text-align:right}
+html[dir="ltr"] .check{direction:ltr;text-align:left;justify-content:flex-start}
+html[dir="rtl"] .check{direction:rtl;text-align:right;justify-content:flex-start}
+html[dir="ltr"] .shipment-head{direction:ltr;text-align:left}
+html[dir="rtl"] .shipment-head{direction:rtl;text-align:right}
+html[dir="ltr"] .shipment p{direction:ltr;text-align:left}
+html[dir="rtl"] .shipment p{direction:rtl;text-align:right}
+html[dir="ltr"] .record-meta{justify-content:flex-start}
+html[dir="rtl"] .record-meta{justify-content:flex-start}
+html[dir="ltr"] .success-card,
+html[dir="rtl"] .success-card{text-align:center;direction:inherit}
+html[dir="ltr"] .pos-language{direction:ltr;text-align:left}
+html[dir="rtl"] .pos-language{direction:rtl;text-align:right}
+html[dir="rtl"] .pos-language option{direction:rtl;text-align:right}
+html[dir="ltr"] .pos-language option{direction:ltr;text-align:left}
+html[dir="rtl"] .field select option{direction:rtl;text-align:right}
+html[dir="ltr"] .field select option{direction:ltr;text-align:left}
+html[dir="rtl"] .awb,
+html[dir="ltr"] .awb{direction:ltr;unicode-bidi:isolate}
+html[dir="rtl"] .top small{direction:rtl}
+html[dir="ltr"] .top small{direction:ltr}
