@@ -72,8 +72,11 @@ public class MainActivity extends Activity {
         settings.setDatabaseEnabled(true);
         settings.setLoadWithOverviewMode(true);
         settings.setUseWideViewPort(true);
+        settings.setSupportZoom(false);
         settings.setBuiltInZoomControls(false);
         settings.setDisplayZoomControls(false);
+        settings.setTextZoom(100);
+        webView.setInitialScale(0);
         settings.setAllowFileAccess(false);
         settings.setAllowContentAccess(false);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE);
@@ -113,6 +116,8 @@ public class MainActivity extends Activity {
             showServerDialog(false);
             return true;
         });
+        webView.setLongClickable(true);
+        webView.setHapticFeedbackEnabled(false);
     }
 
     private void showServerDialog(boolean required) {
