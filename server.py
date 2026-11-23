@@ -4040,6 +4040,15 @@ def _pos_records_profile_v26(c):
     c.execute("CREATE INDEX IF NOT EXISTS idx_pos_records_branch_created ON pos_shipment_records(branch_id,created_at DESC,id DESC)")
 
 
+def _pos_dispatch_tracking_v27(c):
+    """Track POS dispatch actions without changing shipment identity."""
+    ensure_columns(c,"pos_shipment_records",{
+        "dispatched_at":"TEXT",
+        "dispatched_by_user_id":"INTEGER REFERENCES users(id) ON DELETE SET NULL",
+    })
+    c.execute("CREATE INDEX IF NOT EXISTS idx_pos_records_dispatched ON pos_shipment_records(dispatched_at,id DESC)")
+
+
 def _shipment_branch_handoff_v24(c):
     """Simple shipment-level branch handoff, independent of route manifests."""
     c.execute("""CREATE TABLE IF NOT EXISTS shipment_branch_handoffs (
@@ -4161,6 +4170,7 @@ MIGRATIONS = (
     (24, "shipment_level_branch_handoff", _shipment_branch_handoff_v24),
     (25, "dedicated_pos_test_logins", _pos_test_logins_v25),
     (26, "pos_records_profile_persistence", _pos_records_profile_v26),
+    (27, "pos_dispatch_tracking", _pos_dispatch_tracking_v27),
 )
 
 
@@ -5540,7 +5550,7 @@ class Handler(BaseHTTPRequestHandler):
                     return self.send_json({"user":profile,"branch":branch})
                 if parts==['api','pos','records']:
                     rows=c.execute("""SELECT pr.id,pr.device_id,pr.created_at AS pos_created_at,
-                               pr.print_count,pr.last_printed_at,
+                               pr.print_count,pr.last_printed_at,pr.dispatched_at,pr.dispatched_by_user_id,
                                s.awb,s.recipient,s.phone,s.origin,s.destination,s.recipient_branch,
                                s.status,s.stage,s.payment_method,s.payment_status,s.cod,
                                s.shipping_fee,s.total_fee,s.created_at
@@ -6298,6 +6308,69 @@ class Handler(BaseHTTPRequestHandler):
                             metadata={"password_changed":password_changed},request=self)
                 c.commit()
                 return self.send_json({"ok":True,"user":safe_user(updated,c)})
+
+            if len(parts)==5 and parts[:3]==['api','pos','records'] and parts[4]=='dispatch':
+                if not str(user.get("username") or "").strip().lower().startswith("pos."):
+                    return self.forbidden()
+                awb=str(parts[3] or "").strip().upper()
+                row=c.execute("""SELECT pr.id AS pos_record_id,pr.branch_id,pr.dispatched_at,s.*
+                    FROM pos_shipment_records pr
+                    JOIN shipments s ON s.id=pr.shipment_id
+                    WHERE s.awb=? AND pr.pos_user_id=?""",(awb,user["id"])).fetchone()
+                if not row:
+                    return self.send_json({"error":"POS shipment record not found."},404)
+                ctx=auth.context(c,user)
+                if row["branch_id"] not in tuple(ctx.get("branch_ids") or ()):
+                    return self.forbidden()
+                canonical=transitions.canonical(row["status"])
+                if canonical=="dispatched":
+                    return self.send_json({
+                        "ok":True,"awb":awb,"status":row["status"],"already_dispatched":True,
+                        "dispatched_at":row["dispatched_at"]
+                    })
+                try:
+                    transitions.check_transition(c,row,transitions.STATUS_NAMES["dispatched"],source="status")
+                except ValueError as exc:
+                    return self.send_json({"error":str(exc)},409)
+                before={"status":row["status"],"stage":row["stage"]}
+                status=transitions.STATUS_NAMES["dispatched"]
+                stage=transitions.STATUS_STAGES["dispatched"]
+                c.execute("""UPDATE shipments SET status=?,stage=?,updated_at=CURRENT_TIMESTAMP
+                             WHERE id=?""",(status,stage,row["id"]))
+                add_shipment_event(
+                    c,row["id"],status,stage,row["origin"],user.get("display_name") or user["username"]
+                )
+                c.execute("""UPDATE pos_shipment_records
+                             SET dispatched_at=CURRENT_TIMESTAMP,dispatched_by_user_id=?
+                             WHERE id=?""",(user["id"],row["pos_record_id"]))
+                handoff=ensure_shipment_branch_handoff(c,row["id"])
+                destination_branch=None
+                if handoff:
+                    destination_branch=c.execute(
+                        "SELECT id,code,name,city FROM branches WHERE id=?",
+                        (handoff["destination_branch_id"],)
+                    ).fetchone()
+                write_audit(
+                    c,ctx,"shipment.pos_dispatched","shipment",row["id"],
+                    before=before,after={"status":status,"stage":stage},
+                    metadata={
+                        "awb":awb,
+                        "pos_record_id":row["pos_record_id"],
+                        "origin_branch_id":row["branch_id"],
+                        "destination_branch_id":handoff["destination_branch_id"] if handoff else None
+                    },
+                    request=self
+                )
+                c.commit()
+                updated=c.execute(
+                    "SELECT dispatched_at FROM pos_shipment_records WHERE id=?",
+                    (row["pos_record_id"],)
+                ).fetchone()
+                return self.send_json({
+                    "ok":True,"awb":awb,"status":status,"stage":stage,
+                    "dispatched_at":updated["dispatched_at"] if updated else None,
+                    "destination_branch":dict(destination_branch) if destination_branch else None
+                })
 
             if len(parts)==5 and parts[:3]==['api','pos','records'] and parts[4]=='printed':
                 if not str(user.get("username") or "").strip().lower().startswith("pos."):
