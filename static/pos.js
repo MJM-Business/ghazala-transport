@@ -1,7 +1,7 @@
 (()=>{
 const $=s=>document.querySelector(s);
 const app=$('#app'),toastEl=$('#toast');
-let me=null,shipments=[],branches=[];
+let me=null,shipments=[],branches=[],posView='create';
 let lang=localStorage.getItem('ghz-pos-lang')==='ar'?'ar':'en';
 const deviceId=localStorage.getItem('ghz-pos-device-id')||('POS-'+Math.random().toString(36).slice(2,8).toUpperCase());
 localStorage.setItem('ghz-pos-device-id',deviceId);
@@ -23,7 +23,7 @@ const TXT={
   senderPays:'Sender Pays',collection:'Collection Amount',pieces:'Pieces',createPrint:'Create Shipment & Print',
   creating:'Creating Shipment...',created:'Shipment created',createdTitle:'Shipment Created',
   printSent:'Receipt print command has been sent.',newAgain:'Create New Shipment',printAgain:'Print Again',
-  sentPrinter:'Sent to POS printer',qrError:'Could not generate',language:'Language'
+  sentPrinter:'Sent to POS printer',qrError:'Could not generate',language:'Language',settings:'Settings',records:'Records',profile:'Profile & Account',name:'Name',account:'Account',branch:'Relevant Branch',save:'Save Changes',currentPassword:'Current Password',newPassword:'New Password',passwordHint:'Leave password fields empty if you do not want to change it.',recordsTitle:'Shipment Records',noRecords:'No POS shipments yet.',search:'Search AWB / recipient',backCreate:'Create Shipment',saved:'Settings saved'
  },
  ar:{
   dedicated:'جهاز مخصص لإنشاء الشحنات',username:'اسم المستخدم',password:'كلمة المرور',login:'تسجيل الدخول',
@@ -36,7 +36,7 @@ const TXT={
   senderPays:'يدفع المرسل',collection:'مبلغ التحصيل',pieces:'عدد القطع',createPrint:'إنشاء الشحنة والطباعة',
   creating:'جارٍ إنشاء الشحنة...',created:'تم إنشاء الشحنة',createdTitle:'تم إنشاء الشحنة',
   printSent:'تم إرسال أمر الطباعة.',newAgain:'إنشاء شحنة جديدة',printAgain:'طباعة مرة أخرى',
-  sentPrinter:'تم الإرسال إلى طابعة الجهاز',qrError:'تعذر إنشاء',language:'اللغة'
+  sentPrinter:'تم الإرسال إلى طابعة الجهاز',qrError:'تعذر إنشاء',language:'اللغة',settings:'الإعدادات',records:'السجلات',profile:'الملف والحساب',name:'الاسم',account:'الحساب',branch:'الفرع المرتبط',save:'حفظ التغييرات',currentPassword:'كلمة المرور الحالية',newPassword:'كلمة المرور الجديدة',passwordHint:'اترك حقول كلمة المرور فارغة إذا لم ترغب في تغييرها.',recordsTitle:'سجلات الشحنات',noRecords:'لا توجد شحنات POS حتى الآن.',search:'بحث برقم AWB أو المستلم',backCreate:'إنشاء شحنة',saved:'تم حفظ الإعدادات'
  }
 };
 const t=k=>TXT[lang]?.[k]||TXT.en[k]||k;
@@ -70,10 +70,13 @@ function loginView(){
 async function refresh(){const [auth,br]=await Promise.all([api('/api/me'),api('/api/public/branch-directory')]);me=auth.user;branches=Array.isArray(br)?br:(br.branches||[]);if(me&&canUsePos(me)){try{shipments=await api('/api/shipments')}catch(_){shipments=[]}}}
 function shell(){
  applyLanguage();
- app.innerHTML='<header class="top"><img src="/ghazala-logo.png?v=2"><div class="identity"><b>Ghazala POS</b><small>'+esc(userBranch(me))+' · '+esc(deviceId)+'</small></div><div class="top-controls">'+languageSelect()+'<button id="logout" class="btn light logout">'+esc(t('logout'))+'</button></div></header><div class="content"><div class="head"><div><h1>'+esc(t('create'))+'</h1><small>'+esc(t('sub'))+'</small></div></div><section id="panel" class="panel"></section></div>';
+ app.innerHTML='<header class="top"><img src="/ghazala-logo.png?v=2"><div class="identity"><b>Ghazala POS</b><small>'+esc(userBranch(me))+' · '+esc(deviceId)+'</small></div><div class="top-controls">'+languageSelect()+'<button id="logout" class="btn light logout">'+esc(t('logout'))+'</button></div></header><div class="pos-nav"><button class="nav-btn '+(posView==='create'?'active':'')+'" data-pos-view="create">'+esc(t('backCreate'))+'</button><button class="nav-btn '+(posView==='records'?'active':'')+'" data-pos-view="records">'+esc(t('records'))+'</button><button class="nav-btn '+(posView==='settings'?'active':'')+'" data-pos-view="settings">'+esc(t('settings'))+'</button></div><div class="content"><section id="panel" class="panel"></section></div>';
  bindLanguage();
  $('#logout').onclick=async()=>{try{await api('/api/logout',{method:'POST',body:'{}'})}catch(_){}me=null;shipments=[];loginView()};
- createPanel();
+ document.querySelectorAll('[data-pos-view]').forEach(b=>b.onclick=()=>{posView=b.dataset.posView;render()});
+ if(posView==='records')recordsPanel();
+ else if(posView==='settings')settingsPanel();
+ else createPanel();
 }
 function etaDefault(){const d=new Date(Date.now()+24*3600*1000);return d.toISOString().slice(0,16)}
 function createPanel(){
@@ -83,14 +86,32 @@ function createPanel(){
  const syncDest=()=>{f.recipient_branch.innerHTML=branchOptions(f.destination.value);if(f.elements.origin.value===f.destination.value){const other=[...f.destination.options].find(o=>o.value!==f.elements.origin.value);if(other)f.destination.value=other.value;f.recipient_branch.innerHTML=branchOptions(f.destination.value)}};
  f.destination.onchange=syncDest;
  f.querySelectorAll('[name=payment_method]').forEach(x=>x.onchange=()=>{const cod=f.payment_method.value==='cod';$('#codWrap').style.display=cod?'grid':'none';f.cod.required=cod;if(!cod)f.cod.value='0'});
- async function saveAndPrint(){if(!f.reportValidity())return;const b=f.querySelector('button[type=submit]');b.disabled=true;b.textContent=t('creating');try{const data=Object.fromEntries(new FormData(f));['declared_value','cod','pieces','weight','length_cm','width_cm','height_cm'].forEach(k=>data[k]=Number(data[k]||0));if(data.payment_method!=='cod')data.cod=0;const created=await api('/api/shipments',{method:'POST',body:JSON.stringify(data)});toast(t('created')+': '+created.awb);await refresh();await printWaybill(created.awb);showSuccess(created.awb)}catch(err){toast(err.message);b.disabled=false;b.textContent=t('createPrint')}}
+ async function saveAndPrint(){if(!f.reportValidity())return;const b=f.querySelector('button[type=submit]');b.disabled=true;b.textContent=t('creating');try{const data=Object.fromEntries(new FormData(f));['declared_value','cod','pieces','weight','length_cm','width_cm','height_cm'].forEach(k=>data[k]=Number(data[k]||0));if(data.payment_method!=='cod')data.cod=0;data.pos_device_id=deviceId;const created=await api('/api/shipments',{method:'POST',body:JSON.stringify(data)});toast(t('created')+': '+created.awb);await refresh();await printWaybill(created.awb);showSuccess(created.awb)}catch(err){toast(err.message);b.disabled=false;b.textContent=t('createPrint')}}
  f.onsubmit=e=>{e.preventDefault();saveAndPrint()};
 }
 function showSuccess(awb){
  const panel=$('#panel');if(!panel)return;
  panel.innerHTML='<div class="success-card"><div class="success-icon">✓</div><h2>'+esc(t('createdTitle'))+'</h2><div class="success-awb">'+esc(awb)+'</div><p>'+esc(t('printSent'))+'</p><button id="newShipmentBtn" class="btn primary">'+esc(t('newAgain'))+'</button><button id="reprintBtn" class="btn light">'+esc(t('printAgain'))+'</button></div>';
- $('#newShipmentBtn').onclick=createPanel;
+ $('#newShipmentBtn').onclick=()=>{posView='create';render()};
  $('#reprintBtn').onclick=()=>printWaybill(awb);
+}
+async function recordsPanel(){
+ const panel=$('#panel');if(!panel)return;
+ panel.innerHTML='<div class="section-title">'+esc(t('recordsTitle'))+'</div><label class="field"><span>'+esc(t('search'))+'</span><input id="recordSearch" placeholder="GHZ-..."></label><div id="recordList" class="shipment-list"><div class="empty">...</div></div>';
+ try{
+   const rows=await api('/api/pos/records');
+   const draw=()=>{const q=String($('#recordSearch')?.value||'').trim().toLowerCase();const data=rows.filter(s=>!q||[s.awb,s.recipient,s.phone].some(v=>String(v||'').toLowerCase().includes(q)));$('#recordList').innerHTML=data.length?data.map(s=>'<article class="shipment"><div class="shipment-head"><div><div class="awb">'+esc(s.awb)+'</div><b>'+esc(s.recipient||'')+'</b></div><span class="badge">'+esc(s.status||'')+'</span></div><p>'+esc(s.origin||'')+' → '+esc(s.destination||'')+' · '+esc(s.phone||'')+'</p><div class="record-meta"><span>'+esc(s.pos_created_at||s.created_at||'')+'</span><span>Prints: '+esc(s.print_count||0)+'</span><span>'+esc(s.payment_status||'')+'</span></div><div class="mini-actions"><button class="btn orange" data-record-print="'+esc(s.awb)+'">'+esc(t('printAgain'))+'</button></div></article>').join(''):'<div class="empty">'+esc(t('noRecords'))+'</div>';document.querySelectorAll('[data-record-print]').forEach(b=>b.onclick=()=>printWaybill(b.dataset.recordPrint))};
+   $('#recordSearch').oninput=draw;draw();
+ }catch(err){panel.innerHTML='<div class="empty">'+esc(err.message)+'</div>'}
+}
+async function settingsPanel(){
+ const panel=$('#panel');if(!panel)return;
+ panel.innerHTML='<div class="empty">...</div>';
+ try{
+   const data=await api('/api/pos/profile');me=data.user||me;const branch=data.branch||primaryBranch(me)||{};
+   panel.innerHTML='<div class="section-title">'+esc(t('profile'))+'</div><form id="settingsForm"><label class="field"><span>'+esc(t('name'))+'</span><input name="display_name" value="'+esc(me.display_name||'')+'" required></label><label class="field"><span>'+esc(t('account'))+'</span><input value="'+esc(me.username||'')+'" readonly></label><label class="field"><span>'+esc(t('branch'))+'</span><input value="'+esc((branch.name||branch.code||'')+(branch.city?' · '+branch.city:''))+'" readonly></label><div class="settings-note">'+esc(t('passwordHint'))+'</div><label class="field"><span>'+esc(t('currentPassword'))+'</span><input name="current_password" type="password" autocomplete="current-password"></label><label class="field"><span>'+esc(t('newPassword'))+'</span><input name="new_password" type="password" autocomplete="new-password"></label><button class="btn primary" type="submit">'+esc(t('save'))+'</button></form>';
+   $('#settingsForm').onsubmit=async e=>{e.preventDefault();const f=e.currentTarget,b=f.querySelector('button');b.disabled=true;try{const payload=Object.fromEntries(new FormData(f));const res=await api('/api/pos/profile',{method:'POST',body:JSON.stringify(payload)});me=res.user||me;toast(t('saved'));render()}catch(err){toast(err.message)}finally{if(b.isConnected)b.disabled=false}};
+ }catch(err){panel.innerHTML='<div class="empty">'+esc(err.message)+'</div>'}
 }
 function recentPanel(){
  const rows=[...shipments].sort((a,b)=>String(b.created_at||'').localeCompare(String(a.created_at||''))).slice(0,30);
@@ -101,6 +122,7 @@ function recentPanel(){
 async function codeSvg(awb,type){const r=await fetch('/api/shipments/'+encodeURIComponent(awb)+'/'+type,{credentials:'same-origin'});if(!r.ok)throw new Error(t('qrError')+' '+type);return await r.text()}
 async function printWaybill(awb){
  try{
+   try{await api('/api/pos/records/'+encodeURIComponent(awb)+'/printed',{method:'POST',body:'{}'})}catch(_){}
    const [doc,qr,bar]=await Promise.all([api('/api/shipments/'+encodeURIComponent(awb)+'/documents'),codeSvg(awb,'qr'),codeSvg(awb,'barcode')]);
    const s=doc.shipment||shipments.find(x=>x.awb===awb)||{awb};
    const qrUrl='data:image/svg+xml;base64,'+btoa(unescape(encodeURIComponent(qr)));
