@@ -6367,10 +6367,7 @@ class Handler(BaseHTTPRequestHandler):
                 required_values={
                     "customer name":sender_name,
                     "customer mobile":sender_phone,
-                    "sender ID":sender_id,
-                    "pickup address":sender_address,
                     "recipient":recipient,
-                    "recipient ID":recipient_id,
                     "recipient mobile":recipient_phone,
                     "origin":origin,
                     "destination":destination,
