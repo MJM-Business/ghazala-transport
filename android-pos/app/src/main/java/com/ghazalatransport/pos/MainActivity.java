@@ -4,11 +4,15 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.print.PrintManager;
 import android.content.Context;
+import android.content.Intent;
+import android.content.ComponentName;
+import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.net.ConnectivityManager;
 import android.net.NetworkCapabilities;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.print.PrintDocumentAdapter;
 import android.view.KeyEvent;
 import android.view.View;
@@ -24,6 +28,8 @@ import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ProgressBar;
 import android.widget.Toast;
+import org.json.JSONObject;
+import java.lang.reflect.Method;
 
 public class MainActivity extends Activity {
     private static final String PREFS = "ghazala_pos_prefs";
@@ -31,6 +37,8 @@ public class MainActivity extends Activity {
     private WebView webView;
     private ProgressBar progress;
     private SharedPreferences prefs;
+    private Object sunmiPrinterService;
+    private boolean sunmiBound=false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,6 +46,7 @@ public class MainActivity extends Activity {
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
         buildUi();
+        bindSunmiPrinter();
 
         String serverUrl = normalizeUrl(prefs.getString(PREF_SERVER_URL, ""));
         if (serverUrl.isEmpty()) {
@@ -120,6 +129,106 @@ public class MainActivity extends Activity {
         webView.setHapticFeedbackEnabled(false);
     }
 
+
+    private void bindSunmiPrinter() {
+        try {
+            Intent intent = new Intent("woyou.aidlservice.jiuiv5.IWoyouService");
+            intent.setPackage("woyou.aidlservice.jiuiv5");
+            sunmiBound = bindService(intent, sunmiConnection, Context.BIND_AUTO_CREATE);
+        } catch (Exception ex) {
+            sunmiBound = false;
+        }
+    }
+
+    private final ServiceConnection sunmiConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            try {
+                Context pkg = createPackageContext(
+                        "woyou.aidlservice.jiuiv5",
+                        Context.CONTEXT_INCLUDE_CODE | Context.CONTEXT_IGNORE_SECURITY
+                );
+                Class<?> stub = pkg.getClassLoader().loadClass(
+                        "woyou.aidlservice.jiuiv5.IWoyouService$Stub"
+                );
+                Method asInterface = stub.getMethod("asInterface", IBinder.class);
+                sunmiPrinterService = asInterface.invoke(null, service);
+                Toast.makeText(MainActivity.this,
+                        "SUNMI thermal printer connected.",
+                        Toast.LENGTH_SHORT).show();
+            } catch (Exception ex) {
+                sunmiPrinterService = null;
+                Toast.makeText(MainActivity.this,
+                        "SUNMI printer service mila, lekin interface load nahi hui.",
+                        Toast.LENGTH_LONG).show();
+            }
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            sunmiPrinterService = null;
+        }
+    };
+
+    private Object invokeSunmi(String name, Object... args) throws Exception {
+        if (sunmiPrinterService == null) {
+            throw new IllegalStateException("SUNMI printer service connected nahi hai.");
+        }
+        Method match = null;
+        Method[] methods = sunmiPrinterService.getClass().getMethods();
+        for (Method method : methods) {
+            if (method.getName().equals(name) && method.getParameterTypes().length == args.length) {
+                match = method;
+                break;
+            }
+        }
+        if (match == null) throw new NoSuchMethodException(name);
+        match.setAccessible(true);
+        return match.invoke(sunmiPrinterService, args);
+    }
+
+    private void printSunmiReceipt(String json) {
+        try {
+            JSONObject data = new JSONObject(json);
+            String awb = data.optString("awb", "");
+            String sender = data.optString("sender", "");
+            String recipient = data.optString("recipient", "");
+            String mobile = data.optString("mobile", "");
+            String route = data.optString("route", "");
+            String payment = data.optString("payment", "");
+            String total = data.optString("total", "0");
+
+            invokeSunmi("printerInit", new Object[]{null});
+            invokeSunmi("setAlignment", 1, null);
+            invokeSunmi("setFontSize", 26.0f, null);
+            invokeSunmi("printText", "GHAZALA TRANSPORT\n", null);
+            invokeSunmi("setFontSize", 22.0f, null);
+            invokeSunmi("printText", awb + "\n", null);
+            invokeSunmi("printQRCode", awb, 6, 1, null);
+            invokeSunmi("lineWrap", 1, null);
+            invokeSunmi("printBarCode", awb, 8, 90, 2, 2, null);
+            invokeSunmi("lineWrap", 1, null);
+            invokeSunmi("setAlignment", 0, null);
+            invokeSunmi("setFontSize", 20.0f, null);
+            invokeSunmi("printText", "Sender: " + sender + "\n", null);
+            invokeSunmi("printText", "Recipient: " + recipient + "\n", null);
+            invokeSunmi("printText", "Mobile: " + mobile + "\n", null);
+            invokeSunmi("printText", "Route: " + route + "\n", null);
+            invokeSunmi("printText", "Payment: " + payment + "\n", null);
+            invokeSunmi("printText", "Total: " + total + " SAR\n", null);
+            invokeSunmi("printText", "Track shipment by scanning QR code\n", null);
+            invokeSunmi("lineWrap", 4, null);
+
+            Toast.makeText(this,
+                    "Receipt SUNMI printer ko bhej di gayi.",
+                    Toast.LENGTH_SHORT).show();
+        } catch (Exception ex) {
+            Toast.makeText(this,
+                    "SUNMI print failed: " + ex.getClass().getSimpleName() + " - " + ex.getMessage(),
+                    Toast.LENGTH_LONG).show();
+        }
+    }
+
     private void showServerDialog(boolean required) {
         final EditText input = new EditText(this);
         input.setSingleLine(true);
@@ -184,6 +293,14 @@ public class MainActivity extends Activity {
         return super.onKeyDown(keyCode, event);
     }
 
+    @Override
+    protected void onDestroy() {
+        if (sunmiBound) {
+            try { unbindService(sunmiConnection); } catch (Exception ignored) {}
+        }
+        super.onDestroy();
+    }
+
     private final class PosBridge {
         private final Activity activity;
 
@@ -194,6 +311,11 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void printHtml(String html, int paperWidthMm) {
             activity.runOnUiThread(() -> printHtmlContent(html));
+        }
+
+        @JavascriptInterface
+        public void printReceipt(String json) {
+            activity.runOnUiThread(() -> printSunmiReceipt(json));
         }
 
         @JavascriptInterface
