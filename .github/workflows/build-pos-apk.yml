@@ -1,0 +1,38 @@
+name: Build Ghazala POS APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - full-improvement-checklist
+    paths:
+      - 'android-pos/**'
+      - '.github/workflows/build-pos-apk.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.2.1'
+
+      - name: Build debug APK
+        working-directory: android-pos
+        run: gradle :app:assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: ghazala-pos-debug-apk
+          path: android-pos/app/build/outputs/apk/debug/app-debug.apk
