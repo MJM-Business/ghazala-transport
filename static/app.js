@@ -1788,6 +1788,14 @@ function wireCustomerLogin(){
 
       user=result.user;
       const role=accessRole(result.user);
+      const loginUsername=String(result.user?.username||username||'').trim().toLowerCase();
+
+      // POS staff use the same universal login screen, but enter the
+      // dedicated POS portal after successful authentication.
+      if(loginUsername.startsWith('pos.')){
+        window.location.assign('/pos');
+        return;
+      }
 
       if(role==='customer'){
         customerMode=true;
