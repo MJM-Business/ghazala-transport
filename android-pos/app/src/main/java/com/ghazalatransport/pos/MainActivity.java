@@ -193,23 +193,54 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public void printHtml(String html, int paperWidthMm) {
-            activity.runOnUiThread(() -> printWebContent());
+            activity.runOnUiThread(() -> printHtmlContent(html));
         }
 
         @JavascriptInterface
         public void printWaybill(String awb, int paperWidthMm) {
-            activity.runOnUiThread(() -> printWebContent());
+            activity.runOnUiThread(() -> {
+                Toast.makeText(activity,
+                        "Waybill print data web portal se tayar hota hai.",
+                        Toast.LENGTH_SHORT).show();
+            });
         }
 
-        private void printWebContent() {
+        private void printHtmlContent(String html) {
             try {
-                PrintManager printManager = (PrintManager) getSystemService(Context.PRINT_SERVICE);
+                final PrintManager printManager = (PrintManager) getSystemService(Context.PRINT_SERVICE);
                 if (printManager == null) {
-                    Toast.makeText(activity, "Android print service available nahi hai.", Toast.LENGTH_LONG).show();
+                    Toast.makeText(activity,
+                            "Android print service available nahi hai. Vendor printer SDK chahiye.",
+                            Toast.LENGTH_LONG).show();
                     return;
                 }
-                PrintDocumentAdapter adapter = webView.createPrintDocumentAdapter("Ghazala POS Receipt");
-                printManager.print("Ghazala POS Receipt", adapter, null);
+
+                final WebView printView = new WebView(activity);
+                WebSettings printSettings = printView.getSettings();
+                printSettings.setJavaScriptEnabled(true);
+                printSettings.setDomStorageEnabled(true);
+                printSettings.setDefaultTextEncodingName("utf-8");
+
+                printView.setWebViewClient(new WebViewClient() {
+                    @Override
+                    public void onPageFinished(WebView view, String url) {
+                        try {
+                            PrintDocumentAdapter adapter =
+                                    printView.createPrintDocumentAdapter("Ghazala POS Receipt");
+                            printManager.print("Ghazala POS Receipt", adapter, null);
+                        } catch (Exception ex) {
+                            Toast.makeText(activity,
+                                    "Print service start nahi ho saki. Vendor printer SDK chahiye.",
+                                    Toast.LENGTH_LONG).show();
+                        }
+                    }
+                });
+
+                String baseUrl = prefs.getString(PREF_SERVER_URL, "");
+                if (baseUrl == null || baseUrl.trim().isEmpty()) {
+                    baseUrl = "http://127.0.0.1/";
+                }
+                printView.loadDataWithBaseURL(baseUrl, html, "text/html", "UTF-8", null);
             } catch (Exception ex) {
                 Toast.makeText(activity,
                         "Printer bridge ko device vendor SDK ki zarurat hai.",
