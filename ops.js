@@ -1003,13 +1003,12 @@
       <form id="createForm" class="form-grid ops-form">
         <h3 class="field span-2">${opsTr('بيانات المرسل')}</h3>
         <label class="field"><span>${opsTr('اسم المرسل')} *</span><input name="sender_name" required autocomplete="name"></label><label class="field"><span>${opsTr('رقم هوية المرسل')} (${safe(clt('optional'))})</span><input name="sender_id" inputmode="numeric"></label>
-        <label class="field"><span>${opsTr('جوال المرسل')} *</span><input name="sender_phone" type="tel" required autocomplete="tel"></label>
+        <label class="field"><span>${opsTr('جوال المرسل')} *</span><input name="sender_phone" type="tel" required autocomplete="tel"></label><label class="field span-2"><span>${opsTr('عنوان المرسل')} *</span><textarea name="sender_address" required></textarea></label>
         ${hasPermission('shipments.edit')?`<h3 class="field span-2">${safe(clt('account'))}</h3><label class="field span-2"><span>${safe(clt('optional'))}</span><select name="customer_user_id">${customerAccountOptionMarkup(customerAccounts)}</select></label>`:''}
         <h3 class="field span-2">${opsTr('بيانات المستلم ووجهة الوصول')}</h3>
         <label class="field"><span>${opsTr('اسم المستلم')} *</span><input name="recipient" required></label><label class="field"><span>${opsTr('رقم هوية المستلم')} (${safe(clt('optional'))})</span><input name="recipient_id" inputmode="numeric"></label>
         <label class="field"><span>${opsTr('جوال المستلم')} *</span><input name="phone" type="tel" required></label><label class="field"><span>${opsTr('من مدينة')}</span><select name="origin" required>${cityOptionMarkup(originDefault)}</select></label>
         <label class="field"><span>${opsTr('إلى مدينة')}</span><select name="destination" required>${cityOptionMarkup(destinationDefault)}</select></label><label class="field"><span>${opsTr('فرع الوجهة')}</span><select name="recipient_branch">${branchOptions(destinationDefault)}</select></label>
-        <label class="field span-2"><span>${opsTr('عنوان المستلم بالتفصيل')} *</span><textarea name="recipient_address" required placeholder="${opsTr('الحي، الشارع، رقم المبنى، أقرب علامة')}"></textarea></label>
         <h3 class="field span-2">${opsTr('تفاصيل الطرد والشحنة')}</h3>
         <label class="field"><span>${opsTr('نوع الشحنة')}</span><select name="package_type">${['طرد تجاري سريع','مستندات','قابل للكسر','شحنة كبيرة'].map(type=>`<option value="${safe(type)}">${opsTr(type)}</option>`).join('')}</select></label><label class="field"><span>${opsTr('عدد الطرود')}</span><input name="pieces" type="number" min="1" max="100" value="1" required></label>
         <label class="field"><span>${opsTr('الوزن الإجمالي (كجم)')}</span><input name="weight" type="number" min="0.5" step="0.1" value="1" required></label><label class="field"><span>${opsTr('وقت الوصول المتوقع ETA')} *</span><input name="eta" type="datetime-local" value="${localDT(24)}" required></label>
