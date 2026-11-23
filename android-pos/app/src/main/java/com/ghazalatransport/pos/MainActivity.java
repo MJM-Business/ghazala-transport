@@ -2,7 +2,7 @@ package com.ghazalatransport.pos;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.PrintManager;
+import android.print.PrintManager;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
