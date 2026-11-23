@@ -136,7 +136,7 @@ function shell(){
 function etaDefault(){const d=new Date(Date.now()+24*3600*1000);return d.toISOString().slice(0,16)}
 function createPanel(){
  const origin=defaultCity(),destBranch=branches.find(b=>b.city&&b.city!==origin),dest=(destBranch&&destBranch.city)||origin;
- $('#panel').innerHTML='<div class="section-title">'+esc(t('newShipment'))+'</div><form id="shipmentForm"><div class="split"><label class="field"><span>'+esc(t('senderName'))+'</span><input name="sender_name" required></label><label class="field"><span>'+esc(t('senderMobile'))+'</span><input name="sender_phone" type="tel" required></label></div><div class="split"><label class="field"><span>'+esc(t('senderId'))+'</span><input name="sender_id"></label><label class="field"><span>'+esc(t('recipientId'))+'</span><input name="recipient_id"></label></div><label class="field"><span>'+esc(t('pickup'))+'</span><textarea name="sender_address" required></textarea></label><div class="split"><label class="field"><span>'+esc(t('recipientName'))+'</span><input name="recipient" required></label><label class="field"><span>'+esc(t('recipientMobile'))+'</span><input name="phone" type="tel" required></label></div><div class="split"><label class="field"><span>'+esc(t('fromCity'))+'</span><input value="'+esc(localCity(origin))+'" readonly><input type="hidden" name="origin" value="'+esc(origin)+'"></label><label class="field"><span>'+esc(t('toCity'))+'</span><select name="destination" required>'+cityOptions(dest)+'</select></label></div><label class="field"><span>'+esc(t('destinationBranch'))+'</span><select name="recipient_branch">'+branchOptions(dest)+'</select></label><label class="field"><span>'+esc(t('shipmentValue'))+'</span><input name="declared_value" type="number" min="0" step="0.01" value="0"></label><div class="checks"><label class="check"><input type="radio" name="payment_method" value="cod" checked> '+esc(t('cod'))+'</label><label class="check"><input type="radio" name="payment_method" value="sender"> '+esc(t('senderPays'))+'</label></div><label id="codWrap" class="field"><span>'+esc(t('collection'))+'</span><input name="cod" type="number" min="0.01" step="0.01" value="1"></label><label class="field"><span>'+esc(t('pieces'))+'</span><input name="pieces" type="number" min="1" value="1" required></label><input type="hidden" name="eta" value="'+etaDefault()+'"><input type="hidden" name="package_type" value="طرد تجاري سريع"><input type="hidden" name="weight" value="1"><input type="hidden" name="length_cm" value="0"><input type="hidden" name="width_cm" value="0"><input type="hidden" name="height_cm" value="0"><div class="actions single"><button type="submit" class="btn orange">'+esc(t('createPrint'))+'</button></div></form>';
+ $('#panel').innerHTML='<div class="section-title">'+esc(t('newShipment'))+'</div><form id="shipmentForm"><div class="split"><label class="field"><span>'+esc(t('senderName'))+'</span><input name="sender_name" required></label><label class="field"><span>'+esc(t('senderMobile'))+'</span><input name="sender_phone" type="tel" required></label></div><div class="split"><label class="field"><span>'+esc(t('senderId'))+'</span><input name="sender_id"></label><label class="field"><span>'+esc(t('recipientId'))+'</span><input name="recipient_id"></label></div><label class="field"><span>'+esc(t('pickup'))+'</span><textarea name="sender_address" required></textarea></label><div class="split"><label class="field"><span>'+esc(t('recipientName'))+'</span><input name="recipient" required></label><label class="field"><span>'+esc(t('recipientMobile'))+'</span><input name="phone" type="tel" required></label></div><div class="split"><label class="field"><span>'+esc(t('fromCity'))+'</span><input value="'+esc(localCity(origin))+'" readonly><input type="hidden" name="origin" value="'+esc(origin)+'"></label><label class="field"><span>'+esc(t('toCity'))+'</span><select name="destination" required>'+cityOptions(dest)+'</select></label></div><label class="field"><span>'+esc(t('destinationBranch'))+'</span><select name="recipient_branch">'+branchOptions(dest)+'</select></label><label class="field"><span>'+esc(t('shipmentValue'))+'</span><input name="declared_value" type="number" min="0" step="0.01" value="0"></label><div class="checks"><label class="check"><input type="radio" name="payment_method" value="cod" checked> '+esc(t('cod'))+'</label><label class="check"><input type="radio" name="payment_method" value="sender"> '+esc(t('senderPays'))+'</label></div><label id="codWrap" class="field"><span>'+esc(t('collection'))+'</span><input name="cod" type="number" min="0.01" step="0.01" value="1"></label><label class="field"><span>'+esc(t('pieces'))+'</span><input name="pieces" type="number" min="1" value="1" required></label><input type="hidden" name="eta" value="'+etaDefault()+'"><input type="hidden" name="package_type" value="طرد تجاري سريع"><input type="hidden" name="weight" value="1"><input type="hidden" name="length_cm" value="0"><input type="hidden" name="width_cm" value="0"><input type="hidden" name="height_cm" value="0"><div id="createStatus" class="create-status" aria-live="polite"></div><div class="actions single"><button type="submit" class="btn orange">'+esc(t('createPrint'))+'</button></div></form>';
  const f=$('#shipmentForm');
  const syncDest=()=>{f.recipient_branch.innerHTML=branchOptions(f.destination.value);if(f.elements.origin.value===f.destination.value){const other=Array.from(f.destination.options).find(o=>o.value!==f.elements.origin.value);if(other)f.destination.value=other.value;f.recipient_branch.innerHTML=branchOptions(f.destination.value)}};
  f.destination.onchange=syncDest;
@@ -144,6 +144,8 @@ function createPanel(){
  async function saveAndPrint(){
  if(!validateShipmentForm(f))return;
  const b=f.querySelector('button[type=submit]');
+ const statusBox=$('#createStatus');
+ if(statusBox){statusBox.className='create-status';statusBox.textContent='Sending shipment to server...'}
  b.disabled=true;b.textContent=t('creating');
  try{
    const data=formObject(f);
@@ -151,12 +153,15 @@ function createPanel(){
    if(data.payment_method!=='cod')data.cod=0;
    data.pos_device_id=deviceId;
    const created=await api('/api/shipments',{method:'POST',body:JSON.stringify(data)});
+   if(statusBox){statusBox.className='create-status ok';statusBox.textContent='Shipment saved: '+created.awb}
    toast(t('created')+': '+created.awb);
    await refresh();
    showSuccess(created.awb);
    setTimeout(function(){printWaybill(created.awb)},250);
  }catch(err){
-   toast('Create failed: '+(err&&err.message?err.message:String(err)));
+   const message='Create failed: '+(err&&err.message?err.message:String(err));
+   if(statusBox){statusBox.className='create-status error';statusBox.textContent=message}
+   toast(message);
    b.disabled=false;b.textContent=t('createPrint');
  }
 }
