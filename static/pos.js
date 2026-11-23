@@ -220,6 +220,20 @@ async function printWaybill(awb){
    const barUrl='data:image/svg+xml;base64,'+btoa(unescape(encodeURIComponent(bar)));
    const html='<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><style>@page{size:58mm auto;margin:0}body{margin:0;width:58mm;font:9px Arial;color:#111}.r{width:58mm;padding:2.5mm;box-sizing:border-box;text-align:center}.logo{width:15mm;height:15mm;object-fit:contain}.awb{font:bold 14px monospace;margin:2mm 0}.qr{width:23mm;height:23mm}.bar{width:51mm;height:12mm;object-fit:contain}.line{border-top:1px dashed #555;margin:2mm 0}.row{display:flex;justify-content:space-between;gap:2mm;text-align:left;margin:1mm 0}.row b{text-align:right}h2{font-size:12px;margin:1mm}.small{font-size:7px}.no-print{margin:3mm} @media print{.no-print{display:none}}</style></head><body><div class="no-print"><button onclick="print()">PRINT</button></div><main class="r"><img class="logo" src="/ghazala-logo.png?v=2"><h2>GHAZALA TRANSPORT</h2><div class="awb">'+esc(awb)+'</div><img class="qr" src="'+qrUrl+'"><br><img class="bar" src="'+barUrl+'"><div class="line"></div><div class="row"><span>Sender</span><b>'+esc(s.sender_name||'')+'</b></div><div class="row"><span>Recipient</span><b>'+esc(s.recipient||'')+'</b></div><div class="row"><span>Mobile</span><b>'+esc(s.phone||'')+'</b></div><div class="row"><span>Route</span><b>'+esc(s.origin||'')+' → '+esc(s.destination||'')+'</b></div><div class="row"><span>Payment</span><b>'+esc(s.payment_status||'')+'</b></div><div class="row"><span>Total</span><b>'+esc(s.total_fee||'0')+' SAR</b></div><div class="line"></div><div class="small">Track shipment by scanning QR code</div></main><script>setTimeout(()=>window.print(),350)<\/script></body></html>';
    const bridge=window.GhazalaPOSPrinter||window.AndroidPrinter||window.Android;
+   if(bridge&&typeof bridge.printReceipt==='function'){
+     const receiptData={
+       awb:awb,
+       sender:s.sender_name||'',
+       recipient:s.recipient||'',
+       mobile:s.phone||'',
+       route:(s.origin||'')+' -> '+(s.destination||''),
+       payment:s.payment_status||'',
+       total:String(s.total_fee||'0')
+     };
+     await Promise.resolve(bridge.printReceipt(JSON.stringify(receiptData)));
+     toast(t('sentPrinter'));
+     return;
+   }
    if(bridge&&typeof bridge.printHtml==='function'){await Promise.resolve(bridge.printHtml(html,58));toast(t('sentPrinter'));return}
    const frame=document.createElement('iframe');frame.className='print-frame';document.body.appendChild(frame);frame.onload=()=>{};frame.srcdoc=html;setTimeout(()=>{try{frame.contentWindow.focus();frame.contentWindow.print()}catch(_){window.open('/api/shipments/'+encodeURIComponent(awb)+'/waybill/pdf','_blank')}setTimeout(()=>frame.remove(),2500)},500);
  }catch(err){toast(err.message)}
