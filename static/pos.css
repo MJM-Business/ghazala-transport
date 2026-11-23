@@ -69,3 +69,5 @@ html[dir="rtl"] .awb,
 html[dir="ltr"] .awb{direction:ltr;unicode-bidi:isolate}
 html[dir="rtl"] .top small{direction:rtl}
 html[dir="ltr"] .top small{direction:ltr}
+
+.dispatched-btn{background:#eaf8f2!important;color:#0f7a57!important;border:1px solid #b8ead8!important;cursor:default}.shipment .mini-actions{grid-template-columns:1fr 1fr}
