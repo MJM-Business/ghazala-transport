@@ -23,7 +23,7 @@ const TXT={
   senderPays:'Sender Pays',collection:'Collection Amount',pieces:'Pieces',createPrint:'Create Shipment & Print',
   creating:'Creating Shipment...',created:'Shipment created',createdTitle:'Shipment Created',
   printSent:'Receipt print command has been sent.',newAgain:'Create New Shipment',printAgain:'Print Again',
-  sentPrinter:'Sent to POS printer',qrError:'Could not generate',language:'Language',settings:'Settings',records:'Records',profile:'Profile & Account',name:'Name',account:'Account',branch:'Relevant Branch',save:'Save Changes',currentPassword:'Current Password',newPassword:'New Password',passwordHint:'Leave password fields empty if you do not want to change it.',recordsTitle:'Shipment Records',noRecords:'No POS shipments yet.',search:'Search AWB / recipient',backCreate:'Create Shipment',saved:'Settings saved'
+  sentPrinter:'Sent to POS printer',qrError:'Could not generate',language:'Language',settings:'Settings',records:'Records',profile:'Profile & Account',name:'Name',account:'Account',branch:'Relevant Branch',save:'Save Changes',currentPassword:'Current Password',newPassword:'New Password',passwordHint:'Leave password fields empty if you do not want to change it.',recordsTitle:'Shipment Records',noRecords:'No POS shipments yet.',search:'Search AWB / recipient',backCreate:'Create Shipment',saved:'Settings saved',dispatch:'Dispatch Shipment',dispatching:'Dispatching...',dispatched:'Dispatched',dispatchConfirm:'Dispatch this shipment to the destination branch?',dispatchDone:'Shipment dispatched successfully'
  },
  ar:{
   dedicated:'جهاز مخصص لإنشاء الشحنات',username:'اسم المستخدم',password:'كلمة المرور',login:'تسجيل الدخول',
@@ -36,7 +36,7 @@ const TXT={
   senderPays:'يدفع المرسل',collection:'مبلغ التحصيل',pieces:'عدد القطع',createPrint:'إنشاء الشحنة والطباعة',
   creating:'جارٍ إنشاء الشحنة...',created:'تم إنشاء الشحنة',createdTitle:'تم إنشاء الشحنة',
   printSent:'تم إرسال أمر الطباعة.',newAgain:'إنشاء شحنة جديدة',printAgain:'طباعة مرة أخرى',
-  sentPrinter:'تم الإرسال إلى طابعة الجهاز',qrError:'تعذر إنشاء',language:'اللغة',settings:'الإعدادات',records:'السجلات',profile:'الملف والحساب',name:'الاسم',account:'الحساب',branch:'الفرع المرتبط',save:'حفظ التغييرات',currentPassword:'كلمة المرور الحالية',newPassword:'كلمة المرور الجديدة',passwordHint:'اترك حقول كلمة المرور فارغة إذا لم ترغب في تغييرها.',recordsTitle:'سجلات الشحنات',noRecords:'لا توجد شحنات POS حتى الآن.',search:'بحث برقم AWB أو المستلم',backCreate:'إنشاء شحنة',saved:'تم حفظ الإعدادات'
+  sentPrinter:'تم الإرسال إلى طابعة الجهاز',qrError:'تعذر إنشاء',language:'اللغة',settings:'الإعدادات',records:'السجلات',profile:'الملف والحساب',name:'الاسم',account:'الحساب',branch:'الفرع المرتبط',save:'حفظ التغييرات',currentPassword:'كلمة المرور الحالية',newPassword:'كلمة المرور الجديدة',passwordHint:'اترك حقول كلمة المرور فارغة إذا لم ترغب في تغييرها.',recordsTitle:'سجلات الشحنات',noRecords:'لا توجد شحنات POS حتى الآن.',search:'بحث برقم AWB أو المستلم',backCreate:'إنشاء شحنة',saved:'تم حفظ الإعدادات',dispatch:'ترحيل الشحنة',dispatching:'جارٍ الترحيل...',dispatched:'تم الترحيل',dispatchConfirm:'هل تريد ترحيل هذه الشحنة إلى فرع الوجهة؟',dispatchDone:'تم ترحيل الشحنة بنجاح'
  }
 };
 const t=k=>TXT[lang]?.[k]||TXT.en[k]||k;
@@ -116,9 +116,22 @@ async function recordsPanel(){
  panel.innerHTML='<div class="section-title">'+esc(t('recordsTitle'))+'</div><label class="field"><span>'+esc(t('search'))+'</span><input id="recordSearch" placeholder="GHZ-..."></label><div id="recordList" class="shipment-list"><div class="empty">...</div></div>';
  try{
    const rows=await api('/api/pos/records');
-   const draw=()=>{const q=String($('#recordSearch')?.value||'').trim().toLowerCase();const data=rows.filter(s=>!q||[s.awb,s.recipient,s.phone].some(v=>String(v||'').toLowerCase().includes(q)));$('#recordList').innerHTML=data.length?data.map(s=>'<article class="shipment"><div class="shipment-head"><div><div class="awb">'+esc(s.awb)+'</div><b>'+esc(s.recipient||'')+'</b></div><span class="badge">'+esc(s.status||'')+'</span></div><p>'+esc(s.origin||'')+' → '+esc(s.destination||'')+' · '+esc(s.phone||'')+'</p><div class="record-meta"><span>'+esc(s.pos_created_at||s.created_at||'')+'</span><span>Prints: '+esc(s.print_count||0)+'</span><span>'+esc(s.payment_status||'')+'</span></div><div class="mini-actions"><button class="btn orange" data-record-print="'+esc(s.awb)+'">'+esc(t('printAgain'))+'</button></div></article>').join(''):'<div class="empty">'+esc(t('noRecords'))+'</div>';document.querySelectorAll('[data-record-print]').forEach(b=>b.onclick=()=>printWaybill(b.dataset.recordPrint))};
+   const draw=()=>{const q=String($('#recordSearch')?.value||'').trim().toLowerCase();const data=rows.filter(s=>!q||[s.awb,s.recipient,s.phone].some(v=>String(v||'').toLowerCase().includes(q)));$('#recordList').innerHTML=data.length?data.map(s=>{const dispatched=!!s.dispatched_at||String(s.status||'').includes('الترحيل')||String(s.status||'').toLowerCase().includes('dispatch');return '<article class="shipment"><div class="shipment-head"><div><div class="awb">'+esc(s.awb)+'</div><b>'+esc(s.recipient||'')+'</b></div><span class="badge">'+esc(s.status||'')+'</span></div><p>'+esc(localCity(s.origin||''))+' → '+esc(localCity(s.destination||''))+' · '+esc(s.phone||'')+'</p><div class="record-meta"><span>'+esc(s.pos_created_at||s.created_at||'')+'</span><span>Prints: '+esc(s.print_count||0)+'</span><span>'+esc(s.payment_status||'')+'</span></div><div class="mini-actions"><button class="btn light" data-record-print="'+esc(s.awb)+'">'+esc(t('printAgain'))+'</button>'+(dispatched?'<button class="btn dispatched-btn" disabled>'+esc(t('dispatched'))+'</button>':'<button class="btn orange" data-dispatch="'+esc(s.awb)+'">'+esc(t('dispatch'))+'</button>')+'</div></article>'}).join(''):'<div class="empty">'+esc(t('noRecords'))+'</div>';document.querySelectorAll('[data-record-print]').forEach(b=>b.onclick=()=>printWaybill(b.dataset.recordPrint));document.querySelectorAll('[data-dispatch]').forEach(b=>b.onclick=()=>dispatchShipment(b.dataset.dispatch,b))};
    $('#recordSearch').oninput=draw;draw();
  }catch(err){panel.innerHTML='<div class="empty">'+esc(err.message)+'</div>'}
+}
+async function dispatchShipment(awb,button){
+ if(!confirm(t('dispatchConfirm')))return;
+ button.disabled=true;button.textContent=t('dispatching');
+ try{
+   const res=await api('/api/pos/records/'+encodeURIComponent(awb)+'/dispatch',{method:'POST',body:'{}'});
+   toast(t('dispatchDone')+' · '+res.awb);
+   await refresh();
+   await recordsPanel();
+ }catch(err){
+   toast(err.message);
+   if(button?.isConnected){button.disabled=false;button.textContent=t('dispatch')}
+ }
 }
 async function settingsPanel(){
  const panel=$('#panel');if(!panel)return;
