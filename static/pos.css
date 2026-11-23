@@ -71,3 +71,5 @@ html[dir="rtl"] .top small{direction:rtl}
 html[dir="ltr"] .top small{direction:ltr}
 
 .dispatched-btn{background:#eaf8f2!important;color:#0f7a57!important;border:1px solid #b8ead8!important;cursor:default}.shipment .mini-actions{grid-template-columns:1fr 1fr}
+
+.create-status{min-height:0;margin:8px 0 0;padding:0;font-size:12px;font-weight:800;line-height:1.4}.create-status:not(:empty){padding:9px 10px;border-radius:10px;background:#f8fafc;border:1px solid var(--line);color:var(--navy)}.create-status.ok{background:#eaf8f2;color:#0f7a57;border-color:#b8ead8}.create-status.error{background:#fff2f2;color:#b42318;border-color:#f2caca}
