@@ -1109,7 +1109,6 @@
               <div class="ops-receipt-row compact"><input name="recipient_id" required inputmode="numeric"><span>${opsTr('هوية المستلم')}</span></div>
             </div>
             <div class="ops-receipt-row"><textarea name="sender_address" required></textarea><span>${opsTr('عنوان المرسل')}</span></div>
-            <div class="ops-receipt-row"><textarea name="recipient_address" required placeholder="${opsTr('الحي، الشارع، رقم المبنى، أقرب علامة')}"></textarea><span>${opsTr('عنوان المستلم')}</span></div>
 
             <div class="ops-receipt-split">
               <div class="ops-receipt-row compact"><select name="origin" required>${cityOptionMarkup(originDefault)}</select><span>${opsTr('من مدينة')}</span></div>
