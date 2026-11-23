@@ -6367,12 +6367,12 @@ class Handler(BaseHTTPRequestHandler):
                 required_values={
                     "customer name":sender_name,
                     "customer mobile":sender_phone,
+                    "pickup address":sender_address,
                     "recipient":recipient,
                     "recipient mobile":recipient_phone,
                     "origin":origin,
                     "destination":destination,
                     "ETA":eta,
-                    "recipient address":recipient_address,
                 }
                 missing=[name for name,value in required_values.items() if not value]
                 if missing:
@@ -7744,7 +7744,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send_json({"ok":True,"awb":awb,"verified_at":now_text,"sms_delivery":sms["delivery"],"delivery_attempt_id":delivery_attempt_id})
             if path=="/api/shipments":
                 customer_user_id=data.get("customer_user_id") or None
-                required=["sender_name","sender_id","sender_phone","recipient","recipient_id","phone","origin","destination","eta"]
+                required=["sender_name","sender_phone","recipient","phone","origin","destination","eta"]
                 if any(not str(data.get(k," ")).strip() for k in required): return self.send_json({"error":'أكمل حقول المرسل والمستلم والمسار والموعد'},400)
                 data["origin"]=str(data["origin"]).strip()
                 data["destination"]=str(data["destination"]).strip()
@@ -7753,7 +7753,7 @@ class Handler(BaseHTTPRequestHandler):
                     return self.send_json({"error":"Origin and destination must be different."},400)
                 if not active_branch_for_city(c,data["origin"]) or not active_branch_for_city(c,data["destination"]):
                     return self.send_json({"error":"Select cities served by active Ghazala branches."},400)
-                if not str(data.get("sender_address","")).strip() or not str(data.get("recipient_address","")).strip(): return self.send_json({"error":'أدخل عنوان المرسل والمستلم بالتفصيل'},400)
+                if not str(data.get("sender_address","")).strip(): return self.send_json({"error":'أدخل عنوان الاستلام'},400)
                 method=data.get("payment_method","cod")
                 if method not in ("sender","cod","company"): return self.send_json({"error":'طريقة الدفع غير صحيحة'},400)
                 if method=="company" and not str(data.get("company_account","")).strip(): return self.send_json({"error":'أدخل اسم/رقم حساب الشركة'},400)
@@ -7777,8 +7777,8 @@ class Handler(BaseHTTPRequestHandler):
                   sender_name,sender_id,sender_phone,driver_id,sender_address,recipient_branch,recipient_address,recipient_latitude,recipient_longitude,
                   package_type,package_description,pieces,weight,length_cm,width_cm,height_cm,declared_value,insured,payment_method,shipping_fee,vat_amount,cod_fee,insurance_fee,total_fee,payment_status,pricing_size_code,pricing_size_fee,company_account,is_demo)
                   VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0)""",
-                  (awb,data["recipient"],data["recipient_id"],data["phone"],data["origin"],data["destination"],'تم إنشاء الشحنة','تم الإنشاء',cod_amount,data["eta"],
-                   data["sender_name"],data["sender_id"],data["sender_phone"],driver_id,data.get("sender_address",""),data.get("recipient_branch",""),data["recipient_address"],
+                  (awb,data["recipient"],data.get("recipient_id",""),data["phone"],data["origin"],data["destination"],'تم إنشاء الشحنة','تم الإنشاء',cod_amount,data["eta"],
+                   data["sender_name"],data.get("sender_id",""),data["sender_phone"],driver_id,data.get("sender_address",""),data.get("recipient_branch",""),data.get("recipient_address",""),
                    data.get("recipient_latitude"),data.get("recipient_longitude"),data.get("package_type",'طرد تجاري سريع'),data.get("package_description",""),quote["pieces"],quote["weight"],
                    dimensions["length_cm"],dimensions["width_cm"],dimensions["height_cm"],dimensions["declared_value"],1 if data.get("insured") else 0,
                    method,quote["shipping_fee"],quote["vat_amount"],quote["cod_fee"],quote["insurance_fee"],quote["total_fee"],payment_status,quote["size_code"],quote["size_fee"],data.get("company_account","")))
