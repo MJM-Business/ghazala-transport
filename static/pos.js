@@ -4,13 +4,34 @@ const app=$('#app'),toastEl=$('#toast');
 let me=null,shipments=[],branches=[],posView='create';
 let lang=localStorage.getItem('ghz-pos-lang')==='ar'?'ar':'en';
 const deviceId=localStorage.getItem('ghz-pos-device-id')||('POS-'+Math.random().toString(36).slice(2,8).toUpperCase());
+window.onerror=function(message,source,line){
+  try{
+    var box=document.createElement('div');
+    box.style.cssText='position:fixed;left:8px;right:8px;bottom:8px;z-index:9999;background:#7f1d1d;color:#fff;padding:10px;border-radius:8px;font:12px Arial';
+    box.textContent='POS JS error: '+String(message||'Unknown error')+' @ '+String(line||'');
+    document.body.appendChild(box);
+  }catch(_){}
+};
 localStorage.setItem('ghz-pos-device-id',deviceId);
 const api=async(path,options={})=>{
-  const res=await fetch(path,{credentials:'same-origin',headers:{'Content-Type':'application/json',...(options.headers||{})},...options});
+  const requestOptions=Object.assign({},options||{});
+  requestOptions.credentials='same-origin';
+  requestOptions.headers=Object.assign({'Content-Type':'application/json'},(options&&options.headers)||{});
+  const res=await fetch(path,requestOptions);
   let data={};try{data=await res.json()}catch(_){}
   if(!res.ok)throw new Error(data.error||('Request failed ('+res.status+')'));
   return data;
 };
+function formObject(form){
+ const data={};
+ const els=Array.prototype.slice.call(form.elements||[]);
+ els.forEach(function(el){
+   if(!el.name||el.disabled)return;
+   if((el.type==='radio'||el.type==='checkbox')&&!el.checked)return;
+   data[el.name]=el.value;
+ });
+ return data;
+}
 const TXT={
  en:{
   dedicated:'Dedicated shipment terminal',username:'Username',password:'Password',login:'Login to POS',
@@ -39,7 +60,7 @@ const TXT={
   sentPrinter:'تم الإرسال إلى طابعة الجهاز',qrError:'تعذر إنشاء',language:'اللغة',settings:'الإعدادات',records:'السجلات',profile:'الملف والحساب',name:'الاسم',account:'الحساب',branch:'الفرع المرتبط',save:'حفظ التغييرات',currentPassword:'كلمة المرور الحالية',newPassword:'كلمة المرور الجديدة',passwordHint:'اترك حقول كلمة المرور فارغة إذا لم ترغب في تغييرها.',recordsTitle:'سجلات الشحنات',noRecords:'لا توجد شحنات POS حتى الآن.',search:'بحث برقم AWB أو المستلم',backCreate:'إنشاء شحنة',saved:'تم حفظ الإعدادات',dispatch:'ترحيل الشحنة',dispatching:'جارٍ الترحيل...',dispatched:'تم الترحيل',dispatchConfirm:'هل تريد ترحيل هذه الشحنة إلى فرع الوجهة؟',dispatchDone:'تم ترحيل الشحنة بنجاح'
  }
 };
-const t=k=>TXT[lang]?.[k]||TXT.en[k]||k;
+const t=k=>(TXT[lang]&&TXT[lang][k])||TXT.en[k]||k;
 function applyLanguage(){
  document.documentElement.lang=lang;
  document.documentElement.dir=lang==='ar'?'rtl':'ltr';
@@ -53,12 +74,12 @@ function bindLanguage(id='posLanguage'){
  el.onchange=()=>{lang=el.value==='ar'?'ar':'en';localStorage.setItem('ghz-pos-lang',lang);applyLanguage();render()};
 }
 function toast(msg){toastEl.textContent=msg;toastEl.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>toastEl.hidden=true,2600)}
-function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
-function userRole(u){return u?.role||u?.access_role||''}
-function canUsePos(u){return !!u&&String(u?.username||'').trim().toLowerCase().startsWith('pos.')}
-function primaryBranch(u){const list=Array.isArray(u?.branches)?u.branches:[];return list.find(b=>Number(b.id)===Number(u?.primary_branch_id))||list[0]||null}
+function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function userRole(u){return (u&&u.role)||(u&&u.access_role)||''}
+function canUsePos(u){return !!u&&String((u&&u.username)||'').trim().toLowerCase().indexOf('pos.')===0}
+function primaryBranch(u){const list=Array.isArray(u&&u.branches)?u.branches:[];return list.find(b=>Number(b.id)===Number(u&&u.primary_branch_id))||list[0]||null}
 function userBranch(u){const b=primaryBranch(u);return b?localBranchName(b):'Ghazala Branch'}
-function defaultCity(){const b=primaryBranch(me);return b?.city||branches[0]?.city||'Jeddah'}
+function defaultCity(){const b=primaryBranch(me);return (b&&b.city)||(branches[0]&&branches[0].city)||'Jeddah'}
 function localCity(value){
  const v=String(value||'').trim();
  const map={
@@ -66,7 +87,7 @@ function localCity(value){
   'جازان':{en:'Jazan',ar:'جازان'},'Jazan':{en:'Jazan',ar:'جازان'},
   'جيزان':{en:'Jazan',ar:'جازان'}
  };
- return map[v]?.[lang]||v;
+ return (map[v]&&map[v][lang])||v;
 }
 function localBranchName(branch){
  if(!branch)return '';
@@ -75,7 +96,7 @@ function localBranchName(branch){
  if(code==='JAZ-MAIN')return lang==='ar'?'مركز جازان':'Jazan Branch';
  return branch.name||branch.code||'';
 }
-function cityOptions(selected=''){const cities=[...new Set(branches.filter(b=>b.is_active!==0).map(b=>b.city).filter(Boolean))];return cities.map(c=>'<option value="'+esc(c)+'" '+(c===selected?'selected':'')+'>'+esc(localCity(c))+'</option>').join('')}
+function cityOptions(selected=''){const cities=Array.from(new Set(branches.filter(b=>b.is_active!==0).map(b=>b.city).filter(Boolean)));return cities.map(c=>'<option value="'+esc(c)+'" '+(c===selected?'selected':'')+'>'+esc(localCity(c))+'</option>').join('')}
 function branchOptions(city,selected=''){return '<option value="">'+esc(t('chooseBranch'))+'</option>'+branches.filter(b=>b.city===city&&b.is_active!==0).map(b=>'<option value="'+esc(b.code)+'" '+(b.code===selected?'selected':'')+'>'+esc(localBranchName(b))+'</option>').join('')}
 function loginView(){
  applyLanguage();
@@ -96,13 +117,13 @@ function shell(){
 }
 function etaDefault(){const d=new Date(Date.now()+24*3600*1000);return d.toISOString().slice(0,16)}
 function createPanel(){
- const origin=defaultCity(),dest=branches.find(b=>b.city&&b.city!==origin)?.city||origin;
+ const origin=defaultCity(),destBranch=branches.find(b=>b.city&&b.city!==origin),dest=(destBranch&&destBranch.city)||origin;
  $('#panel').innerHTML='<div class="section-title">'+esc(t('newShipment'))+'</div><form id="shipmentForm"><div class="split"><label class="field"><span>'+esc(t('senderName'))+'</span><input name="sender_name" required></label><label class="field"><span>'+esc(t('senderMobile'))+'</span><input name="sender_phone" type="tel" required></label></div><div class="split"><label class="field"><span>'+esc(t('senderId'))+'</span><input name="sender_id"></label><label class="field"><span>'+esc(t('recipientId'))+'</span><input name="recipient_id"></label></div><label class="field"><span>'+esc(t('pickup'))+'</span><textarea name="sender_address" required></textarea></label><div class="split"><label class="field"><span>'+esc(t('recipientName'))+'</span><input name="recipient" required></label><label class="field"><span>'+esc(t('recipientMobile'))+'</span><input name="phone" type="tel" required></label></div><div class="split"><label class="field"><span>'+esc(t('fromCity'))+'</span><input value="'+esc(localCity(origin))+'" readonly><input type="hidden" name="origin" value="'+esc(origin)+'"></label><label class="field"><span>'+esc(t('toCity'))+'</span><select name="destination" required>'+cityOptions(dest)+'</select></label></div><label class="field"><span>'+esc(t('destinationBranch'))+'</span><select name="recipient_branch">'+branchOptions(dest)+'</select></label><label class="field"><span>'+esc(t('shipmentValue'))+'</span><input name="declared_value" type="number" min="0" step="0.01" value="0"></label><div class="checks"><label class="check"><input type="radio" name="payment_method" value="cod" checked> '+esc(t('cod'))+'</label><label class="check"><input type="radio" name="payment_method" value="sender"> '+esc(t('senderPays'))+'</label></div><label id="codWrap" class="field"><span>'+esc(t('collection'))+'</span><input name="cod" type="number" min="0.01" step="0.01" value="1"></label><label class="field"><span>'+esc(t('pieces'))+'</span><input name="pieces" type="number" min="1" value="1" required></label><input type="hidden" name="eta" value="'+etaDefault()+'"><input type="hidden" name="package_type" value="طرد تجاري سريع"><input type="hidden" name="weight" value="1"><input type="hidden" name="length_cm" value="0"><input type="hidden" name="width_cm" value="0"><input type="hidden" name="height_cm" value="0"><div class="actions single"><button type="submit" class="btn orange">'+esc(t('createPrint'))+'</button></div></form>';
  const f=$('#shipmentForm');
- const syncDest=()=>{f.recipient_branch.innerHTML=branchOptions(f.destination.value);if(f.elements.origin.value===f.destination.value){const other=[...f.destination.options].find(o=>o.value!==f.elements.origin.value);if(other)f.destination.value=other.value;f.recipient_branch.innerHTML=branchOptions(f.destination.value)}};
+ const syncDest=()=>{f.recipient_branch.innerHTML=branchOptions(f.destination.value);if(f.elements.origin.value===f.destination.value){const other=Array.from(f.destination.options).find(o=>o.value!==f.elements.origin.value);if(other)f.destination.value=other.value;f.recipient_branch.innerHTML=branchOptions(f.destination.value)}};
  f.destination.onchange=syncDest;
  f.querySelectorAll('[name=payment_method]').forEach(x=>x.onchange=()=>{const cod=f.payment_method.value==='cod';$('#codWrap').style.display=cod?'grid':'none';f.cod.required=cod;if(!cod)f.cod.value='0'});
- async function saveAndPrint(){if(!f.reportValidity())return;const b=f.querySelector('button[type=submit]');b.disabled=true;b.textContent=t('creating');try{const data=Object.fromEntries(new FormData(f));['declared_value','cod','pieces','weight','length_cm','width_cm','height_cm'].forEach(k=>data[k]=Number(data[k]||0));if(data.payment_method!=='cod')data.cod=0;data.pos_device_id=deviceId;const created=await api('/api/shipments',{method:'POST',body:JSON.stringify(data)});toast(t('created')+': '+created.awb);await refresh();await printWaybill(created.awb);showSuccess(created.awb)}catch(err){toast(err.message);b.disabled=false;b.textContent=t('createPrint')}}
+ async function saveAndPrint(){if(!f.reportValidity())return;const b=f.querySelector('button[type=submit]');b.disabled=true;b.textContent=t('creating');try{const data=formObject(f);['declared_value','cod','pieces','weight','length_cm','width_cm','height_cm'].forEach(k=>data[k]=Number(data[k]||0));if(data.payment_method!=='cod')data.cod=0;data.pos_device_id=deviceId;const created=await api('/api/shipments',{method:'POST',body:JSON.stringify(data)});toast(t('created')+': '+created.awb);await refresh();await printWaybill(created.awb);showSuccess(created.awb)}catch(err){toast(err.message);b.disabled=false;b.textContent=t('createPrint')}}
  f.onsubmit=e=>{e.preventDefault();saveAndPrint()};
 }
 function showSuccess(awb){
@@ -116,7 +137,7 @@ async function recordsPanel(){
  panel.innerHTML='<div class="section-title">'+esc(t('recordsTitle'))+'</div><label class="field"><span>'+esc(t('search'))+'</span><input id="recordSearch" placeholder="GHZ-..."></label><div id="recordList" class="shipment-list"><div class="empty">...</div></div>';
  try{
    const rows=await api('/api/pos/records');
-   const draw=()=>{const q=String($('#recordSearch')?.value||'').trim().toLowerCase();const data=rows.filter(s=>!q||[s.awb,s.recipient,s.phone].some(v=>String(v||'').toLowerCase().includes(q)));$('#recordList').innerHTML=data.length?data.map(s=>{const dispatched=!!s.dispatched_at||String(s.status||'').includes('الترحيل')||String(s.status||'').toLowerCase().includes('dispatch');return '<article class="shipment"><div class="shipment-head"><div><div class="awb">'+esc(s.awb)+'</div><b>'+esc(s.recipient||'')+'</b></div><span class="badge">'+esc(s.status||'')+'</span></div><p>'+esc(localCity(s.origin||''))+' → '+esc(localCity(s.destination||''))+' · '+esc(s.phone||'')+'</p><div class="record-meta"><span>'+esc(s.pos_created_at||s.created_at||'')+'</span><span>Prints: '+esc(s.print_count||0)+'</span><span>'+esc(s.payment_status||'')+'</span></div><div class="mini-actions"><button class="btn light" data-record-print="'+esc(s.awb)+'">'+esc(t('printAgain'))+'</button>'+(dispatched?'<button class="btn dispatched-btn" disabled>'+esc(t('dispatched'))+'</button>':'<button class="btn orange" data-dispatch="'+esc(s.awb)+'">'+esc(t('dispatch'))+'</button>')+'</div></article>'}).join(''):'<div class="empty">'+esc(t('noRecords'))+'</div>';document.querySelectorAll('[data-record-print]').forEach(b=>b.onclick=()=>printWaybill(b.dataset.recordPrint));document.querySelectorAll('[data-dispatch]').forEach(b=>b.onclick=()=>dispatchShipment(b.dataset.dispatch,b))};
+   const draw=()=>{const searchEl=$('#recordSearch');const q=String((searchEl&&searchEl.value)||'').trim().toLowerCase();const data=rows.filter(s=>!q||[s.awb,s.recipient,s.phone].some(v=>String(v||'').toLowerCase().includes(q)));$('#recordList').innerHTML=data.length?data.map(s=>{const dispatched=!!s.dispatched_at||String(s.status||'').includes('الترحيل')||String(s.status||'').toLowerCase().includes('dispatch');return '<article class="shipment"><div class="shipment-head"><div><div class="awb">'+esc(s.awb)+'</div><b>'+esc(s.recipient||'')+'</b></div><span class="badge">'+esc(s.status||'')+'</span></div><p>'+esc(localCity(s.origin||''))+' → '+esc(localCity(s.destination||''))+' · '+esc(s.phone||'')+'</p><div class="record-meta"><span>'+esc(s.pos_created_at||s.created_at||'')+'</span><span>Prints: '+esc(s.print_count||0)+'</span><span>'+esc(s.payment_status||'')+'</span></div><div class="mini-actions"><button class="btn light" data-record-print="'+esc(s.awb)+'">'+esc(t('printAgain'))+'</button>'+(dispatched?'<button class="btn dispatched-btn" disabled>'+esc(t('dispatched'))+'</button>':'<button class="btn orange" data-dispatch="'+esc(s.awb)+'">'+esc(t('dispatch'))+'</button>')+'</div></article>'}).join(''):'<div class="empty">'+esc(t('noRecords'))+'</div>';document.querySelectorAll('[data-record-print]').forEach(b=>b.onclick=()=>printWaybill(b.dataset.recordPrint));document.querySelectorAll('[data-dispatch]').forEach(b=>b.onclick=()=>dispatchShipment(b.dataset.dispatch,b))};
    $('#recordSearch').oninput=draw;draw();
  }catch(err){panel.innerHTML='<div class="empty">'+esc(err.message)+'</div>'}
 }
@@ -130,7 +151,7 @@ async function dispatchShipment(awb,button){
    await recordsPanel();
  }catch(err){
    toast(err.message);
-   if(button?.isConnected){button.disabled=false;button.textContent=t('dispatch')}
+   if(button&&button.isConnected){button.disabled=false;button.textContent=t('dispatch')}
  }
 }
 async function settingsPanel(){
@@ -139,11 +160,11 @@ async function settingsPanel(){
  try{
    const data=await api('/api/pos/profile');me=data.user||me;const branch=data.branch||primaryBranch(me)||{};
    panel.innerHTML='<div class="section-title">'+esc(t('profile'))+'</div><form id="settingsForm"><label class="field"><span>'+esc(t('name'))+'</span><input name="display_name" value="'+esc(me.display_name||'')+'" required></label><label class="field"><span>'+esc(t('account'))+'</span><input value="'+esc(me.username||'')+'" readonly></label><label class="field"><span>'+esc(t('branch'))+'</span><input value="'+esc(localBranchName(branch)+(branch.city?' · '+localCity(branch.city):''))+'" readonly></label><div class="settings-note">'+esc(t('passwordHint'))+'</div><label class="field"><span>'+esc(t('currentPassword'))+'</span><input name="current_password" type="password" autocomplete="current-password"></label><label class="field"><span>'+esc(t('newPassword'))+'</span><input name="new_password" type="password" autocomplete="new-password"></label><button class="btn primary" type="submit">'+esc(t('save'))+'</button></form>';
-   $('#settingsForm').onsubmit=async e=>{e.preventDefault();const f=e.currentTarget,b=f.querySelector('button');b.disabled=true;try{const payload=Object.fromEntries(new FormData(f));const res=await api('/api/pos/profile',{method:'POST',body:JSON.stringify(payload)});me=res.user||me;toast(t('saved'));render()}catch(err){toast(err.message)}finally{if(b.isConnected)b.disabled=false}};
+   $('#settingsForm').onsubmit=async e=>{e.preventDefault();const f=e.currentTarget,b=f.querySelector('button');b.disabled=true;try{const payload=formObject(f);const res=await api('/api/pos/profile',{method:'POST',body:JSON.stringify(payload)});me=res.user||me;toast(t('saved'));render()}catch(err){toast(err.message)}finally{if(b.isConnected)b.disabled=false}};
  }catch(err){panel.innerHTML='<div class="empty">'+esc(err.message)+'</div>'}
 }
 function recentPanel(){
- const rows=[...shipments].sort((a,b)=>String(b.created_at||'').localeCompare(String(a.created_at||''))).slice(0,30);
+ const rows=Array.from(shipments).sort((a,b)=>String(b.created_at||'').localeCompare(String(a.created_at||''))).slice(0,30);
  $('#panel').innerHTML='<div class="section-title">Recent Shipments / Reprint</div><label class="field"><span>Search AWB / Recipient</span><input id="search" placeholder="GHZ-..."></label><div id="list" class="shipment-list"></div>';
  const draw=()=>{const q=$('#search').value.trim().toLowerCase();const data=rows.filter(s=>!q||[s.awb,s.recipient,s.phone].some(v=>String(v||'').toLowerCase().includes(q)));$('#list').innerHTML=data.length?data.map(s=>'<article class="shipment"><div class="shipment-head"><div><div class="awb">'+esc(s.awb)+'</div><b>'+esc(s.recipient||'')+'</b></div><span class="badge">'+esc(s.status||'Created')+'</span></div><p>'+esc(s.origin||'')+' → '+esc(s.destination||'')+' · '+esc(s.phone||'')+'</p><div class="mini-actions"><button class="btn light" data-view="'+esc(s.awb)+'">View</button><button class="btn orange" data-print="'+esc(s.awb)+'">Print / Reprint</button></div></article>').join(''):'<div class="empty">No shipments found.</div>';document.querySelectorAll('[data-print]').forEach(b=>b.onclick=()=>printWaybill(b.dataset.print));document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>window.open('/#track='+encodeURIComponent(b.dataset.view),'_blank'))};
  $('#search').oninput=draw;draw();
