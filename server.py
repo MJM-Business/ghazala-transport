@@ -6326,13 +6326,20 @@ class Handler(BaseHTTPRequestHandler):
 
                 allowed={
                     "sender_name","sender_phone","sender_id","recipient","phone","recipient_id",
-                    "package_description","declared_value","pieces","payment_method","cod"
+                    "package_description","shipment_price","pieces","payment_method","cod"
                 }
                 if not isinstance(data,dict) or not data or set(data)-allowed:
                     return self.send_json({"error":"Unsupported POS shipment edit fields."},400)
 
                 required=("sender_name","sender_phone","recipient","phone")
-                merged={key:(data[key] if key in data else row[key]) for key in allowed}
+                merged={}
+                for key in allowed:
+                    if key in data:
+                        merged[key]=data[key]
+                    elif key=="shipment_price":
+                        merged[key]=row["total_fee"]
+                    else:
+                        merged[key]=row[key]
                 if any(not str(merged.get(key) or "").strip() for key in required):
                     return self.send_json({"error":"Sender/recipient name and mobile are required."},400)
 
@@ -6340,10 +6347,10 @@ class Handler(BaseHTTPRequestHandler):
                 if method not in ("sender","cod"):
                     return self.send_json({"error":"Invalid POS payment method."},400)
                 try:
-                    declared_value=float(merged.get("declared_value") or 0)
+                    shipment_price=float(merged.get("shipment_price") or 0)
                     pieces=int(merged.get("pieces") or 1)
                     cod_amount=float(merged.get("cod") or 0)
-                    if not math.isfinite(declared_value) or declared_value<0: raise ValueError()
+                    if not math.isfinite(shipment_price) or shipment_price<0: raise ValueError()
                     if pieces<1 or pieces>1000: raise ValueError()
                     if not math.isfinite(cod_amount) or cod_amount<0: raise ValueError()
                     if method=="cod" and cod_amount<=0: raise ValueError()
@@ -6354,11 +6361,12 @@ class Handler(BaseHTTPRequestHandler):
 
                 before={key:row[key] for key in (
                     "sender_name","sender_phone","sender_id","recipient","phone","recipient_id",
-                    "package_description","declared_value","pieces","payment_method","cod"
+                    "package_description","pieces","payment_method","cod","total_fee"
                 )}
                 c.execute("""UPDATE shipments
                     SET sender_name=?,sender_phone=?,sender_id=?,recipient=?,phone=?,recipient_id=?,
-                        package_description=?,declared_value=?,pieces=?,payment_method=?,cod=?,
+                        package_description=?,pieces=?,payment_method=?,cod=?,
+                        shipping_fee=?,vat_amount=0,cod_fee=0,insurance_fee=0,total_fee=?,
                         updated_at=CURRENT_TIMESTAMP
                     WHERE id=?""",(
                     str(merged.get("sender_name") or "").strip(),
@@ -6368,7 +6376,7 @@ class Handler(BaseHTTPRequestHandler):
                     str(merged.get("phone") or "").strip(),
                     str(merged.get("recipient_id") or "").strip(),
                     str(merged.get("package_description") or "").strip()[:2000],
-                    declared_value,pieces,method,cod_amount,row["id"]
+                    pieces,method,cod_amount,round(shipment_price,2),round(shipment_price,2),row["id"]
                 ))
                 updated=c.execute(shipment_query()+" WHERE s.id=?",(row["id"],)).fetchone()
                 write_audit(
@@ -8050,6 +8058,15 @@ class Handler(BaseHTTPRequestHandler):
                     if any(not math.isfinite(value) or value<0 for value in dimensions.values()): raise ValueError("dimensions")
                     quote=calculate_quote(c,data)
                     if any(not math.isfinite(float(quote[key])) for key in ("shipping_fee","cod_fee","insurance_fee","vat_amount","total_fee")): raise ValueError("quote")
+                    if is_pos_user and "shipment_price" in data:
+                        shipment_price=float(data.get("shipment_price") or 0)
+                        if not math.isfinite(shipment_price) or shipment_price<0:
+                            raise ValueError("shipment_price")
+                        quote["shipping_fee"]=round(shipment_price,2)
+                        quote["vat_amount"]=0.0
+                        quote["cod_fee"]=0.0
+                        quote["insurance_fee"]=0.0
+                        quote["total_fee"]=round(shipment_price,2)
                 except (ValueError,TypeError): return self.send_json({"error":'تحقق من الوزن والكمية والقيمة المعلنة'},400)
                 awb="GHZ-"+str(uuid.uuid4().int)[:7]
                 payment_status={"cod":'مستحق عند التسليم',"sender":'بانتظار الدفع',"company":'على حساب الشركة'}[method]
