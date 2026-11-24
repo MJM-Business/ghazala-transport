@@ -60,7 +60,7 @@ const TXT={
   denied:'This account cannot use the POS portal.',logout:'Logout',create:'Create Shipment',
   sub:'Fill details and print receipt',newShipment:'Create New Shipment',senderName:'Sender Name',
   senderMobile:'Sender Mobile',senderId:'Sender ID / Iqama (Optional)',recipientId:'Recipient ID / Iqama (Optional)',
-  pickup:'Pickup Address',recipientName:'Recipient Name',recipientMobile:'Recipient Mobile',
+  pickup:'Pickup Address',recipientName:'Recipient Name',recipientMobile:'Recipient Mobile',parcelDescription:'Parcel Description',editShipment:'Edit Shipment',saveShipment:'Save Changes',cancelEdit:'Cancel',editSaved:'Shipment updated successfully',
   fromCity:'From City',toCity:'To City',destinationBranch:'Destination Branch',
   chooseBranch:'Choose Destination Branch',shipmentValue:'Shipment Value',cod:'Cash on Delivery',
   senderPays:'Sender Pays',collection:'Collection Amount',pieces:'Pieces',createPrint:'Create Shipment & Print',
@@ -73,7 +73,7 @@ const TXT={
   denied:'هذا الحساب غير مخول لاستخدام بوابة نقاط البيع.',logout:'تسجيل الخروج',create:'إنشاء شحنة',
   sub:'أدخل البيانات واطبع الإيصال',newShipment:'إنشاء شحنة جديدة',senderName:'اسم المرسل',
   senderMobile:'جوال المرسل',senderId:'هوية / إقامة المرسل (اختياري)',recipientId:'هوية / إقامة المستلم (اختياري)',
-  pickup:'عنوان الاستلام',recipientName:'اسم المستلم',recipientMobile:'جوال المستلم',
+  pickup:'عنوان الاستلام',recipientName:'اسم المستلم',recipientMobile:'جوال المستلم',parcelDescription:'وصف محتويات الطرد',editShipment:'تعديل الشحنة',saveShipment:'حفظ التعديلات',cancelEdit:'إلغاء',editSaved:'تم تحديث الشحنة بنجاح',
   fromCity:'من مدينة',toCity:'إلى مدينة',destinationBranch:'فرع الوجهة',
   chooseBranch:'اختر فرع الوجهة',shipmentValue:'قيمة الشحنة',cod:'الدفع عند الاستلام',
   senderPays:'يدفع المرسل',collection:'مبلغ التحصيل',pieces:'عدد القطع',createPrint:'إنشاء الشحنة والطباعة',
@@ -140,7 +140,7 @@ function shell(){
 function etaDefault(){const d=new Date(Date.now()+24*3600*1000);return d.toISOString().slice(0,16)}
 function createPanel(){
  const origin=defaultCity(),destBranch=branches.find(b=>b.city&&b.city!==origin),dest=(destBranch&&destBranch.city)||origin;
- $('#panel').innerHTML='<div class="section-title">'+esc(t('newShipment'))+'</div><form id="shipmentForm"><div class="split"><label class="field"><span>'+esc(t('senderName'))+'</span><input name="sender_name" required></label><label class="field"><span>'+esc(t('senderMobile'))+'</span><input name="sender_phone" type="tel" required></label></div><div class="split"><label class="field"><span>'+esc(t('senderId'))+'</span><input name="sender_id"></label><label class="field"><span>'+esc(t('recipientId'))+'</span><input name="recipient_id"></label></div><label class="field"><span>'+esc(t('pickup'))+'</span><textarea name="sender_address" required></textarea></label><div class="split"><label class="field"><span>'+esc(t('recipientName'))+'</span><input name="recipient" required></label><label class="field"><span>'+esc(t('recipientMobile'))+'</span><input name="phone" type="tel" required></label></div><div class="split"><label class="field"><span>'+esc(t('fromCity'))+'</span><input value="'+esc(localCity(origin))+'" readonly><input type="hidden" name="origin" value="'+esc(origin)+'"></label><label class="field"><span>'+esc(t('toCity'))+'</span><select name="destination" required>'+cityOptions(dest)+'</select></label></div><label class="field"><span>'+esc(t('destinationBranch'))+'</span><select name="recipient_branch">'+branchOptions(dest)+'</select></label><label class="field"><span>'+esc(t('shipmentValue'))+'</span><input name="declared_value" type="number" min="0" step="0.01" value="0"></label><div class="checks"><label class="check"><input type="radio" name="payment_method" value="cod" checked> '+esc(t('cod'))+'</label><label class="check"><input type="radio" name="payment_method" value="sender"> '+esc(t('senderPays'))+'</label></div><label id="codWrap" class="field"><span>'+esc(t('collection'))+'</span><input name="cod" type="number" min="0.01" step="0.01" value="1"></label><label class="field"><span>'+esc(t('pieces'))+'</span><input name="pieces" type="number" min="1" value="1" required></label><input type="hidden" name="eta" value="'+etaDefault()+'"><input type="hidden" name="package_type" value="طرد تجاري سريع"><input type="hidden" name="weight" value="1"><input type="hidden" name="length_cm" value="0"><input type="hidden" name="width_cm" value="0"><input type="hidden" name="height_cm" value="0"><div id="createStatus" class="create-status" aria-live="polite"></div><div class="actions single"><button type="button" id="createShipmentBtn" class="btn orange">'+esc(t('createPrint'))+'</button></div></form>';
+ $('#panel').innerHTML='<div class="section-title">'+esc(t('newShipment'))+'</div><form id="shipmentForm"><div class="split"><label class="field"><span>'+esc(t('senderName'))+'</span><input name="sender_name" required></label><label class="field"><span>'+esc(t('senderMobile'))+'</span><input name="sender_phone" type="tel" required></label></div><div class="split"><label class="field"><span>'+esc(t('senderId'))+'</span><input name="sender_id"></label><label class="field"><span>'+esc(t('recipientId'))+'</span><input name="recipient_id"></label></div><div class="split"><label class="field"><span>'+esc(t('recipientName'))+'</span><input name="recipient" required></label><label class="field"><span>'+esc(t('recipientMobile'))+'</span><input name="phone" type="tel" required></label></div><label class="field"><span>'+esc(t('parcelDescription'))+'</span><textarea name="package_description" maxlength="2000" placeholder="Carton ke andar kya hai..."></textarea></label><div class="split"><label class="field"><span>'+esc(t('fromCity'))+'</span><input value="'+esc(localCity(origin))+'" readonly><input type="hidden" name="origin" value="'+esc(origin)+'"></label><label class="field"><span>'+esc(t('toCity'))+'</span><select name="destination" required>'+cityOptions(dest)+'</select></label></div><label class="field"><span>'+esc(t('destinationBranch'))+'</span><select name="recipient_branch">'+branchOptions(dest)+'</select></label><label class="field"><span>'+esc(t('shipmentValue'))+'</span><input name="declared_value" type="number" min="0" step="0.01" value="0"></label><div class="checks"><label class="check"><input type="radio" name="payment_method" value="cod" checked> '+esc(t('cod'))+'</label><label class="check"><input type="radio" name="payment_method" value="sender"> '+esc(t('senderPays'))+'</label></div><label id="codWrap" class="field"><span>'+esc(t('collection'))+'</span><input name="cod" type="number" min="0.01" step="0.01" value="1"></label><label class="field"><span>'+esc(t('pieces'))+'</span><input name="pieces" type="number" min="1" value="1" required></label><input type="hidden" name="eta" value="'+etaDefault()+'"><input type="hidden" name="package_type" value="طرد تجاري سريع"><input type="hidden" name="weight" value="1"><input type="hidden" name="length_cm" value="0"><input type="hidden" name="width_cm" value="0"><input type="hidden" name="height_cm" value="0"><div id="createStatus" class="create-status" aria-live="polite"></div><div class="actions single"><button type="button" id="createShipmentBtn" class="btn orange">'+esc(t('createPrint'))+'</button></div></form>';
  const f=$('#shipmentForm');
  const syncDest=()=>{f.recipient_branch.innerHTML=branchOptions(f.destination.value);if(f.elements.origin.value===f.destination.value){const other=Array.from(f.destination.options).find(o=>o.value!==f.elements.origin.value);if(other)f.destination.value=other.value;f.recipient_branch.innerHTML=branchOptions(f.destination.value)}};
  f.destination.onchange=syncDest;
@@ -190,12 +190,54 @@ async function recordsPanel(){
  panel.innerHTML='<div class="section-title">'+esc(t('recordsTitle'))+'</div><button id="refreshRecordsBtn" class="btn light" type="button" style="margin-bottom:8px">Refresh Records</button><label class="field"><span>'+esc(t('search'))+'</span><input id="recordSearch" placeholder="GHZ-..."></label><div id="recordList" class="shipment-list"><div class="empty">...</div></div>';
  try{
    const rows=await api('/api/pos/records');
-   const draw=()=>{const searchEl=$('#recordSearch');const q=String((searchEl&&searchEl.value)||'').trim().toLowerCase();const data=rows.filter(s=>!q||[s.awb,s.recipient,s.phone].some(v=>String(v||'').toLowerCase().includes(q)));$('#recordList').innerHTML=data.length?data.map(s=>{const dispatched=!!s.dispatched_at||String(s.status||'').includes('الترحيل')||String(s.status||'').toLowerCase().includes('dispatch');return '<article class="shipment"><div class="shipment-head"><div><div class="awb">'+esc(s.awb)+'</div><b>'+esc(s.recipient||'')+'</b></div><span class="badge">'+esc(s.status||'')+'</span></div><p>'+esc(localCity(s.origin||''))+' → '+esc(localCity(s.destination||''))+' · '+esc(s.phone||'')+'</p><div class="record-meta"><span>'+esc(s.pos_created_at||s.created_at||'')+'</span><span>Prints: '+esc(s.print_count||0)+'</span><span>'+esc(s.payment_status||'')+'</span></div><div class="mini-actions"><button class="btn light" data-record-print="'+esc(s.awb)+'">'+esc(t('printAgain'))+'</button>'+(dispatched?'<button class="btn dispatched-btn" disabled>'+esc(t('dispatched'))+'</button>':'<button class="btn orange" data-dispatch="'+esc(s.awb)+'">'+esc(t('dispatch'))+'</button>')+'</div></article>'}).join(''):'<div class="empty">'+esc(t('noRecords'))+'</div>';document.querySelectorAll('[data-record-print]').forEach(b=>b.onclick=()=>printWaybill(b.dataset.recordPrint));document.querySelectorAll('[data-dispatch]').forEach(b=>b.onclick=()=>dispatchShipment(b.dataset.dispatch,b))};
+   const draw=()=>{const searchEl=$('#recordSearch');const q=String((searchEl&&searchEl.value)||'').trim().toLowerCase();const data=rows.filter(s=>!q||[s.awb,s.recipient,s.phone].some(v=>String(v||'').toLowerCase().includes(q)));$('#recordList').innerHTML=data.length?data.map(s=>{const dispatched=!!s.dispatched_at||String(s.status||'').includes('الترحيل')||String(s.status||'').toLowerCase().includes('dispatch');return '<article class="shipment"><div class="shipment-head"><div><div class="awb">'+esc(s.awb)+'</div><b>'+esc(s.recipient||'')+'</b></div><span class="badge">'+esc(s.status||'')+'</span></div><p>'+esc(localCity(s.origin||''))+' → '+esc(localCity(s.destination||''))+' · '+esc(s.phone||'')+'</p><div class="record-meta"><span>'+esc(s.pos_created_at||s.created_at||'')+'</span><span>Prints: '+esc(s.print_count||0)+'</span><span>'+esc(s.payment_status||'')+'</span></div><div class="mini-actions"><button class="btn light" data-record-print="'+esc(s.awb)+'">'+esc(t('printAgain'))+'</button><button class="btn light" data-edit-shipment="'+esc(s.awb)+'" '+(dispatched?'disabled':'')+'>'+esc(t('editShipment'))+'</button>'+(dispatched?'<button class="btn dispatched-btn" disabled>'+esc(t('dispatched'))+'</button>':'<button class="btn orange" data-dispatch="'+esc(s.awb)+'">'+esc(t('dispatch'))+'</button>')+'</div></article>'}).join(''):'<div class="empty">'+esc(t('noRecords'))+'</div>';document.querySelectorAll('[data-record-print]').forEach(b=>b.onclick=()=>printWaybill(b.dataset.recordPrint));document.querySelectorAll('[data-edit-shipment]').forEach(b=>b.onclick=()=>editShipment(b.dataset.editShipment,rows));document.querySelectorAll('[data-dispatch]').forEach(b=>b.onclick=()=>dispatchShipment(b.dataset.dispatch,b))};
    $('#recordSearch').oninput=draw;
    const refreshRecordsBtn=$('#refreshRecordsBtn');
    if(refreshRecordsBtn)refreshRecordsBtn.onclick=()=>recordsPanel();
    draw();
  }catch(err){panel.innerHTML='<div class="empty">'+esc(err.message)+'</div>'}
+}
+function editShipment(awb,rows){
+ const s=(rows||[]).find(x=>String(x.awb||'')===String(awb||''));
+ const panel=$('#panel');if(!s||!panel)return;
+ panel.innerHTML='<div class="section-title">'+esc(t('editShipment'))+' · '+esc(s.awb)+'</div>'+
+ '<form id="editShipmentForm">'+
+ '<div class="split"><label class="field"><span>'+esc(t('senderName'))+'</span><input name="sender_name" value="'+esc(s.sender_name||'')+'" required></label>'+
+ '<label class="field"><span>'+esc(t('senderMobile'))+'</span><input name="sender_phone" type="tel" value="'+esc(s.sender_phone||'')+'" required></label></div>'+
+ '<div class="split"><label class="field"><span>'+esc(t('senderId'))+'</span><input name="sender_id" value="'+esc(s.sender_id||'')+'"></label>'+
+ '<label class="field"><span>'+esc(t('recipientId'))+'</span><input name="recipient_id" value="'+esc(s.recipient_id||'')+'"></label></div>'+
+ '<div class="split"><label class="field"><span>'+esc(t('recipientName'))+'</span><input name="recipient" value="'+esc(s.recipient||'')+'" required></label>'+
+ '<label class="field"><span>'+esc(t('recipientMobile'))+'</span><input name="phone" type="tel" value="'+esc(s.phone||'')+'" required></label></div>'+
+ '<label class="field"><span>'+esc(t('parcelDescription'))+'</span><textarea name="package_description" maxlength="2000">'+esc(s.package_description||'')+'</textarea></label>'+
+ '<label class="field"><span>'+esc(t('shipmentValue'))+'</span><input name="declared_value" type="number" min="0" step="0.01" value="'+esc(s.declared_value||0)+'"></label>'+
+ '<div class="checks"><label class="check"><input type="radio" name="payment_method" value="cod" '+(s.payment_method==='cod'?'checked':'')+'> '+esc(t('cod'))+'</label>'+
+ '<label class="check"><input type="radio" name="payment_method" value="sender" '+(s.payment_method==='sender'?'checked':'')+'> '+esc(t('senderPays'))+'</label></div>'+
+ '<label id="editCodWrap" class="field" style="'+(s.payment_method==='cod'?'':'display:none')+'"><span>'+esc(t('collection'))+'</span><input name="cod" type="number" min="0" step="0.01" value="'+esc(s.cod||0)+'"></label>'+
+ '<label class="field"><span>'+esc(t('pieces'))+'</span><input name="pieces" type="number" min="1" value="'+esc(s.pieces||1)+'" required></label>'+
+ '<div id="editStatus" class="create-status" aria-live="polite"></div>'+
+ '<div class="edit-actions"><button type="button" id="saveShipmentEdit" class="btn orange">'+esc(t('saveShipment'))+'</button><button type="button" id="cancelShipmentEdit" class="btn light">'+esc(t('cancelEdit'))+'</button></div>'+
+ '</form>';
+ const f=$('#editShipmentForm');
+ f.querySelectorAll('[name=payment_method]').forEach(x=>x.onchange=()=>{const cod=f.payment_method.value==='cod';$('#editCodWrap').style.display=cod?'grid':'none';if(!cod)f.cod.value='0'});
+ $('#cancelShipmentEdit').onclick=()=>recordsPanel();
+ $('#saveShipmentEdit').onclick=async()=>{
+   if(!validateShipmentForm(f))return;
+   const b=$('#saveShipmentEdit'),status=$('#editStatus');b.disabled=true;
+   try{
+     const data=formObject(f);
+     ['declared_value','cod','pieces'].forEach(k=>data[k]=Number(data[k]||0));
+     if(data.payment_method!=='cod')data.cod=0;
+     if(status){status.className='create-status';status.textContent='Saving changes...'}
+     await api('/api/pos/records/'+encodeURIComponent(awb)+'/edit',{method:'POST',body:JSON.stringify(data)});
+     if(status){status.className='create-status ok';status.textContent=t('editSaved')}
+     toast(t('editSaved'));
+     await refresh();
+     setTimeout(()=>recordsPanel(),350);
+   }catch(err){
+     if(status){status.className='create-status error';status.textContent=err.message}
+     toast(err.message);b.disabled=false;
+   }
+ };
 }
 async function dispatchShipment(awb,button){
  if(!confirm(t('dispatchConfirm')))return;
