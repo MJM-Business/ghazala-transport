@@ -226,11 +226,11 @@ public class MainActivity extends Activity {
             JSONObject data = new JSONObject(json);
             String awb = data.optString("awb", "");
             String sender = data.optString("sender", "");
+            String senderMobile = data.optString("senderMobile", "");
             String recipient = data.optString("recipient", "");
-            String mobile = data.optString("mobile", "");
+            String recipientMobile = data.optString("recipientMobile", "");
             String route = data.optString("route", "");
             String payment = data.optString("payment", "");
-            String total = data.optString("total", "0");
             String date = data.optString("date", "");
             String time = data.optString("time", "");
             String branch = data.optString("branch", "");
@@ -269,14 +269,13 @@ public class MainActivity extends Activity {
             invokeSunmi("printText", "--------------------------------\n", null);
 
             printColumns("Sender / المرسل", sender);
+            printColumns("Sender Mobile / جوال المرسل", senderMobile);
             printColumns("Recipient / المستلم", recipient);
-            printColumns("Mobile / الجوال", mobile);
+            printColumns("Receiver Mobile / جوال المستلم", recipientMobile);
             invokeSunmi("printText", "--------------------------------\n", null);
 
             printColumns("Route / المسار", route);
             printColumns("Payment / الدفع", payment);
-            invokeSunmi("setFontSize", 22.0f, null);
-            printColumns("Total / الإجمالي", total + " SAR");
             invokeSunmi("setFontSize", 18.0f, null);
             invokeSunmi("printText", "--------------------------------\n", null);
 
@@ -407,7 +406,7 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public String getBridgeVersion() {
-            return "0.6.0-receipt";
+            return "0.7.0-contact-receipt";
         }
 
         @JavascriptInterface
