@@ -187,8 +187,17 @@ public class MainActivity extends Activity {
         return match.invoke(sunmiPrinterService, args);
     }
 
-    private void printSunmiReceipt(String json) {
+    private String printerStatus() {
+        if (!sunmiBound) return "NOT_BOUND";
+        if (sunmiPrinterService == null) return "NOT_READY";
+        return "READY";
+    }
+
+    private String printSunmiReceipt(String json) {
         try {
+            if (sunmiPrinterService == null) {
+                return "PRINTER_NOT_READY";
+            }
             JSONObject data = new JSONObject(json);
             String awb = data.optString("awb", "");
             String sender = data.optString("sender", "");
@@ -219,13 +228,26 @@ public class MainActivity extends Activity {
             invokeSunmi("printText", "Track shipment by scanning QR code\n", null);
             invokeSunmi("lineWrap", 4, null);
 
-            Toast.makeText(this,
-                    "Receipt SUNMI printer ko bhej di gayi.",
-                    Toast.LENGTH_SHORT).show();
+            return "OK";
         } catch (Exception ex) {
-            Toast.makeText(this,
-                    "SUNMI print failed: " + ex.getClass().getSimpleName() + " - " + ex.getMessage(),
-                    Toast.LENGTH_LONG).show();
+            return "ERROR:" + ex.getClass().getSimpleName() + ":" + String.valueOf(ex.getMessage());
+        }
+    }
+
+    private String testSunmiPrinter() {
+        try {
+            if (sunmiPrinterService == null) return "PRINTER_NOT_READY";
+            invokeSunmi("printerInit", new Object[]{null});
+            invokeSunmi("setAlignment", 1, null);
+            invokeSunmi("setFontSize", 26.0f, null);
+            invokeSunmi("printText", "GHAZALA TRANSPORT\n", null);
+            invokeSunmi("setFontSize", 20.0f, null);
+            invokeSunmi("printText", "SUNMI V2 PRINTER TEST\n", null);
+            invokeSunmi("printText", "Printer connection OK\n", null);
+            invokeSunmi("lineWrap", 4, null);
+            return "OK";
+        } catch (Exception ex) {
+            return "ERROR:" + ex.getClass().getSimpleName() + ":" + String.valueOf(ex.getMessage());
         }
     }
 
@@ -314,8 +336,18 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
-        public void printReceipt(String json) {
-            activity.runOnUiThread(() -> printSunmiReceipt(json));
+        public String getPrinterStatus() {
+            return printerStatus();
+        }
+
+        @JavascriptInterface
+        public String testPrinter() {
+            return testSunmiPrinter();
+        }
+
+        @JavascriptInterface
+        public String printReceipt(String json) {
+            return printSunmiReceipt(json);
         }
 
         @JavascriptInterface
