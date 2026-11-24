@@ -77,6 +77,7 @@ public class MainActivity extends Activity {
 
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
+        settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
         settings.setDomStorageEnabled(true);
         settings.setDatabaseEnabled(true);
         settings.setLoadWithOverviewMode(true);
@@ -291,6 +292,7 @@ public class MainActivity extends Activity {
     }
 
     private void loadServer(String url) {
+        try { webView.clearCache(true); } catch (Exception ignored) {}
         if (!networkAvailable()) {
             Toast.makeText(this, "Wi-Fi/network available nahi hai.", Toast.LENGTH_LONG).show();
         }
