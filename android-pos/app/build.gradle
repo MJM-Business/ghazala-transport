@@ -10,8 +10,8 @@ android {
         applicationId 'com.ghazalatransport.pos'
         minSdk 23
         targetSdk 34
-        versionCode 10
-        versionName '0.10.0-centered-round-icon'
+        versionCode 11
+        versionName '0.11.0-transparent-round-icon'
     }
 
     buildTypes {
@@ -40,68 +40,4 @@ tasks.named('preBuild').configure {
 }
 
 
-tasks.register('generateOfficialGhazalaLauncherIcon') {
-    inputs.file(rootProject.file('../assets/ghazala-logo-original.png'))
-    outputs.file(file('src/main/res/drawable/ghazala_pos_icon.png'))
-    doLast {
-        def srcFile = rootProject.file('../assets/ghazala-logo-original.png')
-        def outFile = file('src/main/res/drawable/ghazala_pos_icon.png')
-        outFile.parentFile.mkdirs()
 
-        def src = javax.imageio.ImageIO.read(srcFile)
-        int minX = src.width, minY = src.height, maxX = -1, maxY = -1
-
-        for (int y = 0; y < src.height; y++) {
-            for (int x = 0; x < src.width; x++) {
-                int argb = src.getRGB(x, y)
-                int a = (argb >>> 24) & 0xff
-                int rr = (argb >>> 16) & 0xff
-                int gg = (argb >>> 8) & 0xff
-                int bb = argb & 0xff
-                boolean visible = a > 20 && !(rr > 244 && gg > 244 && bb > 244)
-                if (visible) {
-                    if (x < minX) minX = x
-                    if (x > maxX) maxX = x
-                    if (y < minY) minY = y
-                    if (y > maxY) maxY = y
-                }
-            }
-        }
-
-        if (maxX < minX || maxY < minY) {
-            minX = 0; minY = 0; maxX = src.width - 1; maxY = src.height - 1
-        }
-
-        int contentW = (maxX - minX + 1) as int
-        int contentH = (maxY - minY + 1) as int
-
-        // Keep the full circular artwork safely inside launchers that add their own round mask.
-        int targetMax = 420
-        double scale = Math.min(targetMax / (double) contentW, targetMax / (double) contentH)
-        int drawW = Math.max(1, Math.round(contentW * scale) as int)
-        int drawH = Math.max(1, Math.round(contentH * scale) as int)
-        int dx = ((512 - drawW) / 2) as int
-        int dy = ((512 - drawH) / 2) as int
-
-        def out = new java.awt.image.BufferedImage(512, 512, java.awt.image.BufferedImage.TYPE_INT_ARGB)
-        def g = out.createGraphics()
-        g.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_BICUBIC)
-        g.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON)
-        g.setComposite(java.awt.AlphaComposite.Clear)
-        g.fillRect(0, 0, 512, 512)
-        g.setComposite(java.awt.AlphaComposite.SrcOver)
-        g.drawImage(
-            src,
-            dx, dy, dx + drawW, dy + drawH,
-            minX, minY, maxX + 1, maxY + 1,
-            null
-        )
-        g.dispose()
-
-        javax.imageio.ImageIO.write(out, 'png', outFile)
-    }
-}
-
-tasks.named('preBuild').configure {
-    dependsOn tasks.named('generateOfficialGhazalaLauncherIcon')
-}
