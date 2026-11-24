@@ -200,8 +200,16 @@ async function settingsPanel(){
  panel.innerHTML='<div class="empty">...</div>';
  try{
    const data=await api('/api/pos/profile');me=data.user||me;const branch=data.branch||primaryBranch(me)||{};
-   panel.innerHTML='<div class="section-title">'+esc(t('profile'))+'</div><div class="settings-note"><b>Printer:</b> <span id="printerStatus">Checking...</span><button id="printerTestBtn" type="button" class="btn orange" style="margin-top:8px">Printer Test</button></div><form id="settingsForm"><label class="field"><span>'+esc(t('name'))+'</span><input name="display_name" value="'+esc(me.display_name||'')+'" required></label><label class="field"><span>'+esc(t('account'))+'</span><input value="'+esc(me.username||'')+'" readonly></label><label class="field"><span>'+esc(t('branch'))+'</span><input value="'+esc(localBranchName(branch)+(branch.city?' · '+localCity(branch.city):''))+'" readonly></label><div class="settings-note">'+esc(t('passwordHint'))+'</div><label class="field"><span>'+esc(t('currentPassword'))+'</span><input name="current_password" type="password" autocomplete="current-password"></label><label class="field"><span>'+esc(t('newPassword'))+'</span><input name="new_password" type="password" autocomplete="new-password"></label><button class="btn primary" type="submit">'+esc(t('save'))+'</button></form>';
+   panel.innerHTML='<div class="section-title">'+esc(t('profile'))+'</div><div class="settings-note"><b>Bridge:</b> <span id="bridgeVersion">Checking...</span><br><b>Printer:</b> <span id="printerStatus">Checking...</span><button id="printerTestBtn" type="button" class="btn orange" style="margin-top:8px">Printer Test</button></div><form id="settingsForm"><label class="field"><span>'+esc(t('name'))+'</span><input name="display_name" value="'+esc(me.display_name||'')+'" required></label><label class="field"><span>'+esc(t('account'))+'</span><input value="'+esc(me.username||'')+'" readonly></label><label class="field"><span>'+esc(t('branch'))+'</span><input value="'+esc(localBranchName(branch)+(branch.city?' · '+localCity(branch.city):''))+'" readonly></label><div class="settings-note">'+esc(t('passwordHint'))+'</div><label class="field"><span>'+esc(t('currentPassword'))+'</span><input name="current_password" type="password" autocomplete="current-password"></label><label class="field"><span>'+esc(t('newPassword'))+'</span><input name="new_password" type="password" autocomplete="new-password"></label><button class="btn primary" type="submit">'+esc(t('save'))+'</button></form>';
    const printerBridge=window.GhazalaPOSPrinter||window.AndroidPrinter||window.Android;
+   const bridgeVersionEl=$('#bridgeVersion');
+   if(bridgeVersionEl){
+     try{
+       bridgeVersionEl.textContent=printerBridge&&typeof printerBridge.getBridgeVersion==='function'
+         ? String(printerBridge.getBridgeVersion())
+         : 'BRIDGE_NOT_AVAILABLE';
+     }catch(err){bridgeVersionEl.textContent='ERROR: '+err.message}
+   }
    const printerStatusEl=$('#printerStatus');
    if(printerStatusEl){
      try{
