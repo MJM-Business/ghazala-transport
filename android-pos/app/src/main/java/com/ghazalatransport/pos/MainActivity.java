@@ -338,6 +338,11 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
+        public String getBridgeVersion() {
+            return "0.4.0-sunmi";
+        }
+
+        @JavascriptInterface
         public String getPrinterStatus() {
             return printerStatus();
         }
