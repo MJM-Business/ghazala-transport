@@ -10,8 +10,8 @@ android {
         applicationId 'com.ghazalatransport.pos'
         minSdk 23
         targetSdk 34
-        versionCode 8
-        versionName '0.8.0-ghazala-icon'
+        versionCode 9
+        versionName '0.9.0-round-icon'
     }
 
     buildTypes {
@@ -40,12 +40,61 @@ tasks.named('preBuild').configure {
 }
 
 
-tasks.register('copyOfficialGhazalaLauncherIcon', Copy) {
-    from rootProject.file('../assets/ghazala-logo-original.png')
-    into file('src/main/res/drawable')
-    rename { 'ghazala_pos_icon.png' }
+tasks.register('generateOfficialGhazalaLauncherIcon') {
+    inputs.file(rootProject.file('../assets/ghazala-logo-original.png'))
+    outputs.file(file('src/main/res/drawable/ghazala_pos_icon.png'))
+    doLast {
+        def srcFile = rootProject.file('../assets/ghazala-logo-original.png')
+        def outFile = file('src/main/res/drawable/ghazala_pos_icon.png')
+        outFile.parentFile.mkdirs()
+
+        def src = javax.imageio.ImageIO.read(srcFile)
+        int minX = src.width, minY = src.height, maxX = -1, maxY = -1
+        for (int y = 0; y < src.height; y++) {
+            for (int x = 0; x < src.width; x++) {
+                int argb = src.getRGB(x, y)
+                int a = (argb >>> 24) & 0xff
+                int rr = (argb >>> 16) & 0xff
+                int gg = (argb >>> 8) & 0xff
+                int bb = argb & 0xff
+                boolean visible = a > 20 && !(rr > 246 && gg > 246 && bb > 246)
+                if (visible) {
+                    if (x < minX) minX = x
+                    if (x > maxX) maxX = x
+                    if (y < minY) minY = y
+                    if (y > maxY) maxY = y
+                }
+            }
+        }
+
+        if (maxX < minX || maxY < minY) {
+            minX = 0; minY = 0; maxX = src.width - 1; maxY = src.height - 1
+        }
+
+        int contentW = maxX - minX + 1
+        int contentH = maxY - minY + 1
+        int side = Math.max(contentW, contentH)
+        int centerX = (minX + maxX) / 2
+        int centerY = (minY + maxY) / 2
+        int sx = Math.max(0, Math.min(src.width - side, centerX - side / 2))
+        int sy = Math.max(0, Math.min(src.height - side, centerY - side / 2))
+        side = Math.min(side, Math.min(src.width - sx, src.height - sy))
+
+        def out = new java.awt.image.BufferedImage(512, 512, java.awt.image.BufferedImage.TYPE_INT_ARGB)
+        def g = out.createGraphics()
+        g.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_BICUBIC)
+        g.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON)
+        g.setComposite(java.awt.AlphaComposite.Clear)
+        g.fillRect(0, 0, 512, 512)
+        g.setComposite(java.awt.AlphaComposite.SrcOver)
+        g.setClip(new java.awt.geom.Ellipse2D.Double(4, 4, 504, 504))
+        g.drawImage(src, 4, 4, 508, 508, sx, sy, sx + side, sy + side, null)
+        g.dispose()
+
+        javax.imageio.ImageIO.write(out, 'png', outFile)
+    }
 }
 
 tasks.named('preBuild').configure {
-    dependsOn tasks.named('copyOfficialGhazalaLauncherIcon')
+    dependsOn tasks.named('generateOfficialGhazalaLauncherIcon')
 }
