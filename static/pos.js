@@ -254,7 +254,10 @@ async function printWaybill(awb){
        mobile:s.phone||'',
        route:(s.origin||'')+' -> '+(s.destination||''),
        payment:s.payment_status||'',
-       total:String(s.total_fee||'0')
+       total:String(s.total_fee||'0'),
+       date:new Date().toLocaleDateString('en-GB'),
+       time:new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}),
+       branch:userBranch(me)
      };
      const nativeResult=String(await Promise.resolve(bridge.printReceipt(JSON.stringify(receiptData))));
      if(nativeResult!=='OK')throw new Error('SUNMI '+nativeResult);
