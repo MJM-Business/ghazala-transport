@@ -9,6 +9,7 @@ import android.content.ComponentName;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.ConnectivityManager;
 import android.net.NetworkCapabilities;
 import android.os.Bundle;
@@ -30,6 +31,7 @@ import android.widget.ProgressBar;
 import android.widget.Toast;
 import org.json.JSONObject;
 import java.lang.reflect.Method;
+import java.io.InputStream;
 
 public class MainActivity extends Activity {
     private static final String PREFS = "ghazala_pos_prefs";
@@ -194,6 +196,28 @@ public class MainActivity extends Activity {
         return "READY";
     }
 
+    private Bitmap loadOfficialLogo() {
+        try {
+            InputStream in = getAssets().open("ghazala-logo-original.png");
+            Bitmap original = BitmapFactory.decodeStream(in);
+            in.close();
+            if (original == null) return null;
+            int targetWidth = 150;
+            int targetHeight = Math.max(1, Math.round(original.getHeight() * (targetWidth / (float) original.getWidth())));
+            return Bitmap.createScaledBitmap(original, targetWidth, targetHeight, true);
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    private void printColumns(String left, String right) throws Exception {
+        invokeSunmi("printColumnsString",
+                new String[]{left, right},
+                new int[]{1, 1},
+                new int[]{0, 2},
+                null);
+    }
+
     private String printSunmiReceipt(String json) {
         try {
             if (sunmiPrinterService == null) {
@@ -207,64 +231,70 @@ public class MainActivity extends Activity {
             String route = data.optString("route", "");
             String payment = data.optString("payment", "");
             String total = data.optString("total", "0");
+            String date = data.optString("date", "");
+            String time = data.optString("time", "");
+            String branch = data.optString("branch", "");
 
             invokeSunmi("printerInit", new Object[]{null});
-
-            // Bilingual header, centered and prominent.
             invokeSunmi("setAlignment", 1, null);
-            invokeSunmi("setFontSize", 30.0f, null);
+
+            Bitmap logo = loadOfficialLogo();
+            if (logo != null) {
+                try {
+                    invokeSunmi("printBitmap", logo, null);
+                    invokeSunmi("lineWrap", 1, null);
+                } catch (Exception ignored) {}
+            }
+
+            invokeSunmi("setFontSize", 28.0f, null);
             invokeSunmi("printText", "GHAZALA TRANSPORT\n", null);
-            invokeSunmi("setFontSize", 24.0f, null);
+            invokeSunmi("setFontSize", 22.0f, null);
             invokeSunmi("printText", "غزالة ترانسبورت\n", null);
+            invokeSunmi("setFontSize", 18.0f, null);
+            invokeSunmi("printText", "• • • • • • • • • • • • • •\n", null);
+
+            invokeSunmi("setFontSize", 28.0f, null);
+            invokeSunmi("printText", "SHIPMENT RECEIPT\n", null);
+            invokeSunmi("setFontSize", 23.0f, null);
+            invokeSunmi("printText", "إيصال الشحنة\n", null);
             invokeSunmi("setFontSize", 18.0f, null);
             invokeSunmi("printText", "--------------------------------\n", null);
 
-            // AWB and machine-readable codes.
-            invokeSunmi("setFontSize", 24.0f, null);
-            invokeSunmi("printText", "AWB / رقم الشحنة\n", null);
-            invokeSunmi("setFontSize", 28.0f, null);
-            invokeSunmi("printText", awb + "\n", null);
-            invokeSunmi("printQRCode", awb, 7, 1, null);
-            invokeSunmi("lineWrap", 1, null);
-            invokeSunmi("printBarCode", awb, 8, 100, 2, 2, null);
-            invokeSunmi("lineWrap", 1, null);
-
-            // Shipment details: larger text, bilingual labels.
             invokeSunmi("setAlignment", 0, null);
-            invokeSunmi("setFontSize", 19.0f, null);
+            invokeSunmi("setFontSize", 18.0f, null);
+            printColumns("AWB / رقم الشحنة", awb);
+            printColumns("Date / التاريخ", date);
+            printColumns("Time / الوقت", time);
+            printColumns("Branch / الفرع", branch);
             invokeSunmi("printText", "--------------------------------\n", null);
-            invokeSunmi("printText", "Sender / المرسل\n", null);
+
+            printColumns("Sender / المرسل", sender);
+            printColumns("Recipient / المستلم", recipient);
+            printColumns("Mobile / الجوال", mobile);
+            invokeSunmi("printText", "--------------------------------\n", null);
+
+            printColumns("Route / المسار", route);
+            printColumns("Payment / الدفع", payment);
             invokeSunmi("setFontSize", 22.0f, null);
-            invokeSunmi("printText", sender + "\n", null);
-
-            invokeSunmi("setFontSize", 19.0f, null);
-            invokeSunmi("printText", "Recipient / المستلم\n", null);
-            invokeSunmi("setFontSize", 22.0f, null);
-            invokeSunmi("printText", recipient + "\n", null);
-
-            invokeSunmi("setFontSize", 19.0f, null);
-            invokeSunmi("printText", "Mobile / الجوال\n", null);
-            invokeSunmi("setFontSize", 22.0f, null);
-            invokeSunmi("printText", mobile + "\n", null);
-
-            invokeSunmi("setFontSize", 19.0f, null);
-            invokeSunmi("printText", "Route / المسار\n", null);
-            invokeSunmi("setFontSize", 21.0f, null);
-            invokeSunmi("printText", route + "\n", null);
-
-            invokeSunmi("setFontSize", 19.0f, null);
-            invokeSunmi("printText", "Payment / الدفع\n", null);
-            invokeSunmi("setFontSize", 21.0f, null);
-            invokeSunmi("printText", payment + "\n", null);
-
-            invokeSunmi("setFontSize", 20.0f, null);
-            invokeSunmi("printText", "Total / الإجمالي\n", null);
-            invokeSunmi("setFontSize", 26.0f, null);
-            invokeSunmi("printText", total + " SAR\n", null);
+            printColumns("Total / الإجمالي", total + " SAR");
+            invokeSunmi("setFontSize", 18.0f, null);
+            invokeSunmi("printText", "--------------------------------\n", null);
 
             invokeSunmi("setAlignment", 1, null);
-            invokeSunmi("setFontSize", 17.0f, null);
-            invokeSunmi("printText", "Scan QR to track / امسح QR لتتبع الشحنة\n", null);
+            invokeSunmi("printQRCode", awb, 7, 1, null);
+            invokeSunmi("lineWrap", 1, null);
+            invokeSunmi("printBarCode", awb, 8, 105, 2, 2, null);
+            invokeSunmi("setFontSize", 20.0f, null);
+            invokeSunmi("printText", awb + "\n", null);
+            invokeSunmi("setFontSize", 18.0f, null);
+            invokeSunmi("printText", "--------------------------------\n", null);
+
+            invokeSunmi("setFontSize", 20.0f, null);
+            invokeSunmi("printText", "Thank you for shipping with Ghazala\n", null);
+            invokeSunmi("setFontSize", 18.0f, null);
+            invokeSunmi("printText", "شكراً لاستخدامكم غزالة ترانسبورت\n", null);
+            invokeSunmi("setFontSize", 15.0f, null);
+            invokeSunmi("printText", "Scan QR to track shipment / امسح QR لتتبع الشحنة\n", null);
             invokeSunmi("lineWrap", 2, null);
 
             return "OK";
@@ -377,7 +407,7 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public String getBridgeVersion() {
-            return "0.5.0-bilingual";
+            return "0.6.0-receipt";
         }
 
         @JavascriptInterface
