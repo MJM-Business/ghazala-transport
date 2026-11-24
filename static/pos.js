@@ -62,7 +62,7 @@ const TXT={
   senderMobile:'Sender Mobile',senderId:'Sender ID / Iqama (Optional)',recipientId:'Recipient ID / Iqama (Optional)',
   pickup:'Pickup Address',recipientName:'Recipient Name',recipientMobile:'Recipient Mobile',parcelDescription:'Parcel Description',editShipment:'Edit Shipment',saveShipment:'Save Changes',cancelEdit:'Cancel',editSaved:'Shipment updated successfully',
   fromCity:'From City',toCity:'To City',destinationBranch:'Destination Branch',
-  chooseBranch:'Choose Destination Branch',shipmentValue:'Shipment Value',cod:'Cash on Delivery',
+  chooseBranch:'Choose Destination Branch',shipmentValue:'Shipment Price',cod:'Cash on Delivery',
   senderPays:'Sender Pays',collection:'Collection Amount',pieces:'Pieces',createPrint:'Create Shipment & Print',
   creating:'Creating Shipment...',created:'Shipment created',createdTitle:'Shipment Created',
   printSent:'Receipt print command has been sent.',newAgain:'Create New Shipment',printAgain:'Print Again',
@@ -75,7 +75,7 @@ const TXT={
   senderMobile:'جوال المرسل',senderId:'هوية / إقامة المرسل (اختياري)',recipientId:'هوية / إقامة المستلم (اختياري)',
   pickup:'عنوان الاستلام',recipientName:'اسم المستلم',recipientMobile:'جوال المستلم',parcelDescription:'وصف محتويات الطرد',editShipment:'تعديل الشحنة',saveShipment:'حفظ التعديلات',cancelEdit:'إلغاء',editSaved:'تم تحديث الشحنة بنجاح',
   fromCity:'من مدينة',toCity:'إلى مدينة',destinationBranch:'فرع الوجهة',
-  chooseBranch:'اختر فرع الوجهة',shipmentValue:'قيمة الشحنة',cod:'الدفع عند الاستلام',
+  chooseBranch:'اختر فرع الوجهة',shipmentValue:'سعر الشحنة',cod:'الدفع عند الاستلام',
   senderPays:'يدفع المرسل',collection:'مبلغ التحصيل',pieces:'عدد القطع',createPrint:'إنشاء الشحنة والطباعة',
   creating:'جارٍ إنشاء الشحنة...',created:'تم إنشاء الشحنة',createdTitle:'تم إنشاء الشحنة',
   printSent:'تم إرسال أمر الطباعة.',newAgain:'إنشاء شحنة جديدة',printAgain:'طباعة مرة أخرى',
@@ -97,6 +97,16 @@ function bindLanguage(id='posLanguage'){
 }
 function toast(msg){toastEl.textContent=msg;toastEl.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>toastEl.hidden=true,2600)}
 function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function saudiPhone(value){
+ const raw=String(value||'').trim();
+ if(!raw)return '';
+ const digits=raw.replace(/\D/g,'');
+ if(raw.indexOf('+966')===0)return '+966'+digits.slice(3);
+ if(digits.indexOf('00966')===0)return '+966'+digits.slice(5);
+ if(digits.indexOf('966')===0)return '+966'+digits.slice(3);
+ if(digits.indexOf('0')===0)return '+966'+digits.slice(1);
+ return '+966'+digits;
+}
 function userRole(u){return (u&&u.role)||(u&&u.access_role)||''}
 function canUsePos(u){return !!u&&String((u&&u.username)||'').trim().toLowerCase().indexOf('pos.')===0}
 function primaryBranch(u){const list=Array.isArray(u&&u.branches)?u.branches:[];return list.find(b=>Number(b.id)===Number(u&&u.primary_branch_id))||list[0]||null}
@@ -140,7 +150,7 @@ function shell(){
 function etaDefault(){const d=new Date(Date.now()+24*3600*1000);return d.toISOString().slice(0,16)}
 function createPanel(){
  const origin=defaultCity(),destBranch=branches.find(b=>b.city&&b.city!==origin),dest=(destBranch&&destBranch.city)||origin;
- $('#panel').innerHTML='<div class="section-title">'+esc(t('newShipment'))+'</div><form id="shipmentForm"><div class="split"><label class="field"><span>'+esc(t('senderName'))+'</span><input name="sender_name" required></label><label class="field"><span>'+esc(t('senderMobile'))+'</span><input name="sender_phone" type="tel" required></label></div><div class="split"><label class="field"><span>'+esc(t('senderId'))+'</span><input name="sender_id"></label><label class="field"><span>'+esc(t('recipientId'))+'</span><input name="recipient_id"></label></div><div class="split"><label class="field"><span>'+esc(t('recipientName'))+'</span><input name="recipient" required></label><label class="field"><span>'+esc(t('recipientMobile'))+'</span><input name="phone" type="tel" required></label></div><label class="field"><span>'+esc(t('parcelDescription'))+'</span><textarea name="package_description" maxlength="2000" placeholder="Carton ke andar kya hai..."></textarea></label><div class="split"><label class="field"><span>'+esc(t('fromCity'))+'</span><input value="'+esc(localCity(origin))+'" readonly><input type="hidden" name="origin" value="'+esc(origin)+'"></label><label class="field"><span>'+esc(t('toCity'))+'</span><select name="destination" required>'+cityOptions(dest)+'</select></label></div><label class="field"><span>'+esc(t('destinationBranch'))+'</span><select name="recipient_branch">'+branchOptions(dest)+'</select></label><label class="field"><span>'+esc(t('shipmentValue'))+'</span><input name="declared_value" type="number" min="0" step="0.01" value="0"></label><div class="checks"><label class="check"><input type="radio" name="payment_method" value="cod" checked> '+esc(t('cod'))+'</label><label class="check"><input type="radio" name="payment_method" value="sender"> '+esc(t('senderPays'))+'</label></div><label id="codWrap" class="field"><span>'+esc(t('collection'))+'</span><input name="cod" type="number" min="0.01" step="0.01" value="1"></label><label class="field"><span>'+esc(t('pieces'))+'</span><input name="pieces" type="number" min="1" value="1" required></label><input type="hidden" name="eta" value="'+etaDefault()+'"><input type="hidden" name="package_type" value="طرد تجاري سريع"><input type="hidden" name="weight" value="1"><input type="hidden" name="length_cm" value="0"><input type="hidden" name="width_cm" value="0"><input type="hidden" name="height_cm" value="0"><div id="createStatus" class="create-status" aria-live="polite"></div><div class="actions single"><button type="button" id="createShipmentBtn" class="btn orange">'+esc(t('createPrint'))+'</button></div></form>';
+ $('#panel').innerHTML='<div class="section-title">'+esc(t('newShipment'))+'</div><form id="shipmentForm"><div class="split"><label class="field"><span>'+esc(t('senderName'))+'</span><input name="sender_name" required></label><label class="field"><span>'+esc(t('senderMobile'))+'</span><input name="sender_phone" type="tel" required></label></div><div class="split"><label class="field"><span>'+esc(t('senderId'))+'</span><input name="sender_id"></label><label class="field"><span>'+esc(t('recipientId'))+'</span><input name="recipient_id"></label></div><div class="split"><label class="field"><span>'+esc(t('recipientName'))+'</span><input name="recipient" required></label><label class="field"><span>'+esc(t('recipientMobile'))+'</span><input name="phone" type="tel" required></label></div><label class="field"><span>'+esc(t('parcelDescription'))+'</span><textarea name="package_description" maxlength="2000" placeholder="Carton ke andar kya hai..."></textarea></label><div class="split"><label class="field"><span>'+esc(t('fromCity'))+'</span><input value="'+esc(localCity(origin))+'" readonly><input type="hidden" name="origin" value="'+esc(origin)+'"></label><label class="field"><span>'+esc(t('toCity'))+'</span><select name="destination" required>'+cityOptions(dest)+'</select></label></div><label class="field"><span>'+esc(t('destinationBranch'))+'</span><select name="recipient_branch">'+branchOptions(dest)+'</select></label><label class="field"><span>'+esc(t('shipmentValue'))+'</span><input name="shipment_price" type="number" min="0" step="0.01" value="0"></label><div class="checks"><label class="check"><input type="radio" name="payment_method" value="cod" checked> '+esc(t('cod'))+'</label><label class="check"><input type="radio" name="payment_method" value="sender"> '+esc(t('senderPays'))+'</label></div><label id="codWrap" class="field"><span>'+esc(t('collection'))+'</span><input name="cod" type="number" min="0.01" step="0.01" value="1"></label><label class="field"><span>'+esc(t('pieces'))+'</span><input name="pieces" type="number" min="1" value="1" required></label><input type="hidden" name="eta" value="'+etaDefault()+'"><input type="hidden" name="package_type" value="طرد تجاري سريع"><input type="hidden" name="weight" value="1"><input type="hidden" name="length_cm" value="0"><input type="hidden" name="width_cm" value="0"><input type="hidden" name="height_cm" value="0"><div id="createStatus" class="create-status" aria-live="polite"></div><div class="actions single"><button type="button" id="createShipmentBtn" class="btn orange">'+esc(t('createPrint'))+'</button></div></form>';
  const f=$('#shipmentForm');
  const syncDest=()=>{f.recipient_branch.innerHTML=branchOptions(f.destination.value);if(f.elements.origin.value===f.destination.value){const other=Array.from(f.destination.options).find(o=>o.value!==f.elements.origin.value);if(other)f.destination.value=other.value;f.recipient_branch.innerHTML=branchOptions(f.destination.value)}};
  f.destination.onchange=syncDest;
@@ -153,7 +163,7 @@ function createPanel(){
  b.disabled=true;b.textContent=t('creating');
  try{
    const data=formObject(f);
-   ['declared_value','cod','pieces','weight','length_cm','width_cm','height_cm'].forEach(k=>data[k]=Number(data[k]||0));
+   ['shipment_price','cod','pieces','weight','length_cm','width_cm','height_cm'].forEach(k=>data[k]=Number(data[k]||0));
    if(data.payment_method!=='cod')data.cod=0;
    data.pos_device_id=deviceId;
    const created=await api('/api/shipments',{method:'POST',body:JSON.stringify(data)});
@@ -209,7 +219,7 @@ function editShipment(awb,rows){
  '<div class="split"><label class="field"><span>'+esc(t('recipientName'))+'</span><input name="recipient" value="'+esc(s.recipient||'')+'" required></label>'+
  '<label class="field"><span>'+esc(t('recipientMobile'))+'</span><input name="phone" type="tel" value="'+esc(s.phone||'')+'" required></label></div>'+
  '<label class="field"><span>'+esc(t('parcelDescription'))+'</span><textarea name="package_description" maxlength="2000">'+esc(s.package_description||'')+'</textarea></label>'+
- '<label class="field"><span>'+esc(t('shipmentValue'))+'</span><input name="declared_value" type="number" min="0" step="0.01" value="'+esc(s.declared_value||0)+'"></label>'+
+ '<label class="field"><span>'+esc(t('shipmentValue'))+'</span><input name="shipment_price" type="number" min="0" step="0.01" value="'+esc(s.total_fee||0)+'"></label>'+
  '<div class="checks"><label class="check"><input type="radio" name="payment_method" value="cod" '+(s.payment_method==='cod'?'checked':'')+'> '+esc(t('cod'))+'</label>'+
  '<label class="check"><input type="radio" name="payment_method" value="sender" '+(s.payment_method==='sender'?'checked':'')+'> '+esc(t('senderPays'))+'</label></div>'+
  '<label id="editCodWrap" class="field" style="'+(s.payment_method==='cod'?'':'display:none')+'"><span>'+esc(t('collection'))+'</span><input name="cod" type="number" min="0" step="0.01" value="'+esc(s.cod||0)+'"></label>'+
@@ -225,7 +235,7 @@ function editShipment(awb,rows){
    const b=$('#saveShipmentEdit'),status=$('#editStatus');b.disabled=true;
    try{
      const data=formObject(f);
-     ['declared_value','cod','pieces'].forEach(k=>data[k]=Number(data[k]||0));
+     ['shipment_price','cod','pieces'].forEach(k=>data[k]=Number(data[k]||0));
      if(data.payment_method!=='cod')data.cod=0;
      if(status){status.className='create-status';status.textContent='Saving changes...'}
      await api('/api/pos/records/'+encodeURIComponent(awb)+'/edit',{method:'POST',body:JSON.stringify(data)});
@@ -301,17 +311,17 @@ async function printWaybill(awb){
    const s=doc.shipment||shipments.find(x=>x.awb===awb)||{awb};
    const qrUrl='data:image/svg+xml;base64,'+btoa(unescape(encodeURIComponent(qr)));
    const barUrl='data:image/svg+xml;base64,'+btoa(unescape(encodeURIComponent(bar)));
-   const html='<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><style>@page{size:52mm 74mm;margin:0}html,body{margin:0;width:52mm;height:74mm;overflow:hidden}body{font:8px Arial;color:#111}.r{width:52mm;height:74mm;padding:2mm;box-sizing:border-box;text-align:center;overflow:hidden}.logo{width:10mm;height:10mm;object-fit:contain}.awb{font:bold 12px monospace;margin:1mm 0}.qr{width:18mm;height:18mm}.bar{width:46mm;height:9mm;object-fit:contain}.line{border-top:1px dashed #555;margin:1mm 0}.row{display:flex;justify-content:space-between;gap:1mm;text-align:left;margin:.6mm 0}.row b{text-align:right}h2{font-size:10px;margin:.5mm}.small{font-size:6px}.no-print{margin:3mm} @media print{.no-print{display:none}}</style></head><body><div class="no-print"><button onclick="print()">PRINT</button></div><main class="r"><img class="logo" src="/ghazala-logo.png?v=2"><h2>GHAZALA TRANSPORT</h2><div class="awb">'+esc(awb)+'</div><img class="qr" src="'+qrUrl+'"><br><img class="bar" src="'+barUrl+'"><div class="line"></div><div class="row"><span>Sender</span><b>'+esc(s.sender_name||'')+'</b></div><div class="row"><span>Recipient</span><b>'+esc(s.recipient||'')+'</b></div><div class="row"><span>Mobile</span><b>'+esc(s.phone||'')+'</b></div><div class="row"><span>Route</span><b>'+esc(s.origin||'')+' → '+esc(s.destination||'')+'</b></div><div class="row"><span>Payment</span><b>'+esc(s.payment_status||'')+'</b></div><div class="row"><span>Total</span><b>'+esc(s.total_fee||'0')+' SAR</b></div><div class="line"></div><div class="small">Track shipment by scanning QR code</div></main><script>setTimeout(()=>window.print(),350)<\/script></body></html>';
+   const html='<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><style>@page{size:52mm 74mm;margin:0}html,body{margin:0;width:52mm;height:74mm;overflow:hidden}body{font:8px Arial;color:#111}.r{width:52mm;height:74mm;padding:2mm;box-sizing:border-box;text-align:center;overflow:hidden}.logo{width:10mm;height:10mm;object-fit:contain}.awb{font:bold 12px monospace;margin:1mm 0}.qr{width:18mm;height:18mm}.bar{width:46mm;height:9mm;object-fit:contain}.line{border-top:1px dashed #555;margin:1mm 0}.row{display:flex;justify-content:space-between;gap:1mm;text-align:left;margin:.6mm 0}.row b{text-align:right}h2{font-size:10px;margin:.5mm}.small{font-size:6px}.no-print{margin:3mm} @media print{.no-print{display:none}}</style></head><body><div class="no-print"><button onclick="print()">PRINT</button></div><main class="r"><img class="logo" src="/ghazala-logo.png?v=2"><h2>GHAZALA TRANSPORT</h2><div class="awb">'+esc(awb)+'</div><img class="qr" src="'+qrUrl+'"><br><img class="bar" src="'+barUrl+'"><div class="line"></div><div class="row"><span>Sender</span><b>'+esc(s.sender_name||'')+'</b></div><div class="row"><span>Sender Mobile</span><b>'+esc(saudiPhone(s.sender_phone||''))+'</b></div><div class="row"><span>Recipient</span><b>'+esc(s.recipient||'')+'</b></div><div class="row"><span>Receiver Mobile</span><b>'+esc(saudiPhone(s.phone||''))+'</b></div><div class="row"><span>Route</span><b>'+esc(s.origin||'')+' → '+esc(s.destination||'')+'</b></div><div class="row"><span>Payment</span><b>'+esc(s.payment_status||'')+'</b></div><div class="line"></div><div class="small">Track shipment by scanning QR code</div></main><script>setTimeout(()=>window.print(),350)<\/script></body></html>';
    const bridge=window.GhazalaPOSPrinter||window.AndroidPrinter||window.Android;
    if(bridge&&typeof bridge.printReceipt==='function'){
      const receiptData={
        awb:awb,
        sender:s.sender_name||'',
+       senderMobile:saudiPhone(s.sender_phone||''),
        recipient:s.recipient||'',
-       mobile:s.phone||'',
+       recipientMobile:saudiPhone(s.phone||''),
        route:(s.origin||'')+' -> '+(s.destination||''),
        payment:s.payment_status||'',
-       total:String(s.total_fee||'0'),
        date:new Date().toLocaleDateString('en-GB'),
        time:new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}),
        branch:userBranch(me)
