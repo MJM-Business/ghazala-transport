@@ -5551,7 +5551,9 @@ class Handler(BaseHTTPRequestHandler):
                 if parts==['api','pos','records']:
                     rows=c.execute("""SELECT pr.id,pr.device_id,pr.created_at AS pos_created_at,
                                pr.print_count,pr.last_printed_at,pr.dispatched_at,pr.dispatched_by_user_id,
-                               s.awb,s.recipient,s.phone,s.origin,s.destination,s.recipient_branch,
+                               s.awb,s.sender_name,s.sender_id,s.sender_phone,
+                               s.recipient,s.recipient_id,s.phone,s.origin,s.destination,s.recipient_branch,
+                               s.package_description,s.declared_value,s.pieces,
                                s.status,s.stage,s.payment_method,s.payment_status,s.cod,
                                s.shipping_fee,s.total_fee,s.created_at
                           FROM pos_shipment_records pr
@@ -6308,6 +6310,76 @@ class Handler(BaseHTTPRequestHandler):
                             metadata={"password_changed":password_changed},request=self)
                 c.commit()
                 return self.send_json({"ok":True,"user":safe_user(updated,c)})
+
+            if len(parts)==5 and parts[:3]==['api','pos','records'] and parts[4]=='edit':
+                if not str(user.get("username") or "").strip().lower().startswith("pos."):
+                    return self.forbidden()
+                awb=str(parts[3] or "").strip().upper()
+                row=c.execute("""SELECT pr.id AS pos_record_id,pr.branch_id,pr.dispatched_at,s.*
+                    FROM pos_shipment_records pr
+                    JOIN shipments s ON s.id=pr.shipment_id
+                    WHERE s.awb=? AND pr.pos_user_id=?""",(awb,user["id"])).fetchone()
+                if not row:
+                    return self.send_json({"error":"POS shipment record not found."},404)
+                if row["dispatched_at"] or transitions.canonical(row["status"]) not in ("created","received","at_origin"):
+                    return self.send_json({"error":"Dispatched shipment details cannot be edited from POS."},409)
+
+                allowed={
+                    "sender_name","sender_phone","sender_id","recipient","phone","recipient_id",
+                    "package_description","declared_value","pieces","payment_method","cod"
+                }
+                if not isinstance(data,dict) or not data or set(data)-allowed:
+                    return self.send_json({"error":"Unsupported POS shipment edit fields."},400)
+
+                required=("sender_name","sender_phone","recipient","phone")
+                merged={key:(data[key] if key in data else row[key]) for key in allowed}
+                if any(not str(merged.get(key) or "").strip() for key in required):
+                    return self.send_json({"error":"Sender/recipient name and mobile are required."},400)
+
+                method=str(merged.get("payment_method") or row["payment_method"]).strip()
+                if method not in ("sender","cod"):
+                    return self.send_json({"error":"Invalid POS payment method."},400)
+                try:
+                    declared_value=float(merged.get("declared_value") or 0)
+                    pieces=int(merged.get("pieces") or 1)
+                    cod_amount=float(merged.get("cod") or 0)
+                    if not math.isfinite(declared_value) or declared_value<0: raise ValueError()
+                    if pieces<1 or pieces>1000: raise ValueError()
+                    if not math.isfinite(cod_amount) or cod_amount<0: raise ValueError()
+                    if method=="cod" and cod_amount<=0: raise ValueError()
+                except (TypeError,ValueError,OverflowError):
+                    return self.send_json({"error":"Check shipment value, pieces and collection amount."},400)
+                if method!="cod":
+                    cod_amount=0
+
+                before={key:row[key] for key in (
+                    "sender_name","sender_phone","sender_id","recipient","phone","recipient_id",
+                    "package_description","declared_value","pieces","payment_method","cod"
+                )}
+                c.execute("""UPDATE shipments
+                    SET sender_name=?,sender_phone=?,sender_id=?,recipient=?,phone=?,recipient_id=?,
+                        package_description=?,declared_value=?,pieces=?,payment_method=?,cod=?,
+                        updated_at=CURRENT_TIMESTAMP
+                    WHERE id=?""",(
+                    str(merged.get("sender_name") or "").strip(),
+                    str(merged.get("sender_phone") or "").strip(),
+                    str(merged.get("sender_id") or "").strip(),
+                    str(merged.get("recipient") or "").strip(),
+                    str(merged.get("phone") or "").strip(),
+                    str(merged.get("recipient_id") or "").strip(),
+                    str(merged.get("package_description") or "").strip()[:2000],
+                    declared_value,pieces,method,cod_amount,row["id"]
+                ))
+                updated=c.execute(shipment_query()+" WHERE s.id=?",(row["id"],)).fetchone()
+                write_audit(
+                    c,auth.context(c,user),"shipment.pos_edited","shipment",row["id"],
+                    before=before,
+                    after={key:dict(updated).get(key) for key in before},
+                    metadata={"awb":awb,"pos_record_id":row["pos_record_id"]},
+                    request=self
+                )
+                c.commit()
+                return self.send_json(dict(updated))
 
             if len(parts)==5 and parts[:3]==['api','pos','records'] and parts[4]=='dispatch':
                 if not str(user.get("username") or "").strip().lower().startswith("pos."):
@@ -7951,7 +8023,17 @@ class Handler(BaseHTTPRequestHandler):
                     return self.send_json({"error":"Origin and destination must be different."},400)
                 if not active_branch_for_city(c,data["origin"]) or not active_branch_for_city(c,data["destination"]):
                     return self.send_json({"error":"Select cities served by active Ghazala branches."},400)
-                if not str(data.get("sender_address","")).strip(): return self.send_json({"error":'أدخل عنوان الاستلام'},400)
+                is_pos_user=str(user.get("username") or "").strip().lower().startswith("pos.")
+                if not str(data.get("sender_address","")).strip():
+                    if is_pos_user:
+                        pos_ctx=auth.context(c,user)
+                        branch_id=pos_ctx.get("primary_branch_id")
+                        branch_row=c.execute("SELECT name,city FROM branches WHERE id=?",(branch_id,)).fetchone() if branch_id else None
+                        data["sender_address"]=(
+                            (branch_row["name"] if branch_row else data["origin"]) + " POS Counter"
+                        )
+                    else:
+                        return self.send_json({"error":'أدخل عنوان الاستلام'},400)
                 method=data.get("payment_method","cod")
                 if method not in ("sender","cod","company"): return self.send_json({"error":'طريقة الدفع غير صحيحة'},400)
                 if method=="company" and not str(data.get("company_account","")).strip(): return self.send_json({"error":'أدخل اسم/رقم حساب الشركة'},400)
