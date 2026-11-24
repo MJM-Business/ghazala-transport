@@ -10,8 +10,8 @@ android {
         applicationId 'com.ghazalatransport.pos'
         minSdk 23
         targetSdk 34
-        versionCode 7
-        versionName '0.7.0-contact-receipt'
+        versionCode 8
+        versionName '0.8.0-ghazala-icon'
     }
 
     buildTypes {
@@ -37,4 +37,15 @@ tasks.register('copyOfficialGhazalaLogo', Copy) {
 
 tasks.named('preBuild').configure {
     dependsOn tasks.named('copyOfficialGhazalaLogo')
+}
+
+
+tasks.register('copyOfficialGhazalaLauncherIcon', Copy) {
+    from rootProject.file('../assets/ghazala-logo-original.png')
+    into file('src/main/res/drawable')
+    rename { 'ghazala_pos_icon.png' }
+}
+
+tasks.named('preBuild').configure {
+    dependsOn tasks.named('copyOfficialGhazalaLauncherIcon')
 }
