@@ -209,24 +209,62 @@ public class MainActivity extends Activity {
             String total = data.optString("total", "0");
 
             invokeSunmi("printerInit", new Object[]{null});
+
+            // Bilingual header, centered and prominent.
             invokeSunmi("setAlignment", 1, null);
-            invokeSunmi("setFontSize", 22.0f, null);
+            invokeSunmi("setFontSize", 30.0f, null);
             invokeSunmi("printText", "GHAZALA TRANSPORT\n", null);
+            invokeSunmi("setFontSize", 24.0f, null);
+            invokeSunmi("printText", "غزالة ترانسبورت\n", null);
             invokeSunmi("setFontSize", 18.0f, null);
+            invokeSunmi("printText", "--------------------------------\n", null);
+
+            // AWB and machine-readable codes.
+            invokeSunmi("setFontSize", 24.0f, null);
+            invokeSunmi("printText", "AWB / رقم الشحنة\n", null);
+            invokeSunmi("setFontSize", 28.0f, null);
             invokeSunmi("printText", awb + "\n", null);
-            invokeSunmi("printQRCode", awb, 5, 1, null);
+            invokeSunmi("printQRCode", awb, 7, 1, null);
             invokeSunmi("lineWrap", 1, null);
-            invokeSunmi("printBarCode", awb, 8, 70, 2, 2, null);
+            invokeSunmi("printBarCode", awb, 8, 100, 2, 2, null);
             invokeSunmi("lineWrap", 1, null);
+
+            // Shipment details: larger text, bilingual labels.
             invokeSunmi("setAlignment", 0, null);
-            invokeSunmi("setFontSize", 16.0f, null);
-            invokeSunmi("printText", "Sender: " + sender + "\n", null);
-            invokeSunmi("printText", "Recipient: " + recipient + "\n", null);
-            invokeSunmi("printText", "Mobile: " + mobile + "\n", null);
-            invokeSunmi("printText", "Route: " + route + "\n", null);
-            invokeSunmi("printText", "Payment: " + payment + "\n", null);
-            invokeSunmi("printText", "Total: " + total + " SAR\n", null);
-            invokeSunmi("printText", "Track by QR\n", null);
+            invokeSunmi("setFontSize", 19.0f, null);
+            invokeSunmi("printText", "--------------------------------\n", null);
+            invokeSunmi("printText", "Sender / المرسل\n", null);
+            invokeSunmi("setFontSize", 22.0f, null);
+            invokeSunmi("printText", sender + "\n", null);
+
+            invokeSunmi("setFontSize", 19.0f, null);
+            invokeSunmi("printText", "Recipient / المستلم\n", null);
+            invokeSunmi("setFontSize", 22.0f, null);
+            invokeSunmi("printText", recipient + "\n", null);
+
+            invokeSunmi("setFontSize", 19.0f, null);
+            invokeSunmi("printText", "Mobile / الجوال\n", null);
+            invokeSunmi("setFontSize", 22.0f, null);
+            invokeSunmi("printText", mobile + "\n", null);
+
+            invokeSunmi("setFontSize", 19.0f, null);
+            invokeSunmi("printText", "Route / المسار\n", null);
+            invokeSunmi("setFontSize", 21.0f, null);
+            invokeSunmi("printText", route + "\n", null);
+
+            invokeSunmi("setFontSize", 19.0f, null);
+            invokeSunmi("printText", "Payment / الدفع\n", null);
+            invokeSunmi("setFontSize", 21.0f, null);
+            invokeSunmi("printText", payment + "\n", null);
+
+            invokeSunmi("setFontSize", 20.0f, null);
+            invokeSunmi("printText", "Total / الإجمالي\n", null);
+            invokeSunmi("setFontSize", 26.0f, null);
+            invokeSunmi("printText", total + " SAR\n", null);
+
+            invokeSunmi("setAlignment", 1, null);
+            invokeSunmi("setFontSize", 17.0f, null);
+            invokeSunmi("printText", "Scan QR to track / امسح QR لتتبع الشحنة\n", null);
             invokeSunmi("lineWrap", 2, null);
 
             return "OK";
@@ -339,7 +377,7 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public String getBridgeVersion() {
-            return "0.4.0-sunmi";
+            return "0.5.0-bilingual";
         }
 
         @JavascriptInterface
