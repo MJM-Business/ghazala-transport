@@ -10,8 +10,8 @@ android {
         applicationId 'com.ghazalatransport.pos'
         minSdk 23
         targetSdk 34
-        versionCode 4
-        versionName '0.4.0-sunmi'
+        versionCode 5
+        versionName '0.5.0-bilingual'
     }
 
     buildTypes {
