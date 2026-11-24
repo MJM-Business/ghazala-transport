@@ -209,24 +209,24 @@ public class MainActivity extends Activity {
 
             invokeSunmi("printerInit", new Object[]{null});
             invokeSunmi("setAlignment", 1, null);
-            invokeSunmi("setFontSize", 26.0f, null);
-            invokeSunmi("printText", "GHAZALA TRANSPORT\n", null);
             invokeSunmi("setFontSize", 22.0f, null);
+            invokeSunmi("printText", "GHAZALA TRANSPORT\n", null);
+            invokeSunmi("setFontSize", 18.0f, null);
             invokeSunmi("printText", awb + "\n", null);
-            invokeSunmi("printQRCode", awb, 6, 1, null);
+            invokeSunmi("printQRCode", awb, 5, 1, null);
             invokeSunmi("lineWrap", 1, null);
-            invokeSunmi("printBarCode", awb, 8, 90, 2, 2, null);
+            invokeSunmi("printBarCode", awb, 8, 70, 2, 2, null);
             invokeSunmi("lineWrap", 1, null);
             invokeSunmi("setAlignment", 0, null);
-            invokeSunmi("setFontSize", 20.0f, null);
+            invokeSunmi("setFontSize", 16.0f, null);
             invokeSunmi("printText", "Sender: " + sender + "\n", null);
             invokeSunmi("printText", "Recipient: " + recipient + "\n", null);
             invokeSunmi("printText", "Mobile: " + mobile + "\n", null);
             invokeSunmi("printText", "Route: " + route + "\n", null);
             invokeSunmi("printText", "Payment: " + payment + "\n", null);
             invokeSunmi("printText", "Total: " + total + " SAR\n", null);
-            invokeSunmi("printText", "Track shipment by scanning QR code\n", null);
-            invokeSunmi("lineWrap", 4, null);
+            invokeSunmi("printText", "Track by QR\n", null);
+            invokeSunmi("lineWrap", 2, null);
 
             return "OK";
         } catch (Exception ex) {
