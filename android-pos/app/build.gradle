@@ -10,8 +10,8 @@ android {
         applicationId 'com.ghazalatransport.pos'
         minSdk 23
         targetSdk 34
-        versionCode 15
-        versionName '0.15.0-text-header-receipt'
+        versionCode 16
+        versionName '0.16.0-ghazala-launcher'
     }
 
     buildTypes {
@@ -53,4 +53,76 @@ tasks.register('writeStaticTransparentGhazalaIcon') {
 
 tasks.named('preBuild').configure {
     dependsOn tasks.named('writeStaticTransparentGhazalaIcon')
+}
+
+
+tasks.register('generateGhazalaLauncherMipmaps') {
+    inputs.file(rootProject.file('../assets/ghazala-logo-original.png'))
+    doLast {
+        def src = javax.imageio.ImageIO.read(rootProject.file('../assets/ghazala-logo-original.png'))
+        if (src == null) throw new GradleException('Ghazala logo could not be decoded')
+
+        int minX = src.width, minY = src.height, maxX = -1, maxY = -1
+        for (int y = 0; y < src.height; y++) {
+            for (int x = 0; x < src.width; x++) {
+                int p = src.getRGB(x, y)
+                int a = (p >>> 24) & 0xff
+                int r = (p >>> 16) & 0xff
+                int g = (p >>> 8) & 0xff
+                int b = p & 0xff
+                boolean nonWhite = a > 20 && !(r > 245 && g > 245 && b > 245)
+                if (nonWhite) {
+                    if (x < minX) minX = x
+                    if (x > maxX) maxX = x
+                    if (y < minY) minY = y
+                    if (y > maxY) maxY = y
+                }
+            }
+        }
+        if (maxX < minX || maxY < minY) {
+            minX = 0; minY = 0; maxX = src.width - 1; maxY = src.height - 1
+        }
+
+        int contentW = maxX - minX + 1
+        int contentH = maxY - minY + 1
+        int side = Math.max(contentW, contentH)
+        int cx = ((minX + maxX) / 2) as int
+        int cy = ((minY + maxY) / 2) as int
+        int sx = Math.max(0, Math.min(src.width - side, cx - ((side / 2) as int)))
+        int sy = Math.max(0, Math.min(src.height - side, cy - ((side / 2) as int)))
+
+        def specs = [
+            ['mipmap-mdpi',48],
+            ['mipmap-hdpi',72],
+            ['mipmap-xhdpi',96],
+            ['mipmap-xxhdpi',144],
+            ['mipmap-xxxhdpi',192]
+        ]
+
+        specs.each { spec ->
+            String dirName = spec[0]
+            int size = spec[1] as int
+            def out = new java.awt.image.BufferedImage(size, size, java.awt.image.BufferedImage.TYPE_INT_ARGB)
+            def g2 = out.createGraphics()
+            g2.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_BICUBIC)
+            g2.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON)
+            g2.setComposite(java.awt.AlphaComposite.Clear)
+            g2.fillRect(0,0,size,size)
+            g2.setComposite(java.awt.AlphaComposite.SrcOver)
+
+            int pad = Math.max(2, Math.round(size * 0.03f) as int)
+            g2.setClip(new java.awt.geom.Ellipse2D.Double(pad,pad,size-2*pad,size-2*pad))
+            g2.drawImage(src,pad,pad,size-pad,size-pad,sx,sy,sx+side,sy+side,null)
+            g2.dispose()
+
+            def dir = file("src/main/res/${dirName}")
+            dir.mkdirs()
+            javax.imageio.ImageIO.write(out,'png',new File(dir,'ic_launcher.png'))
+            javax.imageio.ImageIO.write(out,'png',new File(dir,'ic_launcher_round.png'))
+        }
+    }
+}
+
+tasks.named('preBuild').configure {
+    dependsOn tasks.named('generateGhazalaLauncherMipmaps')
 }
