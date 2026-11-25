@@ -199,13 +199,52 @@ public class MainActivity extends Activity {
 
     private Bitmap loadOfficialLogo() {
         try {
-            InputStream in = getAssets().open("ghazala-thermal-logo-bw.png");
-            Bitmap thermalLogo = BitmapFactory.decodeStream(in);
+            InputStream in = getAssets().open("ghazala-logo-original.png");
+            Bitmap original = BitmapFactory.decodeStream(in);
             in.close();
-            if (thermalLogo == null) return null;
-            int targetWidth = 300;
-            int targetHeight = Math.max(1, Math.round(thermalLogo.getHeight() * (targetWidth / (float) thermalLogo.getWidth())));
-            return Bitmap.createScaledBitmap(thermalLogo, targetWidth, targetHeight, false);
+            if (original == null) return null;
+
+            // Thermal printers turn the dark brand background into a solid block.
+            // Build a light edge/outline version instead so the Ghazala artwork stays readable.
+            int targetWidth = 210;
+            int targetHeight = Math.max(1, Math.round(original.getHeight() * (targetWidth / (float) original.getWidth())));
+            Bitmap scaled = Bitmap.createScaledBitmap(original, targetWidth, targetHeight, true);
+            Bitmap thermal = Bitmap.createBitmap(targetWidth, targetHeight, Bitmap.Config.ARGB_8888);
+
+            int[][] gray = new int[targetHeight][targetWidth];
+            for (int y = 0; y < targetHeight; y++) {
+                for (int x = 0; x < targetWidth; x++) {
+                    int p = scaled.getPixel(x, y);
+                    int a = Color.alpha(p);
+                    if (a < 24) {
+                        gray[y][x] = 255;
+                    } else {
+                        gray[y][x] = Math.round(
+                                0.299f * Color.red(p) +
+                                0.587f * Color.green(p) +
+                                0.114f * Color.blue(p));
+                    }
+                    thermal.setPixel(x, y, Color.WHITE);
+                }
+            }
+
+            for (int y = 1; y < targetHeight - 1; y++) {
+                for (int x = 1; x < targetWidth - 1; x++) {
+                    int gx =
+                            -gray[y-1][x-1] + gray[y-1][x+1] +
+                            -2*gray[y][x-1] + 2*gray[y][x+1] +
+                            -gray[y+1][x-1] + gray[y+1][x+1];
+                    int gy =
+                            -gray[y-1][x-1] - 2*gray[y-1][x] - gray[y-1][x+1] +
+                             gray[y+1][x-1] + 2*gray[y+1][x] + gray[y+1][x+1];
+                    int magnitude = Math.abs(gx) + Math.abs(gy);
+                    if (magnitude > 135) {
+                        thermal.setPixel(x, y, Color.BLACK);
+                    }
+                }
+            }
+
+            return thermal;
         } catch (Exception ignored) {
             return null;
         }
@@ -408,7 +447,7 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public String getBridgeVersion() {
-            return "0.13.0-thermal-logo-arabic-brand";
+            return "0.14.0-outline-thermal-logo";
         }
 
         @JavascriptInterface
