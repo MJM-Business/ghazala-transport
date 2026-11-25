@@ -10,8 +10,8 @@ android {
         applicationId 'com.ghazalatransport.pos'
         minSdk 23
         targetSdk 34
-        versionCode 14
-        versionName '0.14.0-outline-thermal-logo'
+        versionCode 15
+        versionName '0.15.0-text-header-receipt'
     }
 
     buildTypes {
