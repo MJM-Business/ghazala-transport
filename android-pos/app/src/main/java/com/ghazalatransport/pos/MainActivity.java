@@ -199,32 +199,13 @@ public class MainActivity extends Activity {
 
     private Bitmap loadOfficialLogo() {
         try {
-            InputStream in = getAssets().open("ghazala-logo-original.png");
-            Bitmap original = BitmapFactory.decodeStream(in);
+            InputStream in = getAssets().open("ghazala-thermal-logo-bw.png");
+            Bitmap thermalLogo = BitmapFactory.decodeStream(in);
             in.close();
-            if (original == null) return null;
-
-            int targetWidth = 260;
-            int targetHeight = Math.max(1, Math.round(original.getHeight() * (targetWidth / (float) original.getWidth())));
-            Bitmap scaled = Bitmap.createScaledBitmap(original, targetWidth, targetHeight, true);
-            Bitmap mono = Bitmap.createBitmap(targetWidth, targetHeight, Bitmap.Config.ARGB_8888);
-
-            for (int y = 0; y < targetHeight; y++) {
-                for (int x = 0; x < targetWidth; x++) {
-                    int pixel = scaled.getPixel(x, y);
-                    int alpha = Color.alpha(pixel);
-                    if (alpha < 32) {
-                        mono.setPixel(x, y, Color.WHITE);
-                        continue;
-                    }
-                    int r = Color.red(pixel);
-                    int g = Color.green(pixel);
-                    int b = Color.blue(pixel);
-                    int gray = Math.round(0.299f * r + 0.587f * g + 0.114f * b);
-                    mono.setPixel(x, y, gray < 175 ? Color.BLACK : Color.WHITE);
-                }
-            }
-            return mono;
+            if (thermalLogo == null) return null;
+            int targetWidth = 300;
+            int targetHeight = Math.max(1, Math.round(thermalLogo.getHeight() * (targetWidth / (float) thermalLogo.getWidth())));
+            return Bitmap.createScaledBitmap(thermalLogo, targetWidth, targetHeight, false);
         } catch (Exception ignored) {
             return null;
         }
@@ -269,7 +250,7 @@ public class MainActivity extends Activity {
             invokeSunmi("setFontSize", 28.0f, null);
             invokeSunmi("printText", "GHAZALA TRANSPORT\n", null);
             invokeSunmi("setFontSize", 22.0f, null);
-            invokeSunmi("printText", "غزالة ترانسبورت\n", null);
+            invokeSunmi("printText", "غزالا ترانسبورت\n", null);
             invokeSunmi("setFontSize", 18.0f, null);
             invokeSunmi("printText", "• • • • • • • • • • • • • •\n", null);
 
@@ -312,7 +293,7 @@ public class MainActivity extends Activity {
             invokeSunmi("setFontSize", 20.0f, null);
             invokeSunmi("printText", "Thank you for shipping with Ghazala\n", null);
             invokeSunmi("setFontSize", 18.0f, null);
-            invokeSunmi("printText", "شكراً لاستخدامكم غزالة ترانسبورت\n", null);
+            invokeSunmi("printText", "شكراً لاستخدامكم غزالا ترانسبورت\n", null);
             invokeSunmi("setFontSize", 15.0f, null);
             invokeSunmi("printText", "Scan QR to track shipment / امسح QR لتتبع الشحنة\n", null);
             invokeSunmi("lineWrap", 2, null);
@@ -427,7 +408,7 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public String getBridgeVersion() {
-            return "0.12.0-top-codes-clear-logo";
+            return "0.13.0-thermal-logo-arabic-brand";
         }
 
         @JavascriptInterface
