@@ -278,17 +278,9 @@ public class MainActivity extends Activity {
             invokeSunmi("printerInit", new Object[]{null});
             invokeSunmi("setAlignment", 1, null);
 
-            Bitmap logo = loadOfficialLogo();
-            if (logo != null) {
-                try {
-                    invokeSunmi("printBitmap", logo, null);
-                    invokeSunmi("lineWrap", 1, null);
-                } catch (Exception ignored) {}
-            }
-
-            invokeSunmi("setFontSize", 28.0f, null);
+            invokeSunmi("setFontSize", 34.0f, null);
             invokeSunmi("printText", "GHAZALA TRANSPORT\n", null);
-            invokeSunmi("setFontSize", 22.0f, null);
+            invokeSunmi("setFontSize", 26.0f, null);
             invokeSunmi("printText", "غزالا ترانسبورت\n", null);
             invokeSunmi("setFontSize", 18.0f, null);
             invokeSunmi("printText", "• • • • • • • • • • • • • •\n", null);
@@ -447,7 +439,7 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public String getBridgeVersion() {
-            return "0.14.0-outline-thermal-logo";
+            return "0.15.0-text-header-receipt";
         }
 
         @JavascriptInterface
