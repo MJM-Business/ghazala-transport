@@ -10,6 +10,7 @@ import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.net.ConnectivityManager;
 import android.net.NetworkCapabilities;
 import android.os.Bundle;
@@ -202,9 +203,28 @@ public class MainActivity extends Activity {
             Bitmap original = BitmapFactory.decodeStream(in);
             in.close();
             if (original == null) return null;
-            int targetWidth = 150;
+
+            int targetWidth = 260;
             int targetHeight = Math.max(1, Math.round(original.getHeight() * (targetWidth / (float) original.getWidth())));
-            return Bitmap.createScaledBitmap(original, targetWidth, targetHeight, true);
+            Bitmap scaled = Bitmap.createScaledBitmap(original, targetWidth, targetHeight, true);
+            Bitmap mono = Bitmap.createBitmap(targetWidth, targetHeight, Bitmap.Config.ARGB_8888);
+
+            for (int y = 0; y < targetHeight; y++) {
+                for (int x = 0; x < targetWidth; x++) {
+                    int pixel = scaled.getPixel(x, y);
+                    int alpha = Color.alpha(pixel);
+                    if (alpha < 32) {
+                        mono.setPixel(x, y, Color.WHITE);
+                        continue;
+                    }
+                    int r = Color.red(pixel);
+                    int g = Color.green(pixel);
+                    int b = Color.blue(pixel);
+                    int gray = Math.round(0.299f * r + 0.587f * g + 0.114f * b);
+                    mono.setPixel(x, y, gray < 175 ? Color.BLACK : Color.WHITE);
+                }
+            }
+            return mono;
         } catch (Exception ignored) {
             return null;
         }
@@ -260,6 +280,16 @@ public class MainActivity extends Activity {
             invokeSunmi("setFontSize", 18.0f, null);
             invokeSunmi("printText", "--------------------------------\n", null);
 
+            // Tracking codes stay at the top so customers and staff can scan immediately.
+            invokeSunmi("setAlignment", 1, null);
+            invokeSunmi("printQRCode", awb, 7, 1, null);
+            invokeSunmi("lineWrap", 1, null);
+            invokeSunmi("printBarCode", awb, 8, 105, 2, 2, null);
+            invokeSunmi("setFontSize", 20.0f, null);
+            invokeSunmi("printText", awb + "\n", null);
+            invokeSunmi("setFontSize", 18.0f, null);
+            invokeSunmi("printText", "--------------------------------\n", null);
+
             invokeSunmi("setAlignment", 0, null);
             invokeSunmi("setFontSize", 18.0f, null);
             printColumns("AWB / رقم الشحنة", awb);
@@ -276,15 +306,6 @@ public class MainActivity extends Activity {
 
             printColumns("Route / المسار", route);
             printColumns("Payment / الدفع", payment);
-            invokeSunmi("setFontSize", 18.0f, null);
-            invokeSunmi("printText", "--------------------------------\n", null);
-
-            invokeSunmi("setAlignment", 1, null);
-            invokeSunmi("printQRCode", awb, 7, 1, null);
-            invokeSunmi("lineWrap", 1, null);
-            invokeSunmi("printBarCode", awb, 8, 105, 2, 2, null);
-            invokeSunmi("setFontSize", 20.0f, null);
-            invokeSunmi("printText", awb + "\n", null);
             invokeSunmi("setFontSize", 18.0f, null);
             invokeSunmi("printText", "--------------------------------\n", null);
 
@@ -406,7 +427,7 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public String getBridgeVersion() {
-            return "0.7.0-contact-receipt";
+            return "0.12.0-top-codes-clear-logo";
         }
 
         @JavascriptInterface
