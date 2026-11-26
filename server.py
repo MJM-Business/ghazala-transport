@@ -6158,7 +6158,21 @@ class Handler(BaseHTTPRequestHandler):
                     ).fetchall()
                 else:
                     rows=policy.rows(c,ctx,'branches',extra='x.is_active=1',order='ORDER BY x.city,x.name,x.id')
-                return self.send_json([dict(r) for r in rows])
+                result=[]
+                for row in rows:
+                    item=dict(row)
+                    pos_user=c.execute(
+                        """SELECT u.id,u.username,u.display_name,u.is_active
+                             FROM user_branches ub
+                             JOIN users u ON u.id=ub.user_id
+                            WHERE ub.branch_id=? AND lower(u.username) LIKE 'pos.%'
+                            ORDER BY u.is_active DESC,u.id DESC LIMIT 1""",
+                        (item["id"],)
+                    ).fetchone()
+                    item["pos_user_status"]="active" if pos_user and pos_user["is_active"] else ("inactive" if pos_user else "not_created")
+                    item["pos_user"]=dict(pos_user) if pos_user else None
+                    result.append(item)
+                return self.send_json(result)
             if path=='/api/vehicles':
                 return self.send_json(vehicle_fleet_payload(c,ctx))
             if path=='/api/fleet/summary':
