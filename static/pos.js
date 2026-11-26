@@ -63,7 +63,7 @@ const TXT={
   pickup:'Pickup Address',recipientName:'Recipient Name',recipientMobile:'Recipient Mobile',parcelDescription:'Parcel Description',editShipment:'Edit Shipment',saveShipment:'Save Changes',cancelEdit:'Cancel',editSaved:'Shipment updated successfully',
   fromCity:'From City',toCity:'To City',destinationBranch:'Destination Branch',
   chooseBranch:'Choose Destination Branch',shipmentValue:'Shipment Price',cod:'Cash on Delivery',
-  senderPays:'Sender Pays',collection:'Collection Amount',pieces:'Pieces',createPrint:'Create Shipment & Print',
+  senderPays:'Sender Pays',collection:'Collection Amount',pieces:'Pieces',createPrint:'Create Shipment & Print',dashboard:'Dashboard',totalShipments:'Total Shipments',todayShipments:'Today Shipments',todayIncome:'Today Income',selectedDate:'Selected Date',dateShipments:'Date Shipments',dateIncome:'Date Income',shipmentList:'Shipment List',noDateShipments:'No shipments for this date',
   creating:'Creating Shipment...',created:'Shipment created',createdTitle:'Shipment Created',
   printSent:'Receipt print command has been sent.',newAgain:'Create New Shipment',printAgain:'Print Again',
   sentPrinter:'Sent to POS printer',qrError:'Could not generate',language:'Language',settings:'Settings',records:'Records',profile:'Profile & Account',name:'Name',account:'Account',branch:'Relevant Branch',save:'Save Changes',currentPassword:'Current Password',newPassword:'New Password',passwordHint:'Leave password fields empty if you do not want to change it.',recordsTitle:'Shipment Records',noRecords:'No POS shipments yet.',search:'Search AWB / recipient',backCreate:'Create Shipment',saved:'Settings saved',dispatch:'Dispatch Shipment',dispatching:'Dispatching...',dispatched:'Dispatched',dispatchConfirm:'Dispatch this shipment to the destination branch?',dispatchDone:'Shipment dispatched successfully'
@@ -76,7 +76,7 @@ const TXT={
   pickup:'عنوان الاستلام',recipientName:'اسم المستلم',recipientMobile:'جوال المستلم',parcelDescription:'وصف محتويات الطرد',editShipment:'تعديل الشحنة',saveShipment:'حفظ التعديلات',cancelEdit:'إلغاء',editSaved:'تم تحديث الشحنة بنجاح',
   fromCity:'من مدينة',toCity:'إلى مدينة',destinationBranch:'فرع الوجهة',
   chooseBranch:'اختر فرع الوجهة',shipmentValue:'سعر الشحنة',cod:'الدفع عند الاستلام',
-  senderPays:'يدفع المرسل',collection:'مبلغ التحصيل',pieces:'عدد القطع',createPrint:'إنشاء الشحنة والطباعة',
+  senderPays:'يدفع المرسل',collection:'مبلغ التحصيل',pieces:'عدد القطع',createPrint:'إنشاء الشحنة والطباعة',dashboard:'لوحة المعلومات',totalShipments:'إجمالي الشحنات',todayShipments:'شحنات اليوم',todayIncome:'دخل اليوم',selectedDate:'التاريخ المحدد',dateShipments:'شحنات التاريخ',dateIncome:'دخل التاريخ',shipmentList:'قائمة الشحنات',noDateShipments:'لا توجد شحنات في هذا التاريخ',
   creating:'جارٍ إنشاء الشحنة...',created:'تم إنشاء الشحنة',createdTitle:'تم إنشاء الشحنة',
   printSent:'تم إرسال أمر الطباعة.',newAgain:'إنشاء شحنة جديدة',printAgain:'طباعة مرة أخرى',
   sentPrinter:'تم الإرسال إلى طابعة الجهاز',qrError:'تعذر إنشاء',language:'اللغة',settings:'الإعدادات',records:'السجلات',profile:'الملف والحساب',name:'الاسم',account:'الحساب',branch:'الفرع المرتبط',save:'حفظ التغييرات',currentPassword:'كلمة المرور الحالية',newPassword:'كلمة المرور الجديدة',passwordHint:'اترك حقول كلمة المرور فارغة إذا لم ترغب في تغييرها.',recordsTitle:'سجلات الشحنات',noRecords:'لا توجد شحنات POS حتى الآن.',search:'بحث برقم AWB أو المستلم',backCreate:'إنشاء شحنة',saved:'تم حفظ الإعدادات',dispatch:'ترحيل الشحنة',dispatching:'جارٍ الترحيل...',dispatched:'تم الترحيل',dispatchConfirm:'هل تريد ترحيل هذه الشحنة إلى فرع الوجهة؟',dispatchDone:'تم ترحيل الشحنة بنجاح'
@@ -139,11 +139,12 @@ function loginView(){
 async function refresh(){const [auth,br]=await Promise.all([api('/api/me'),api('/api/public/branch-directory')]);me=auth.user;branches=Array.isArray(br)?br:(br.branches||[]);if(me&&canUsePos(me)){try{shipments=await api('/api/shipments')}catch(_){shipments=[]}}}
 function shell(){
  applyLanguage();
- app.innerHTML='<header class="top"><div class="top-brand-mark"><img src="/ghazala-logo.png?v=2" alt="Ghazala Transport"></div><div class="identity"><b>Ghazala POS</b><small>'+esc(userBranch(me))+' · '+esc(deviceId)+'</small></div><div class="top-controls">'+languageSelect()+'<button id="logout" class="btn light logout">'+esc(t('logout'))+'</button></div></header><div class="pos-nav"><button class="nav-btn '+(posView==='create'?'active':'')+'" data-pos-view="create">'+esc(t('backCreate'))+'</button><button class="nav-btn '+(posView==='records'?'active':'')+'" data-pos-view="records">'+esc(t('records'))+'</button><button class="nav-btn '+(posView==='settings'?'active':'')+'" data-pos-view="settings">'+esc(t('settings'))+'</button></div><div class="content"><section id="panel" class="panel"></section></div>';
+ app.innerHTML='<header class="top"><div class="top-brand-mark"><img src="/ghazala-logo.png?v=2" alt="Ghazala Transport"></div><div class="identity"><b>Ghazala POS</b><small>'+esc(userBranch(me))+' · '+esc(deviceId)+'</small></div><div class="top-controls">'+languageSelect()+'<button id="logout" class="btn light logout">'+esc(t('logout'))+'</button></div></header><div class="pos-nav"><button class="nav-btn '+(posView==='dashboard'?'active':'')+'" data-pos-view="dashboard">'+esc(t('dashboard'))+'</button><button class="nav-btn '+(posView==='create'?'active':'')+'" data-pos-view="create">'+esc(t('backCreate'))+'</button><button class="nav-btn '+(posView==='records'?'active':'')+'" data-pos-view="records">'+esc(t('records'))+'</button><button class="nav-btn '+(posView==='settings'?'active':'')+'" data-pos-view="settings">'+esc(t('settings'))+'</button></div><div class="content"><section id="panel" class="panel"></section></div>';
  bindLanguage();
  $('#logout').onclick=async()=>{try{await api('/api/logout',{method:'POST',body:'{}'})}catch(_){}me=null;shipments=[];loginView()};
  document.querySelectorAll('[data-pos-view]').forEach(b=>b.onclick=()=>{posView=b.dataset.posView;render()});
- if(posView==='records')recordsPanel();
+ if(posView==='dashboard')dashboardPanel();
+ else if(posView==='records')recordsPanel();
  else if(posView==='settings')settingsPanel();
  else createPanel();
 }
@@ -194,6 +195,63 @@ function showSuccess(awb){
  panel.innerHTML='<div class="success-card"><div class="success-icon">✓</div><h2>'+esc(t('createdTitle'))+'</h2><div class="success-awb">'+esc(awb)+'</div><p>'+esc(t('printSent'))+'</p><button id="newShipmentBtn" class="btn primary">'+esc(t('newAgain'))+'</button><button id="reprintBtn" class="btn light">'+esc(t('printAgain'))+'</button></div>';
  $('#newShipmentBtn').onclick=()=>{posView='create';render()};
  $('#reprintBtn').onclick=()=>printWaybill(awb);
+}
+function recordDateKey(row){
+ const raw=String(row.pos_created_at||row.created_at||'').trim();
+ if(!raw)return '';
+ const m=raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+ if(m)return m[1]+'-'+m[2]+'-'+m[3];
+ const d=new Date(raw);
+ if(Number.isNaN(d.getTime()))return '';
+ const y=d.getFullYear(),mo=String(d.getMonth()+1).padStart(2,'0'),da=String(d.getDate()).padStart(2,'0');
+ return y+'-'+mo+'-'+da;
+}
+function todayKey(){
+ const d=new Date(),y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');
+ return y+'-'+m+'-'+day;
+}
+function money(v){const n=Number(v||0);return (Number.isFinite(n)?n:0).toFixed(2)+' SAR'}
+async function dashboardPanel(){
+ const panel=$('#panel');if(!panel)return;
+ panel.innerHTML='<div class="section-title">'+esc(t('dashboard'))+'</div><div class="empty">...</div>';
+ try{
+   const rows=await api('/api/pos/records');
+   const today=todayKey();
+   const todayRows=rows.filter(r=>recordDateKey(r)===today);
+   const todayIncome=todayRows.reduce((sum,r)=>sum+Number(r.total_fee||0),0);
+   panel.innerHTML=
+     '<div class="section-title">'+esc(t('dashboard'))+'</div>'+
+     '<div class="dashboard-kpis">'+
+       '<div class="dash-card"><span>'+esc(t('totalShipments'))+'</span><b>'+esc(rows.length)+'</b></div>'+
+       '<div class="dash-card"><span>'+esc(t('todayShipments'))+'</span><b>'+esc(todayRows.length)+'</b></div>'+
+       '<div class="dash-card income"><span>'+esc(t('todayIncome'))+'</span><b>'+esc(money(todayIncome))+'</b></div>'+
+     '</div>'+
+     '<label class="field"><span>'+esc(t('selectedDate'))+'</span><input id="dashboardDate" type="date" value="'+esc(today)+'"></label>'+
+     '<div class="dashboard-kpis two">'+
+       '<div class="dash-card"><span>'+esc(t('dateShipments'))+'</span><b id="dateShipmentCount">0</b></div>'+
+       '<div class="dash-card income"><span>'+esc(t('dateIncome'))+'</span><b id="dateIncomeValue">0.00 SAR</b></div>'+
+     '</div>'+
+     '<div class="section-title dashboard-list-title">'+esc(t('shipmentList'))+'</div>'+
+     '<div id="dashboardShipmentList" class="shipment-list"></div>';
+   const drawDate=()=>{
+     const key=$('#dashboardDate').value;
+     const dayRows=rows.filter(r=>recordDateKey(r)===key);
+     const total=dayRows.reduce((sum,r)=>sum+Number(r.total_fee||0),0);
+     $('#dateShipmentCount').textContent=String(dayRows.length);
+     $('#dateIncomeValue').textContent=money(total);
+     $('#dashboardShipmentList').innerHTML=dayRows.length?dayRows.map(s=>
+       '<article class="shipment dashboard-shipment">'+
+         '<div class="shipment-head"><div><div class="awb">'+esc(s.awb)+'</div><b>'+esc(s.recipient||'')+'</b></div><strong class="shipment-income">'+esc(money(s.total_fee))+'</strong></div>'+
+         '<p>'+esc(localCity(s.origin||''))+' → '+esc(localCity(s.destination||''))+' · '+esc(s.phone||'')+'</p>'+
+         '<div class="record-meta"><span>'+esc(s.pos_created_at||s.created_at||'')+'</span><span>'+esc(s.payment_status||'')+'</span></div>'+
+       '</article>'
+     ).join(''):'<div class="empty">'+esc(t('noDateShipments'))+'</div>';
+   };
+   $('#dashboardDate').onchange=drawDate;
+   drawDate();
+ }catch(err){
+   panel.innerHTML='<div class="empty">'+esc(err.message)+'</div>';
+ }
 }
 async function recordsPanel(){
  const panel=$('#panel');if(!panel)return;
