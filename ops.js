@@ -327,6 +327,14 @@
     'رقم هاتف الفرع':'Branch Phone Number',
     'مناطق التغطية':'Coverage Areas',
     'حفظ الفرع':'Save Branch',
+    'إنشاء مستخدم POS':'Create POS User',
+    'اسم مستخدم POS':'POS Username',
+    'اسم العرض':'Display Name',
+    'كلمة المرور المؤقتة':'Temporary Password',
+    'إنشاء الحساب':'Create Account',
+    'تم إنشاء مستخدم POS':'POS user created',
+    'انسخ بيانات الدخول واحفظها':'Copy and save these login credentials',
+    'إغلاق':'Close',
     'إدارة الأسطول':'Fleet Management',
     'إضافة مركبة':'Add Vehicle',
     'إضافة مركبة إلى الأسطول':'Add Vehicle to Fleet',
@@ -2220,6 +2228,60 @@
     };
   }
 
+  function branchPosPassword(){
+    const chars='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+    let out='Ghz!';
+    if(window.crypto&&window.crypto.getRandomValues){
+      const values=new Uint32Array(12);window.crypto.getRandomValues(values);
+      for(let i=0;i<values.length;i++)out+=chars[values[i]%chars.length];
+    }else{
+      for(let i=0;i<12;i++)out+=chars[Math.floor(Math.random()*chars.length)];
+    }
+    return out+'9a';
+  }
+
+  function branchPosUserModal(branch){
+    if(!branch||!requirePermission('users.manage'))return;
+    const code=String(branch.code||'branch').toLowerCase().replace(/[^a-z0-9]+/g,'.').replace(/^\.+|\.+$/g,'');
+    const defaultUsername='pos.'+(code||String(branch.id));
+    const defaultPassword=branchPosPassword();
+    const root=$('#modalRoot');
+    root.innerHTML=`<div class="modal-backdrop" data-close><section class="modal ops-modal">
+      <div class="modal-head"><div><div class="eyebrow">${safe(branch.code||'POS')}</div><h2>${opsTr('إنشاء مستخدم POS')}</h2><p>${safe(branch.name||'')} · ${safe(opsTr(branch.city||''))}</p></div><button class="icon-btn" data-close>×</button></div>
+      <form id="branchPosUserForm" class="form-grid">
+        <label class="field span-2"><span>${opsTr('اسم مستخدم POS')} *</span><input name="username" required value="${safe(defaultUsername)}" autocomplete="off"></label>
+        <label class="field span-2"><span>${opsTr('اسم العرض')} *</span><input name="display_name" required value="${safe((branch.name||branch.code||'Branch')+' POS')}"></label>
+        <label class="field span-2"><span>${opsTr('كلمة المرور المؤقتة')} *</span><input name="password" required type="text" value="${safe(defaultPassword)}" autocomplete="new-password"></label>
+        <div class="field span-2 ops-form-actions"><button type="button" class="btn light" data-close>${opsTr('إلغاء')}</button><button class="btn primary">${opsTr('إنشاء الحساب')}</button></div>
+      </form>
+    </section></div>`;
+    wireModal();localizeNow(root);
+    const form=$('#branchPosUserForm',root);
+    form.onsubmit=async e=>{
+      e.preventDefault();
+      const submit=form.querySelector('[type="submit"],button:not([type="button"])');
+      if(submit)submit.disabled=true;
+      const payload=Object.fromEntries(new FormData(form));
+      try{
+        const result=await api(`/api/branches/${encodeURIComponent(branch.id)}/pos-user`,{method:'POST',body:JSON.stringify(payload)});
+        root.innerHTML=`<div class="modal-backdrop"><section class="modal ops-modal">
+          <div class="modal-head"><div><div class="eyebrow">${safe(result.branch?.code||branch.code||'POS')}</div><h2>${opsTr('تم إنشاء مستخدم POS')}</h2><p>${opsTr('انسخ بيانات الدخول واحفظها')}</p></div></div>
+          <div class="card" style="padding:16px">
+            <div class="summary-row"><span>${opsTr('اسم مستخدم POS')}</span><b style="direction:ltr">${safe(payload.username)}</b></div>
+            <div class="summary-row"><span>${opsTr('كلمة المرور المؤقتة')}</span><b style="direction:ltr">${safe(payload.password)}</b></div>
+            <div class="summary-row"><span>${bt('branch')}</span><b>${safe(branch.name||branch.code)}</b></div>
+          </div>
+          <div class="ops-form-actions" style="margin-top:14px"><button class="btn primary" data-close>${opsTr('إغلاق')}</button></div>
+        </section></div>`;
+        wireModal();localizeNow(root);
+        toast(opsTr('تم إنشاء مستخدم POS'));
+      }catch(err){
+        toast(opsTr(err.message));
+        if(submit)submit.disabled=false;
+      }
+    };
+  }
+
   async function branchManagementModal(){
     if(!requirePermission('branches.manage'))return;
     const root=$('#modalRoot');
@@ -2232,13 +2294,14 @@
         <div class="grid shipment-grid">${(rows||[]).map(branch=>`<article class="card">
           <div class="shipment-top"><span class="icon-square">⌂</span><div class="ship-name">${safe(branch.name)}<div class="ship-phone">${safe(branch.code)} · ${safe(opsTr(branch.city))}</div></div><span class="badge ${branch.is_active!==0?'green':'red'} push">${branch.is_active!==0?bt('active'):bt('inactive')}</span></div>
           <div class="record-meta"><span>${bt('phone')}: <b>${safe(branch.phone||'—')}</b></span><span>${bt('coverage')}: <b>${safe(branch.coverage||'—')}</b></span><span>${bt('address')}: <b>${safe(branch.address||'—')}</b></span></div>
-          <div class="ship-bottom"><button class="btn light small" data-branch-edit="${safe(branch.id)}">${bt('edit')}</button><button class="btn ${branch.is_active!==0?'danger':'primary'} small" data-branch-toggle="${safe(branch.id)}" data-next-active="${branch.is_active===0?'true':'false'}">${branch.is_active!==0?bt('deactivate'):bt('activate')}</button></div>
+          <div class="ship-bottom"><button class="btn light small" data-branch-edit="${safe(branch.id)}">${bt('edit')}</button>${branch.is_active!==0?`<button class="btn accent small" data-branch-pos-user="${safe(branch.id)}">＋ ${opsTr('إنشاء مستخدم POS')}</button>`:''}<button class="btn ${branch.is_active!==0?'danger':'primary'} small" data-branch-toggle="${safe(branch.id)}" data-next-active="${branch.is_active===0?'true':'false'}">${branch.is_active!==0?bt('deactivate'):bt('activate')}</button></div>
         </article>`).join('')||`<div class="card empty">${bt('noBranches')}</div>`}</div>
       </section></div>`;
       wireModal();localizeNow(root);
       $('[data-branch-new]',root)?.addEventListener('click',()=>branchModal());
-      $$('[data-branch-edit]',root).forEach(button=>button.onclick=()=>branchModal((rows||[]).find(x=>String(x.id)===String(button.dataset.branchEdit))));
-      $$('[data-branch-toggle]',root).forEach(button=>button.onclick=async()=>{
+      $('[data-branch-edit]',root).forEach(button=>button.onclick=()=>branchModal((rows||[]).find(x=>String(x.id)===String(button.dataset.branchEdit))));
+      $('[data-branch-pos-user]',root).forEach(button=>button.onclick=()=>branchPosUserModal((rows||[]).find(x=>String(x.id)===String(button.dataset.branchPosUser))));
+      $('[data-branch-toggle]',root).forEach(button=>button.onclick=async()=>{
         button.disabled=true;
         try{
           await api(`/api/branches/${encodeURIComponent(button.dataset.branchToggle)}`,{method:'PATCH',body:JSON.stringify({is_active:button.dataset.nextActive==='true'})});
