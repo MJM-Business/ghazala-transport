@@ -10,8 +10,8 @@ android {
         applicationId 'com.ghazalatransport.pos'
         minSdk 23
         targetSdk 34
-        versionCode 16
-        versionName '0.16.0-ghazala-launcher'
+        versionCode 17
+        versionName '0.17.0-qr-awb-clean-barcode'
     }
 
     buildTypes {
