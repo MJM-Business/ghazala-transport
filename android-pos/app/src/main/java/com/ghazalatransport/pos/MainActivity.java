@@ -298,7 +298,9 @@ public class MainActivity extends Activity {
             invokeSunmi("lineWrap", 1, null);
 
             // Show the tracking/AWB once, directly under the QR code.
-            invokeSunmi("setFontSize", 20.0f, null);
+            // Larger text makes the tracking code easy to read at a glance.
+            invokeSunmi("setAlignment", 1, null);
+            invokeSunmi("setFontSize", 28.0f, null);
             invokeSunmi("printText", awb + "\n", null);
             invokeSunmi("lineWrap", 1, null);
 
@@ -446,7 +448,7 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public String getBridgeVersion() {
-            return "0.18.0-centered-clean-barcode";
+            return "0.19.0-prominent-awb";
         }
 
         @JavascriptInterface
