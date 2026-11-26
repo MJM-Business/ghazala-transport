@@ -2452,6 +2452,58 @@
     if(title)title.textContent=currentLang==='ar'?('إنشاء مدير فرع · '+(branch.name||branch.code)):('Create Branch Manager · '+(branch.name||branch.code));
   }
 
+  function branchPosPassword(){
+    const chars='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+    let out='Ghz!';
+    if(window.crypto&&window.crypto.getRandomValues){
+      const values=new Uint32Array(12);window.crypto.getRandomValues(values);
+      for(let i=0;i<values.length;i++)out+=chars[values[i]%chars.length];
+    }else{
+      for(let i=0;i<12;i++)out+=chars[Math.floor(Math.random()*chars.length)];
+    }
+    return out+'9a';
+  }
+
+  function branchPosUserModal(branch){
+    if(!branch||!hasPermission('users.manage'))return toast(opsTr('ليست لديك صلاحية لهذا الإجراء'));
+    const code=String(branch.code||'branch').toLowerCase().replace(/[^a-z0-9]+/g,'.').replace(/^\.+|\.+$/g,'');
+    const defaultUsername='pos.'+(code||String(branch.id));
+    const defaultPassword=branchPosPassword();
+    const root=$('#modalRoot');
+    root.innerHTML=`<div class="modal-backdrop" data-close><section class="modal ops-modal" style="max-width:560px">
+      <div class="modal-head"><div><div class="eyebrow">GHAZALA POS</div><h2>${currentLang==='ar'?'إنشاء مستخدم POS':'Create POS User'}</h2><p>${safe(branch.name||'')} · ${safe(branch.code||'')}</p></div><button class="icon-btn" data-close>×</button></div>
+      <form id="branchPosUserForm" class="form-grid">
+        <label class="field span-2"><span>${currentLang==='ar'?'اسم مستخدم POS':'POS Username'} *</span><input name="username" required value="${safe(defaultUsername)}" autocomplete="off"></label>
+        <label class="field span-2"><span>${currentLang==='ar'?'اسم العرض':'Display Name'} *</span><input name="display_name" required value="${safe((branch.name||branch.code||'Branch')+' POS')}"></label>
+        <label class="field span-2"><span>${currentLang==='ar'?'كلمة المرور المؤقتة':'Temporary Password'} *</span><input name="password" required type="text" value="${safe(defaultPassword)}" autocomplete="new-password"></label>
+        <div class="field span-2 ops-form-actions"><button type="button" class="btn light" data-close>${currentLang==='ar'?'إلغاء':'Cancel'}</button><button class="btn primary">${currentLang==='ar'?'إنشاء الحساب':'Create Account'}</button></div>
+      </form>
+    </section></div>`;
+    wireModal();localizeNow(root);
+    const form=$('#branchPosUserForm',root);
+    form.onsubmit=async e=>{
+      e.preventDefault();
+      const button=form.querySelector('button.btn.primary');button.disabled=true;
+      const payload=Object.fromEntries(new FormData(form));
+      try{
+        await api(`/api/branches/${encodeURIComponent(branch.id)}/pos-user`,{method:'POST',body:JSON.stringify(payload)});
+        root.innerHTML=`<div class="modal-backdrop"><section class="modal ops-modal" style="max-width:560px">
+          <div class="modal-head"><div><div class="eyebrow">GHAZALA POS</div><h2>${currentLang==='ar'?'تم إنشاء مستخدم POS':'POS User Created'}</h2><p>${currentLang==='ar'?'احفظ بيانات الدخول لاستخدامها على جهاز POS.':'Save these credentials for the POS device.'}</p></div></div>
+          <div class="card" style="padding:16px">
+            <div class="summary-row"><span>${currentLang==='ar'?'اسم المستخدم':'Username'}</span><b style="direction:ltr">${safe(payload.username)}</b></div>
+            <div class="summary-row"><span>${currentLang==='ar'?'كلمة المرور':'Password'}</span><b style="direction:ltr">${safe(payload.password)}</b></div>
+            <div class="summary-row"><span>${currentLang==='ar'?'الفرع':'Branch'}</span><b>${safe(branch.name||branch.code)}</b></div>
+          </div>
+          <div class="ops-form-actions" style="margin-top:14px"><button class="btn primary" data-close>${currentLang==='ar'?'إغلاق':'Close'}</button></div>
+        </section></div>`;
+        wireModal();localizeNow(root);
+      }catch(err){
+        toast(opsTr(err.message));
+        button.disabled=false;
+      }
+    };
+  }
+
   function branchDeleteModal(branch){
     if(!branch||branch.is_active!==0)return;
     const ar=currentLang==='ar';
@@ -2497,14 +2549,15 @@
         <div class="grid shipment-grid">${(rows||[]).map(branch=>`<article class="card">
           <div class="shipment-top"><span class="icon-square">⌂</span><div class="ship-name">${safe(branch.name)}<div class="ship-phone">${safe(branch.code)} · ${safe(opsTr(branch.city))}</div></div><span class="badge ${branch.is_active!==0?'green':'red'} push">${branch.is_active!==0?bt('active'):bt('inactive')}</span></div>
           <div class="record-meta"><span>${bt('phone')}: <b>${safe(branch.phone||'—')}</b></span><span>${bt('coverage')}: <b>${safe(branch.coverage||'—')}</b></span><span>${bt('address')}: <b>${safe(branch.address||'—')}</b></span></div>
-          <div class="ship-bottom"><button class="btn light small" data-branch-edit="${safe(branch.id)}">${bt('edit')}</button>${branch.is_active!==0?`<button class="btn light small" data-branch-manager="${safe(branch.id)}">♙ ${currentLang==='ar'?'إنشاء دخول مدير الفرع':'Create Manager Login'}</button>`:''}<button class="btn ${branch.is_active!==0?'danger':'primary'} small" data-branch-toggle="${safe(branch.id)}" data-next-active="${branch.is_active===0?'true':'false'}">${branch.is_active!==0?(currentLang==='ar'?'إزالة الفرع':'Remove Branch'):bt('activate')}</button>${branch.is_active===0?`<button class="btn danger small" data-branch-delete="${safe(branch.id)}">${currentLang==='ar'?'حذف الفرع':'Delete Branch'}</button>`:''}</div>
+          <div class="ship-bottom"><button class="btn light small" data-branch-edit="${safe(branch.id)}">${bt('edit')}</button>${branch.is_active!==0?`<button class="btn light small" data-branch-manager="${safe(branch.id)}">♙ ${currentLang==='ar'?'إنشاء دخول مدير الفرع':'Create Operations Manager Login'}</button><button class="btn accent small" data-branch-pos-user="${safe(branch.id)}">▣ ${currentLang==='ar'?'إنشاء مستخدم POS':'Create POS User'}</button>`:''}<button class="btn ${branch.is_active!==0?'danger':'primary'} small" data-branch-toggle="${safe(branch.id)}" data-next-active="${branch.is_active===0?'true':'false'}">${branch.is_active!==0?(currentLang==='ar'?'إزالة الفرع':'Remove Branch'):bt('activate')}</button>${branch.is_active===0?`<button class="btn danger small" data-branch-delete="${safe(branch.id)}">${currentLang==='ar'?'حذف الفرع':'Delete Branch'}</button>`:''}</div>
         </article>`).join('')||`<div class="card empty">${bt('noBranches')}</div>`}</div>
       </section></div>`;
       wireModal();localizeNow(root);
       $('[data-branch-new]',root)?.addEventListener('click',()=>branchModal());
       $$('[data-branch-edit]',root).forEach(button=>button.onclick=()=>branchModal((rows||[]).find(x=>String(x.id)===String(button.dataset.branchEdit))));
-      $$('[data-branch-manager]',root).forEach(button=>button.onclick=()=>branchManagerLoginModal((rows||[]).find(x=>String(x.id)===String(button.dataset.branchManager))));
-      $$('[data-branch-delete]',root).forEach(button=>button.onclick=()=>branchDeleteModal((rows||[]).find(x=>String(x.id)===String(button.dataset.branchDelete))));
+      $('[data-branch-manager]',root).forEach(button=>button.onclick=()=>branchManagerLoginModal((rows||[]).find(x=>String(x.id)===String(button.dataset.branchManager))));
+      $('[data-branch-pos-user]',root).forEach(button=>button.onclick=()=>branchPosUserModal((rows||[]).find(x=>String(x.id)===String(button.dataset.branchPosUser))));
+      $('[data-branch-delete]',root).forEach(button=>button.onclick=()=>branchDeleteModal((rows||[]).find(x=>String(x.id)===String(button.dataset.branchDelete))));
       $$('[data-branch-toggle]',root).forEach(button=>button.onclick=async()=>{
         button.disabled=true;
         try{
