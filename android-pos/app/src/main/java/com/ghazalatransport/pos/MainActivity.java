@@ -296,9 +296,14 @@ public class MainActivity extends Activity {
             invokeSunmi("setAlignment", 1, null);
             invokeSunmi("printQRCode", awb, 7, 1, null);
             invokeSunmi("lineWrap", 1, null);
-            invokeSunmi("printBarCode", awb, 8, 105, 2, 2, null);
+
+            // Show the tracking/AWB once, directly under the QR code.
             invokeSunmi("setFontSize", 20.0f, null);
             invokeSunmi("printText", awb + "\n", null);
+            invokeSunmi("lineWrap", 1, null);
+
+            // Barcode only: textPosition=0 hides SUNMI's duplicate human-readable code.
+            invokeSunmi("printBarCode", awb, 8, 105, 2, 0, null);
             invokeSunmi("setFontSize", 18.0f, null);
             invokeSunmi("printText", "--------------------------------\n", null);
 
@@ -439,7 +444,7 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public String getBridgeVersion() {
-            return "0.15.0-text-header-receipt";
+            return "0.17.0-qr-awb-clean-barcode";
         }
 
         @JavascriptInterface
