@@ -10,8 +10,8 @@ android {
         applicationId 'com.ghazalatransport.pos'
         minSdk 23
         targetSdk 34
-        versionCode 19
-        versionName '0.19.0-prominent-awb'
+        versionCode 20
+        versionName '0.20.0-prominent-details'
     }
 
     buildTypes {
