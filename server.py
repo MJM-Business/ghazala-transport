@@ -8261,6 +8261,50 @@ class Handler(BaseHTTPRequestHandler):
                     cur=c.execute("INSERT INTO drivers(name,national_id,mobile,branch,status,location_text,latitude,longitude,is_demo) VALUES(?,?,?,?,?,?,?,?,0)",(data["name"],data["national_id"],data["mobile"],data["branch"],data.get("status",'متاح'),data["location_text"],data.get("latitude") or None,data.get("longitude") or None))
                 except sqlite3.IntegrityError: return self.send_json({"error":'رقم الهوية مسجل مسبقاً'},409)
                 return self.send_json(dict(c.execute("SELECT * FROM drivers WHERE id=?",(cur.lastrowid,)).fetchone()),201)
+            if len(parts)==4 and parts[:2]==["api","branches"] and parts[3]=="pos-user":
+                if not auth.allowed(self.auth_ctx,"branches.manage") or not auth.allowed(self.auth_ctx,"users.manage"):
+                    return self.forbidden()
+                try:
+                    branch_id=int(parts[2])
+                except (TypeError,ValueError):
+                    return self.send_json({"error":"Invalid branch."},400)
+                branch_row=c.execute(
+                    "SELECT id,code,name,city,is_active FROM branches WHERE id=?",
+                    (branch_id,)
+                ).fetchone()
+                if not branch_row:
+                    return self.send_json({"error":"Branch not found."},404)
+                if not branch_row["is_active"]:
+                    return self.send_json({"error":"POS user can only be created for an active branch."},409)
+                if not self.auth_ctx.get("global_scope") and branch_id not in tuple(self.auth_ctx.get("branch_ids") or ()):
+                    return self.forbidden()
+
+                username=str(data.get("username") or "").strip().lower()
+                if not username.startswith("pos."):
+                    return self.send_json({"error":"POS username must start with pos."},400)
+                payload={
+                    "username":username,
+                    "display_name":str(data.get("display_name") or (str(branch_row["name"])+" POS")).strip(),
+                    "password":data.get("password"),
+                    "role":"office_employee",
+                    "branch_ids":[branch_id],
+                    "primary_branch_id":branch_id,
+                    "is_active":True,
+                    "mobile":"",
+                    "national_id":"",
+                    "driver_id":None,
+                }
+                try:
+                    result=accounts.create_user(c,self.auth_ctx,payload,password_hash,self)
+                except ValueError as exc:
+                    return self.send_json({"error":str(exc)},400)
+                c.commit()
+                return self.send_json({
+                    "ok":True,
+                    "user":result,
+                    "branch":{"id":branch_row["id"],"code":branch_row["code"],"name":branch_row["name"],"city":branch_row["city"]}
+                },201)
+
             if path=="/api/users":
                 result=accounts.create_user(c,self.auth_ctx,data,password_hash,self)
                 c.commit(); return self.send_json(result,201)
