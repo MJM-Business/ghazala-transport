@@ -302,8 +302,10 @@ public class MainActivity extends Activity {
             invokeSunmi("printText", awb + "\n", null);
             invokeSunmi("lineWrap", 1, null);
 
-            // Barcode only: textPosition=0 hides SUNMI's duplicate human-readable code.
+            // Barcode only: force center alignment and move the next content to a fresh line.
+            invokeSunmi("setAlignment", 1, null);
             invokeSunmi("printBarCode", awb, 8, 105, 2, 0, null);
+            invokeSunmi("lineWrap", 2, null);
             invokeSunmi("setFontSize", 18.0f, null);
             invokeSunmi("printText", "--------------------------------\n", null);
 
@@ -444,7 +446,7 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public String getBridgeVersion() {
-            return "0.17.0-qr-awb-clean-barcode";
+            return "0.18.0-centered-clean-barcode";
         }
 
         @JavascriptInterface
