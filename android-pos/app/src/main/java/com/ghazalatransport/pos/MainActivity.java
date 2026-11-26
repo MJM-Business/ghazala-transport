@@ -312,7 +312,8 @@ public class MainActivity extends Activity {
             invokeSunmi("printText", "--------------------------------\n", null);
 
             invokeSunmi("setAlignment", 0, null);
-            invokeSunmi("setFontSize", 18.0f, null);
+            // Shipment details: larger text for cleaner thermal readability.
+            invokeSunmi("setFontSize", 21.0f, null);
             printColumns("AWB / رقم الشحنة", awb);
             printColumns("Date / التاريخ", date);
             printColumns("Time / الوقت", time);
@@ -327,7 +328,6 @@ public class MainActivity extends Activity {
 
             printColumns("Route / المسار", route);
             printColumns("Payment / الدفع", payment);
-            invokeSunmi("setFontSize", 18.0f, null);
             invokeSunmi("printText", "--------------------------------\n", null);
 
             invokeSunmi("setFontSize", 20.0f, null);
@@ -448,7 +448,7 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public String getBridgeVersion() {
-            return "0.19.0-prominent-awb";
+            return "0.20.0-prominent-details";
         }
 
         @JavascriptInterface
