@@ -2555,9 +2555,9 @@
       wireModal();localizeNow(root);
       $('[data-branch-new]',root)?.addEventListener('click',()=>branchModal());
       $$('[data-branch-edit]',root).forEach(button=>button.onclick=()=>branchModal((rows||[]).find(x=>String(x.id)===String(button.dataset.branchEdit))));
-      $('[data-branch-manager]',root).forEach(button=>button.onclick=()=>branchManagerLoginModal((rows||[]).find(x=>String(x.id)===String(button.dataset.branchManager))));
-      $('[data-branch-pos-user]',root).forEach(button=>button.onclick=()=>branchPosUserModal((rows||[]).find(x=>String(x.id)===String(button.dataset.branchPosUser))));
-      $('[data-branch-delete]',root).forEach(button=>button.onclick=()=>branchDeleteModal((rows||[]).find(x=>String(x.id)===String(button.dataset.branchDelete))));
+      $$('[data-branch-manager]',root).forEach(button=>button.onclick=()=>branchManagerLoginModal((rows||[]).find(x=>String(x.id)===String(button.dataset.branchManager))));
+      $$('[data-branch-pos-user]',root).forEach(button=>button.onclick=()=>branchPosUserModal((rows||[]).find(x=>String(x.id)===String(button.dataset.branchPosUser))));
+      $$('[data-branch-delete]',root).forEach(button=>button.onclick=()=>branchDeleteModal((rows||[]).find(x=>String(x.id)===String(button.dataset.branchDelete))));
       $$('[data-branch-toggle]',root).forEach(button=>button.onclick=async()=>{
         button.disabled=true;
         try{
