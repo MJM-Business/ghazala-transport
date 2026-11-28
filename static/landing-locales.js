@@ -4,6 +4,23 @@
  */
 (()=>{
   const phrases=[
+    ['رحلة الشحنة خطوة بخطوة','Shipment journey, step by step','شپمنٹ کا سفر، قدم بہ قدم','शिपमेंट की यात्रा, चरण दर चरण'],
+    ['من إنشاء الشحنة حتى استلامها في فرع الوجهة','From shipment creation to receipt at the destination branch','شپمنٹ بنانے سے منزل کے برانچ پر وصولی تک','शिपमेंट बनाने से गंतव्य शाखा पर प्राप्ति तक'],
+    ['تابع كيف تنتقل الشحنة بين الفروع، من التسجيل في جهاز POS حتى الاستلام النهائي وتحديث الحالة في جميع البوابات.','See how a shipment moves between branches, from POS registration to final receipt and status updates across every portal.','دیکھیں کہ شپمنٹ POS رجسٹریشن سے آخری وصولی اور تمام پورٹلز میں اسٹیٹس اپڈیٹ تک برانچوں کے درمیان کیسے چلتی ہے۔','देखें कि शिपमेंट POS पंजीकरण से अंतिम प्राप्ति और सभी पोर्टलों में स्थिति अपडेट तक शाखाओं के बीच कैसे चलती है।'],
+    ['إنشاء الشحنة','Create Shipment','شپمنٹ بنائیں','शिपमेंट बनाएं'],
+    ['جاهزة للإرسال','Ready to Dispatch','ڈسپیچ کے لیے تیار','डिस्पैच के लिए तैयार'],
+    ['تم الترحيل','Dispatched','ڈسپیچ ہو گئی','डिस्पैच की गई'],
+    ['في الطريق','In Transit','راستے میں','रास्ते में'],
+    ['وصلت للفرع','Arrived at Branch','برانچ پہنچ گئی','शाखा पर पहुँची'],
+    ['تم الاستلام','Received','وصول ہو گئی','प्राप्त हुई'],
+    ['فرع الإرسال','Origin Branch','روانگی برانچ','मूल शाखा'],
+    ['فرع الوجهة','Destination Branch','منزل برانچ','गंतव्य शाखा'],
+    ['يقوم مستخدم POS بتسجيل بيانات الشحنة وإنشاء رقم AWB والباركود وQR.','The POS user registers the shipment and generates the AWB, barcode and QR code.','POS یوزر شپمنٹ رجسٹر کرتا ہے اور AWB، بارکوڈ اور QR بناتا ہے۔','POS उपयोगकर्ता शिपमेंट दर्ज करता है और AWB, बारकोड और QR बनाता है।'],
+    ['تظهر الشحنة في سجلات الفرع وتكون جاهزة للمراجعة والطباعة قبل الترحيل.','The shipment appears in branch records, ready for review and printing before dispatch.','شپمنٹ برانچ ریکارڈز میں آتی ہے اور ڈسپیچ سے پہلے ریویو اور پرنٹ کے لیے تیار ہوتی ہے۔','शिपमेंट शाखा रिकॉर्ड में दिखाई देती है और डिस्पैच से पहले समीक्षा और प्रिंट के लिए तैयार रहती है।'],
+    ['يضغط مستخدم POS على Dispatch فتتحدث الحالة وتظهر الشحنة مباشرة لفرع الوجهة.','The POS user presses Dispatch, updating the status and making the shipment visible to the destination branch.','POS یوزر Dispatch دباتا ہے، اسٹیٹس اپڈیٹ ہوتی ہے اور شپمنٹ منزل برانچ کو نظر آتی ہے۔','POS उपयोगकर्ता Dispatch दबाता है, स्थिति अपडेट होती है और शिपमेंट गंतव्य शाखा को दिखाई देती है।'],
+    ['تنتقل الشحنة بين الفرعين مع بقاء نفس السجل المركزي متاحاً للإدارة والفرعين.','The shipment moves between branches while the same central record stays visible to both branches and the admin portal.','شپمنٹ برانچوں کے درمیان چلتی ہے جبکہ وہی مرکزی ریکارڈ دونوں برانچوں اور ایڈمن پورٹل میں نظر آتا رہتا ہے۔','शिपमेंट शाखाओं के बीच चलती है और वही केंद्रीय रिकॉर्ड दोनों शाखाओं तथा एडमिन पोर्टल में उपलब्ध रहता है।'],
+    ['تظهر الشحنة في Incoming Shipments لدى فرع الوجهة مع خيار Shipment Received.','The shipment appears under Incoming Shipments at the destination branch with a Shipment Received action.','منزل برانچ میں شپمنٹ Incoming Shipments کے اندر Shipment Received آپشن کے ساتھ نظر آتی ہے۔','गंतव्य शाखा में शिपमेंट Incoming Shipments के अंतर्गत Shipment Received विकल्प के साथ दिखाई देती है।'],
+    ['عند التأكيد من POS أو الكمبيوتر تتحدث الحالة إلى Delivered في فرع الإرسال وفرع الوجهة ولوحة الإدارة.','When confirmed from POS or computer, the status updates to Delivered for the origin branch, destination branch and admin portal.','POS یا کمپیوٹر سے تصدیق کے بعد اسٹیٹس Origin Branch، Destination Branch اور Admin Portal میں Delivered ہو جاتی ہے۔','POS या कंप्यूटर से पुष्टि के बाद स्थिति मूल शाखा, गंतव्य शाखा और एडमिन पोर्टल में Delivered हो जाती है।'],
     ['Ghazala Transport','Ghazala Transport','غزالا ٹرانسپورٹ','ग़ज़ाला ट्रांसपोर्ट','غزالا ترانسبورت'],
     ['غزالا ترانسبورت','Ghazala Transport','غزالا ٹرانسپورٹ','ग़ज़ाला ट्रांसपोर्ट'],
     ['غزالا ترانسبورت · Ghazala Transport','Ghazala Transport','غزالا ٹرانسپورٹ','ग़ज़ाला ट्रांसपोर्ट','غزالا ترانسبورت'],
