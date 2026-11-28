@@ -168,8 +168,9 @@ function createPanel(){
    if(data.payment_method!=='cod')data.cod=0;
    data.pos_device_id=deviceId;
    const created=await api('/api/shipments',{method:'POST',body:JSON.stringify(data)});
-   if(statusBox){statusBox.className='create-status ok';statusBox.textContent='Shipment saved: '+created.awb}
-   toast(t('created')+': '+created.awb);
+   const waCreate=whatsappResultText(created);
+   if(statusBox){statusBox.className=waCreate&&waCreate!=='WhatsApp: Sent'?'create-status error':'create-status ok';statusBox.textContent='Shipment saved: '+created.awb+(waCreate?' · '+waCreate:'')}
+   toast(t('created')+': '+created.awb+(waCreate?' · '+waCreate:''));
    await refresh();
    showSuccess(created.awb);
    setTimeout(function(){printWaybill(created.awb)},250);
@@ -211,6 +212,14 @@ function todayKey(){
  return y+'-'+m+'-'+day;
 }
 function money(v){const n=Number(v||0);return (Number.isFinite(n)?n:0).toFixed(2)+' SAR'}
+function whatsappResultText(result){
+ const w=result&&result.whatsapp_delivery;
+ if(!w)return '';
+ const status=String(w.delivery||w.status||'').toLowerCase();
+ if(status==='sent')return 'WhatsApp: Sent';
+ const err=String(w.error||w.provider_error||'').trim();
+ return 'WhatsApp: '+(status||'unknown')+(err?' · '+err:'');
+}
 async function dashboardPanel(){
  const panel=$('#panel');if(!panel)return;
  panel.innerHTML='<div class="section-title">'+esc(t('dashboard'))+'</div><div class="empty">...</div>';
@@ -319,7 +328,8 @@ async function dispatchShipment(awb,button){
  button.disabled=true;button.textContent=t('dispatching');
  try{
    const res=await api('/api/pos/records/'+encodeURIComponent(awb)+'/dispatch',{method:'POST',body:'{}'});
-   toast(t('dispatchDone')+' · '+res.awb);
+   const waDispatch=whatsappResultText(res);
+   toast(t('dispatchDone')+' · '+res.awb+(waDispatch?' · '+waDispatch:''));
    await refresh();
    await recordsPanel();
  }catch(err){
@@ -332,7 +342,8 @@ async function receiveShipment(awb,button){
  button.disabled=true;button.textContent=t('receiving');
  try{
    const res=await api('/api/shipments/'+encodeURIComponent(awb)+'/receive-branch',{method:'POST',body:'{}'});
-   toast(t('receiveDone')+' · '+res.awb);
+   const waReceive=whatsappResultText(res);
+   toast(t('receiveDone')+' · '+res.awb+(waReceive?' · '+waReceive:''));
    await refresh();
    await recordsPanel();
  }catch(err){
