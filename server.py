@@ -676,64 +676,21 @@ def _send_whatsapp(con,recipient,message):
 
 
 def _shipment_whatsapp_text(shipment,status,tracking_url):
-    language=str(shipment.get("notification_language") or "ar").strip().lower()
     awb=str(shipment.get("awb") or "")
     canonical=transitions.canonical(status)
     templates={
-        "ar":{
-            "created":f"غزالا ترانسبورت: تم تسجيل شحنتك {awb} وهي جاهزة للإرسال. التتبع: {tracking_url}",
-            "dispatched":f"غزالا ترانسبورت: تم إرسال شحنتك {awb} وهي الآن في الطريق. التتبع: {tracking_url}",
-            "in_transit":f"غزالا ترانسبورت: شحنتك {awb} في الطريق إلى فرع الوجهة. التتبع: {tracking_url}",
-            "at_destination":f"غزالا ترانسبورت: وصلت شحنتك {awb} إلى فرع الوجهة وأصبحت جاهزة للاستلام أو للخطوة التالية. التتبع: {tracking_url}",
-            "out_for_delivery":f"غزالا ترانسبورت: شحنتك {awb} خرجت للتسليم. التتبع: {tracking_url}",
-            "delivered":f"غزالا ترانسبورت: وصلت شحنتك {awb} إلى فرع الوجهة وهي جاهزة للاستلام. يرجى مراجعة الفرع لاستلامها. التتبع: {tracking_url}",
-            "delayed":f"غزالا ترانسبورت: يوجد تحديث على شحنتك {awb} وقد يحدث تأخير. التتبع: {tracking_url}",
-        },
-        "en":{
-            "created":f"Ghazala Transport: Shipment {awb} has been registered and is ready to dispatch. Track: {tracking_url}",
-            "dispatched":f"Ghazala Transport: Shipment {awb} has been dispatched and is on the way. Track: {tracking_url}",
-            "in_transit":f"Ghazala Transport: Shipment {awb} is in transit to the destination branch. Track: {tracking_url}",
-            "at_destination":f"Ghazala Transport: Shipment {awb} has arrived at the destination branch and is ready for pickup or the next delivery step. Track: {tracking_url}",
-            "out_for_delivery":f"Ghazala Transport: Shipment {awb} is out for delivery. Track: {tracking_url}",
-            "delivered":f"Ghazala Transport: Shipment {awb} has arrived at the destination branch and is ready for pickup. Please visit the branch to collect it. Track: {tracking_url}",
-            "delayed":f"Ghazala Transport: Shipment {awb} has an update and may be delayed. Track: {tracking_url}",
-        },
-        "ur":{
-            "created":f"Ghazala Transport: Aap ki shipment {awb} system mein register ho chuki hai aur dispatch ke liye ready hai. Track: {tracking_url}",
-            "dispatched":f"Ghazala Transport: Aap ki shipment {awb} dispatch ho chuki hai aur raste mein hai. Track: {tracking_url}",
-            "in_transit":f"Ghazala Transport: Aap ki shipment {awb} destination branch ki taraf ja rahi hai. Track: {tracking_url}",
-            "at_destination":f"Ghazala Transport: Aap ki shipment {awb} destination branch pohanch gayi hai aur pickup ya next delivery step ke liye ready hai. Track: {tracking_url}",
-            "out_for_delivery":f"Ghazala Transport: Aap ki shipment {awb} delivery ke liye nikal chuki hai. Track: {tracking_url}",
-            "delivered":f"Ghazala Transport: Aap ki shipment {awb} destination branch pohanch chuki hai aur pickup ke liye ready hai. Branch se collect kar sakte hain. Track: {tracking_url}",
-            "delayed":f"Ghazala Transport: Aap ki shipment {awb} mein delay update hai. Track: {tracking_url}",
-        },
-        "hi":{
-            "created":f"Ghazala Transport: Aapki shipment {awb} register ho gayi hai aur dispatch ke liye ready hai. Track: {tracking_url}",
-            "dispatched":f"Ghazala Transport: Aapki shipment {awb} dispatch ho gayi hai aur raste mein hai. Track: {tracking_url}",
-            "in_transit":f"Ghazala Transport: Shipment {awb} destination branch ki taraf transit mein hai. Track: {tracking_url}",
-            "at_destination":f"Ghazala Transport: Shipment {awb} destination branch pahunch gayi hai. Track: {tracking_url}",
-            "out_for_delivery":f"Ghazala Transport: Shipment {awb} delivery ke liye nikal chuki hai. Track: {tracking_url}",
-            "delivered":f"Ghazala Transport: Shipment {awb} destination branch pahunch gayi hai aur pickup ke liye ready hai. Track: {tracking_url}",
-            "delayed":f"Ghazala Transport: Shipment {awb} mein delay update hai. Track: {tracking_url}",
-        },
-        "bn":{
-            "created":f"Ghazala Transport: Shipment {awb} register hoyeche ebong dispatch-er jonno ready. Track: {tracking_url}",
-            "dispatched":f"Ghazala Transport: Shipment {awb} dispatch hoyeche ebong pothe ache. Track: {tracking_url}",
-            "in_transit":f"Ghazala Transport: Shipment {awb} destination branch-er dike jacche. Track: {tracking_url}",
-            "at_destination":f"Ghazala Transport: Shipment {awb} destination branch-e pouchheche. Track: {tracking_url}",
-            "out_for_delivery":f"Ghazala Transport: Shipment {awb} delivery-r jonno ber hoyeche. Track: {tracking_url}",
-            "delivered":f"Ghazala Transport: Shipment {awb} destination branch-e pouchheche ebong pickup-er jonno ready. Track: {tracking_url}",
-            "delayed":f"Ghazala Transport: Shipment {awb}-e delay update ache. Track: {tracking_url}",
-        },
+        "created":f"غزالة ترانسبورت: تم إنشاء شحنتك رقم {awb} وهي جاهزة للإرسال. يمكنك متابعة الشحنة هنا: {tracking_url}",
+        "dispatched":f"غزالة ترانسبورت: تم إرسال شحنتك رقم {awb} وهي الآن في الطريق إلى فرع الوجهة. يمكنك متابعة الشحنة هنا: {tracking_url}",
+        "delivered":f"غزالة ترانسبورت: تم تسليم شحنتك رقم {awb} إلى الوجهة وهي جاهزة للاستلام من الفرع. يمكنك متابعة الشحنة هنا: {tracking_url}",
     }
-    if canonical not in ("created","dispatched","delivered"):
-        return ""
-    return (templates.get(language) or templates["en"]).get(canonical,"")
-
+    return templates.get(canonical,"")
 
 def dispatch_shipment_contact_whatsapp(con,shipment_id,status,tracking_url):
     shipment=con.execute("SELECT id,awb,phone,notification_language FROM shipments WHERE id=?",(shipment_id,)).fetchone()
     if not shipment or not str(shipment["phone"] or "").strip():
+        return None
+    # Automated WhatsApp lifecycle messages are for POS-origin shipments only.
+    if not con.execute("SELECT 1 FROM pos_shipment_records WHERE shipment_id=? LIMIT 1",(shipment_id,)).fetchone():
         return None
     item=dict(shipment)
     if not tracking_url:
