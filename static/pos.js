@@ -66,7 +66,7 @@ const TXT={
   senderPays:'Sender Pays',collection:'Collection Amount',pieces:'Pieces',createPrint:'Create Shipment & Print',dashboard:'Dashboard',totalShipments:'Total Shipments',todayShipments:'Today Shipments',todayIncome:'Today Income',selectedDate:'Selected Date',dateShipments:'Date Shipments',dateIncome:'Date Income',shipmentList:'Shipment List',noDateShipments:'No shipments for this date',
   creating:'Creating Shipment...',created:'Shipment created',createdTitle:'Shipment Created',
   printSent:'Receipt print command has been sent.',newAgain:'Create New Shipment',printAgain:'Print Again',
-  sentPrinter:'Sent to POS printer',qrError:'Could not generate',language:'Language',settings:'Settings',records:'Records',profile:'Profile & Account',name:'Name',account:'Account',branch:'Relevant Branch',save:'Save Changes',currentPassword:'Current Password',newPassword:'New Password',passwordHint:'Leave password fields empty if you do not want to change it.',recordsTitle:'Shipment Records',noRecords:'No POS shipments yet.',search:'Search AWB / recipient',backCreate:'Create Shipment',saved:'Settings saved',dispatch:'Dispatch Shipment',dispatching:'Dispatching...',dispatched:'Dispatched',dispatchConfirm:'Dispatch this shipment to the destination branch?',dispatchDone:'Shipment dispatched successfully'
+  sentPrinter:'Sent to POS printer',qrError:'Could not generate',language:'Language',settings:'Settings',records:'Records',profile:'Profile & Account',name:'Name',account:'Account',branch:'Relevant Branch',save:'Save Changes',currentPassword:'Current Password',newPassword:'New Password',passwordHint:'Leave password fields empty if you do not want to change it.',recordsTitle:'Shipment Records',noRecords:'No POS shipments yet.',search:'Search AWB / recipient',backCreate:'Create Shipment',saved:'Settings saved',dispatch:'Dispatch Shipment',dispatching:'Dispatching...',dispatched:'Dispatched',dispatchConfirm:'Dispatch this shipment to the destination branch?',dispatchDone:'Shipment dispatched successfully',incoming:'Incoming Shipments',receive:'Shipment Received',receiving:'Receiving...',receiveConfirm:'Mark this shipment as received at this destination branch?',receiveDone:'Shipment received successfully',noIncoming:'No incoming shipments ready to receive.'
  },
  ar:{
   dedicated:'جهاز مخصص لإنشاء الشحنات',username:'اسم المستخدم',password:'كلمة المرور',login:'تسجيل الدخول',
@@ -79,7 +79,7 @@ const TXT={
   senderPays:'يدفع المرسل',collection:'مبلغ التحصيل',pieces:'عدد القطع',createPrint:'إنشاء الشحنة والطباعة',dashboard:'لوحة المعلومات',totalShipments:'إجمالي الشحنات',todayShipments:'شحنات اليوم',todayIncome:'دخل اليوم',selectedDate:'التاريخ المحدد',dateShipments:'شحنات التاريخ',dateIncome:'دخل التاريخ',shipmentList:'قائمة الشحنات',noDateShipments:'لا توجد شحنات في هذا التاريخ',
   creating:'جارٍ إنشاء الشحنة...',created:'تم إنشاء الشحنة',createdTitle:'تم إنشاء الشحنة',
   printSent:'تم إرسال أمر الطباعة.',newAgain:'إنشاء شحنة جديدة',printAgain:'طباعة مرة أخرى',
-  sentPrinter:'تم الإرسال إلى طابعة الجهاز',qrError:'تعذر إنشاء',language:'اللغة',settings:'الإعدادات',records:'السجلات',profile:'الملف والحساب',name:'الاسم',account:'الحساب',branch:'الفرع المرتبط',save:'حفظ التغييرات',currentPassword:'كلمة المرور الحالية',newPassword:'كلمة المرور الجديدة',passwordHint:'اترك حقول كلمة المرور فارغة إذا لم ترغب في تغييرها.',recordsTitle:'سجلات الشحنات',noRecords:'لا توجد شحنات POS حتى الآن.',search:'بحث برقم AWB أو المستلم',backCreate:'إنشاء شحنة',saved:'تم حفظ الإعدادات',dispatch:'ترحيل الشحنة',dispatching:'جارٍ الترحيل...',dispatched:'تم الترحيل',dispatchConfirm:'هل تريد ترحيل هذه الشحنة إلى فرع الوجهة؟',dispatchDone:'تم ترحيل الشحنة بنجاح'
+  sentPrinter:'تم الإرسال إلى طابعة الجهاز',qrError:'تعذر إنشاء',language:'اللغة',settings:'الإعدادات',records:'السجلات',profile:'الملف والحساب',name:'الاسم',account:'الحساب',branch:'الفرع المرتبط',save:'حفظ التغييرات',currentPassword:'كلمة المرور الحالية',newPassword:'كلمة المرور الجديدة',passwordHint:'اترك حقول كلمة المرور فارغة إذا لم ترغب في تغييرها.',recordsTitle:'سجلات الشحنات',noRecords:'لا توجد شحنات POS حتى الآن.',search:'بحث برقم AWB أو المستلم',backCreate:'إنشاء شحنة',saved:'تم حفظ الإعدادات',dispatch:'ترحيل الشحنة',dispatching:'جارٍ الترحيل...',dispatched:'تم الترحيل',dispatchConfirm:'هل تريد ترحيل هذه الشحنة إلى فرع الوجهة؟',dispatchDone:'تم ترحيل الشحنة بنجاح',incoming:'الشحنات الواردة',receive:'تم استلام الشحنة',receiving:'جارٍ الاستلام...',receiveConfirm:'هل تريد تأكيد استلام هذه الشحنة في فرع الوجهة؟',receiveDone:'تم استلام الشحنة بنجاح',noIncoming:'لا توجد شحنات واردة جاهزة للاستلام.'
  }
 };
 const t=k=>(TXT[lang]&&TXT[lang][k])||TXT.en[k]||k;
@@ -255,16 +255,23 @@ async function dashboardPanel(){
 }
 async function recordsPanel(){
  const panel=$('#panel');if(!panel)return;
- panel.innerHTML='<div class="section-title">'+esc(t('recordsTitle'))+'</div><button id="refreshRecordsBtn" class="btn light" type="button" style="margin-bottom:8px">Refresh Records</button><label class="field"><span>'+esc(t('search'))+'</span><input id="recordSearch" placeholder="GHZ-..."></label><div id="recordList" class="shipment-list"><div class="empty">...</div></div>';
+ panel.innerHTML='<div class="section-title">'+esc(t('recordsTitle'))+'</div><button id="refreshRecordsBtn" class="btn light" type="button" style="margin-bottom:8px">Refresh Records</button><label class="field"><span>'+esc(t('search'))+'</span><input id="recordSearch" placeholder="GHZ-..."></label><div class="section-title" style="margin-top:18px">'+esc(t('incoming'))+'</div><div id="incomingList" class="shipment-list"><div class="empty">...</div></div><div class="section-title" style="margin-top:18px">'+esc(t('recordsTitle'))+'</div><div id="recordList" class="shipment-list"><div class="empty">...</div></div>';
  try{
    const rows=await api('/api/pos/records');
+   const incoming=(Array.isArray(shipments)?shipments:[]).filter(s=>s&&s.can_receive_at_branch);
+   const drawIncoming=()=>{
+     $('#incomingList').innerHTML=incoming.length?incoming.map(s=>'<article class="shipment"><div class="shipment-head"><div><div class="awb">'+esc(s.awb)+'</div><b>'+esc(s.recipient||'')+'</b></div><span class="badge">'+esc(s.status||'')+'</span></div><p>'+esc(localCity(s.origin||''))+' → '+esc(localCity(s.destination||''))+' · '+esc(s.phone||'')+'</p><div class="record-meta"><span>'+esc(s.payment_status||'')+'</span><span>'+esc(s.package_description||'')+'</span></div><div class="mini-actions"><button class="btn orange" data-receive-shipment="'+esc(s.awb)+'">'+esc(t('receive'))+'</button></div></article>').join(''):'<div class="empty">'+esc(t('noIncoming'))+'</div>';
+     document.querySelectorAll('[data-receive-shipment]').forEach(b=>b.onclick=()=>receiveShipment(b.dataset.receiveShipment,b));
+   };
    const draw=()=>{const searchEl=$('#recordSearch');const q=String((searchEl&&searchEl.value)||'').trim().toLowerCase();const data=rows.filter(s=>!q||[s.awb,s.recipient,s.phone].some(v=>String(v||'').toLowerCase().includes(q)));$('#recordList').innerHTML=data.length?data.map(s=>{const dispatched=!!s.dispatched_at||String(s.status||'').includes('الترحيل')||String(s.status||'').toLowerCase().includes('dispatch');return '<article class="shipment"><div class="shipment-head"><div><div class="awb">'+esc(s.awb)+'</div><b>'+esc(s.recipient||'')+'</b></div><span class="badge">'+esc(s.status||'')+'</span></div><p>'+esc(localCity(s.origin||''))+' → '+esc(localCity(s.destination||''))+' · '+esc(s.phone||'')+'</p><div class="record-meta"><span>'+esc(s.pos_created_at||s.created_at||'')+'</span><span>Prints: '+esc(s.print_count||0)+'</span><span>'+esc(s.payment_status||'')+'</span></div><div class="mini-actions"><button class="btn light" data-record-print="'+esc(s.awb)+'">'+esc(t('printAgain'))+'</button><button class="btn light" data-edit-shipment="'+esc(s.awb)+'" '+(dispatched?'disabled':'')+'>'+esc(t('editShipment'))+'</button>'+(dispatched?'<button class="btn dispatched-btn" disabled>'+esc(t('dispatched'))+'</button>':'<button class="btn orange" data-dispatch="'+esc(s.awb)+'">'+esc(t('dispatch'))+'</button>')+'</div></article>'}).join(''):'<div class="empty">'+esc(t('noRecords'))+'</div>';document.querySelectorAll('[data-record-print]').forEach(b=>b.onclick=()=>printWaybill(b.dataset.recordPrint));document.querySelectorAll('[data-edit-shipment]').forEach(b=>b.onclick=()=>editShipment(b.dataset.editShipment,rows));document.querySelectorAll('[data-dispatch]').forEach(b=>b.onclick=()=>dispatchShipment(b.dataset.dispatch,b))};
    $('#recordSearch').oninput=draw;
    const refreshRecordsBtn=$('#refreshRecordsBtn');
-   if(refreshRecordsBtn)refreshRecordsBtn.onclick=()=>recordsPanel();
+   if(refreshRecordsBtn)refreshRecordsBtn.onclick=async()=>{await refresh();await recordsPanel()};
+   drawIncoming();
    draw();
  }catch(err){panel.innerHTML='<div class="empty">'+esc(err.message)+'</div>'}
 }
+
 function editShipment(awb,rows){
  const s=(rows||[]).find(x=>String(x.awb||'')===String(awb||''));
  const panel=$('#panel');if(!s||!panel)return;
@@ -318,6 +325,19 @@ async function dispatchShipment(awb,button){
  }catch(err){
    toast(err.message);
    if(button&&button.isConnected){button.disabled=false;button.textContent=t('dispatch')}
+ }
+}
+async function receiveShipment(awb,button){
+ if(!confirm(t('receiveConfirm')))return;
+ button.disabled=true;button.textContent=t('receiving');
+ try{
+   const res=await api('/api/shipments/'+encodeURIComponent(awb)+'/receive-branch',{method:'POST',body:'{}'});
+   toast(t('receiveDone')+' · '+res.awb);
+   await refresh();
+   await recordsPanel();
+ }catch(err){
+   toast(err.message);
+   if(button&&button.isConnected){button.disabled=false;button.textContent=t('receive')}
  }
 }
 async function settingsPanel(){
