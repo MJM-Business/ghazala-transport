@@ -7878,3 +7878,32 @@ body.guest .landing-footer{
     padding:48px 16px !important;
   }
 }
+
+
+/* Route section layout correction: prevent inherited landing grid from clipping content */
+body.guest .route-section-3d{
+  display:block !important;
+  grid-template-columns:none !important;
+  max-width:none !important;
+  overflow:hidden !important;
+}
+body.guest .route-section-3d .route-header-3d{
+  max-width:920px !important;
+  margin:0 auto 34px !important;
+}
+body.guest .route-section-3d .route-corridor-3d-card{
+  width:min(1320px,calc(100vw - 64px)) !important;
+  max-width:1320px !important;
+  margin:0 auto !important;
+}
+body.guest .route-section-3d .route-waypoints-bar{
+  width:100%;
+}
+body.guest .route-section-3d .station-info-panels{
+  width:100%;
+}
+@media(max-width:760px){
+  body.guest .route-section-3d .route-corridor-3d-card{
+    width:100% !important;
+  }
+}
