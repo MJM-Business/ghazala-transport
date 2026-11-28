@@ -6298,6 +6298,16 @@ class Handler(BaseHTTPRequestHandler):
             if not user: return self.unauthorized()
             parts=[unquote(p) for p in path.split("/") if p]
 
+            if path=="/api/pos/whatsapp-test":
+                if not str(user.get("username") or "").strip().lower().startswith("pos."):
+                    return self.forbidden()
+                recipient=normalize_whatsapp_recipient(data.get("phone",""))
+                if not recipient:
+                    return self.send_json({"error":"Enter a valid WhatsApp phone number."},400)
+                result=_send_whatsapp(c,recipient,"غزالة ترانسبورت: رسالة اختبار واتساب ناجحة من جهاز نقاط البيع.")
+                return self.send_json({"ok":result.get("delivery")=="sent","recipient":recipient,**result},
+                                      200 if result.get("delivery")=="sent" else 502)
+
             if path=="/api/pos/profile":
                 if not str(user.get("username") or "").strip().lower().startswith("pos."):
                     return self.forbidden()
