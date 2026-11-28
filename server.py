@@ -5890,7 +5890,8 @@ class Handler(BaseHTTPRequestHandler):
                     item['destination_received_at']=handoff['received_at'] if handoff else None
                     item['can_acknowledge_at_branch']=False
                     item['can_receive_at_branch']=bool(
-                        not is_global and is_destination and canonical_status=='out_for_delivery'
+                        not is_global and is_destination
+                        and canonical_status in ('dispatched','out_for_delivery')
                         and handoff and not handoff['received_at']
                     )
                     item['booking_source']='customer' if c.execute(
@@ -7865,10 +7866,10 @@ class Handler(BaseHTTPRequestHandler):
                         "ok":True,"awb":awb,"status":shipment["status"],
                         "already_received":True,"received_at":handoff["received_at"]
                     })
-                if canonical!='out_for_delivery':
+                if canonical not in ('dispatched','out_for_delivery'):
                     return self.send_json({
-                        "error":"Shipment can be received only after the origin branch marks it Out for Delivery.",
-                        "code":"shipment_not_out_for_delivery"
+                        "error":"Shipment can be received only after the origin branch dispatches it.",
+                        "code":"shipment_not_dispatched"
                     },409)
 
                 delivered_status=transitions.storage_status('delivered')
