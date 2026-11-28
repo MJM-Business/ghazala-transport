@@ -405,8 +405,10 @@ def add_shipment_event(con, shipment_id, status, stage, location, actor):
                     category="shipment",shipment_id=shipment_id,source_key=source_key,
                     include_sms=False,include_whatsapp=False
                 )
+    whatsapp_result=None
     if con.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='notification_delivery_log'").fetchone():
-        dispatch_shipment_contact_whatsapp(con,shipment_id,status,"")
+        whatsapp_result=dispatch_shipment_contact_whatsapp(con,shipment_id,status,"")
+    return whatsapp_result
 
 class DeliveryPolicyError(ValueError):
     pass
@@ -6433,7 +6435,7 @@ class Handler(BaseHTTPRequestHandler):
                 stage=transitions.STATUS_STAGES["dispatched"]
                 c.execute("""UPDATE shipments SET status=?,stage=?,updated_at=CURRENT_TIMESTAMP
                              WHERE id=?""",(status,stage,row["id"]))
-                add_shipment_event(
+                whatsapp_result=add_shipment_event(
                     c,row["id"],status,stage,row["origin"],user.get("display_name") or user["username"]
                 )
                 c.execute("""UPDATE pos_shipment_records
@@ -6465,7 +6467,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send_json({
                     "ok":True,"awb":awb,"status":status,"stage":stage,
                     "dispatched_at":updated["dispatched_at"] if updated else None,
-                    "destination_branch":dict(destination_branch) if destination_branch else None
+                    "destination_branch":dict(destination_branch) if destination_branch else None,
+                    "whatsapp_delivery":whatsapp_result or {"delivery":"skipped","error":"No WhatsApp lifecycle message was sent for this event.","provider":"Twilio WhatsApp"}
                 })
 
             if len(parts)==5 and parts[:3]==['api','pos','records'] and parts[4]=='printed':
@@ -7869,7 +7872,7 @@ class Handler(BaseHTTPRequestHandler):
                 c.execute("""UPDATE shipments
                     SET status=?,stage=?,updated_at=CURRENT_TIMESTAMP
                     WHERE id=?""",(delivered_status,delivered_stage,shipment["id"]))
-                add_shipment_event(
+                whatsapp_result=add_shipment_event(
                     c,shipment["id"],delivered_status,delivered_stage,
                     destination_branch["city"] if destination_branch else shipment["destination"],
                     user["display_name"]
@@ -8130,12 +8133,13 @@ class Handler(BaseHTTPRequestHandler):
                     waybill_id=issued_docs["waybill"]["id"],
                     metadata={"awb":awb,"pieces":len(issued_docs["stickers"])},request=self
                 )
-                add_shipment_event(c,shipment["id"],'تم إنشاء الشحنة','تم الإنشاء',data["origin"],user["display_name"])
+                whatsapp_result=add_shipment_event(c,shipment["id"],'تم إنشاء الشحنة','تم الإنشاء',data["origin"],user["display_name"])
                 sms=send_sms(c,data["phone"],"tracking_link",f"Ghazala shipment {awb} is registered. Track: {self.tracking_url(awb)}")
                 row=c.execute(shipment_query()+" WHERE s.awb=?",(awb,)).fetchone()
                 return self.send_json(dict(row)|{
                     "quote":quote,
                     "tracking_sms":sms["delivery"],
+                    "whatsapp_delivery":whatsapp_result or {"delivery":"skipped","error":"No WhatsApp lifecycle message was sent for this event.","provider":"Twilio WhatsApp"},
                     "tracking_url":self.tracking_url(awb),
                     "documents":shipment_document_payload(c,shipment["id"],self.tracking_url(awb)),
                     "customer_link":dict(linked_customer) if linked_customer else None,
