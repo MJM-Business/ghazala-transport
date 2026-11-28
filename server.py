@@ -634,6 +634,29 @@ def _notification_log_upsert(con,*,user_id=None,customer_user_id=None,shipment_i
        next_attempt_at,sent_at))
 
 
+def normalize_whatsapp_recipient(value):
+    """Normalize Saudi customer mobile numbers to WhatsApp E.164 format."""
+    raw=str(value or "").strip()
+    if not raw:
+        return ""
+    if raw.lower().startswith("whatsapp:"):
+        raw=raw.split(":",1)[1].strip()
+    digits=re.sub(r"\D+","",raw)
+    if digits.startswith("00966"):
+        digits=digits[2:]
+    elif digits.startswith("966"):
+        pass
+    elif digits.startswith("05") and len(digits)==10:
+        digits="966"+digits[1:]
+    elif digits.startswith("5") and len(digits)==9:
+        digits="966"+digits
+    elif raw.startswith("+"):
+        return "+"+digits
+    else:
+        return "+"+digits if digits else ""
+    return "+"+digits
+
+
 def _send_whatsapp(con,recipient,message):
     sid=os.environ.get("TWILIO_ACCOUNT_SID","").strip(); token=os.environ.get("TWILIO_AUTH_TOKEN","").strip()
     sender=os.environ.get("TWILIO_WHATSAPP_FROM","").strip()
@@ -663,7 +686,7 @@ def _shipment_whatsapp_text(shipment,status,tracking_url):
             "in_transit":f"غزالا ترانسبورت: شحنتك {awb} في الطريق إلى فرع الوجهة. التتبع: {tracking_url}",
             "at_destination":f"غزالا ترانسبورت: وصلت شحنتك {awb} إلى فرع الوجهة وأصبحت جاهزة للاستلام أو للخطوة التالية. التتبع: {tracking_url}",
             "out_for_delivery":f"غزالا ترانسبورت: شحنتك {awb} خرجت للتسليم. التتبع: {tracking_url}",
-            "delivered":f"غزالا ترانسبورت: تم تسليم شحنتك {awb} بنجاح. شكراً لاستخدامك غزالا.",
+            "delivered":f"غزالا ترانسبورت: وصلت شحنتك {awb} إلى فرع الوجهة وهي جاهزة للاستلام. يرجى مراجعة الفرع لاستلامها. التتبع: {tracking_url}",
             "delayed":f"غزالا ترانسبورت: يوجد تحديث على شحنتك {awb} وقد يحدث تأخير. التتبع: {tracking_url}",
         },
         "en":{
@@ -672,7 +695,7 @@ def _shipment_whatsapp_text(shipment,status,tracking_url):
             "in_transit":f"Ghazala Transport: Shipment {awb} is in transit to the destination branch. Track: {tracking_url}",
             "at_destination":f"Ghazala Transport: Shipment {awb} has arrived at the destination branch and is ready for pickup or the next delivery step. Track: {tracking_url}",
             "out_for_delivery":f"Ghazala Transport: Shipment {awb} is out for delivery. Track: {tracking_url}",
-            "delivered":f"Ghazala Transport: Shipment {awb} has been delivered successfully. Thank you.",
+            "delivered":f"Ghazala Transport: Shipment {awb} has arrived at the destination branch and is ready for pickup. Please visit the branch to collect it. Track: {tracking_url}",
             "delayed":f"Ghazala Transport: Shipment {awb} has an update and may be delayed. Track: {tracking_url}",
         },
         "ur":{
@@ -681,7 +704,7 @@ def _shipment_whatsapp_text(shipment,status,tracking_url):
             "in_transit":f"Ghazala Transport: Aap ki shipment {awb} destination branch ki taraf ja rahi hai. Track: {tracking_url}",
             "at_destination":f"Ghazala Transport: Aap ki shipment {awb} destination branch pohanch gayi hai aur pickup ya next delivery step ke liye ready hai. Track: {tracking_url}",
             "out_for_delivery":f"Ghazala Transport: Aap ki shipment {awb} delivery ke liye nikal chuki hai. Track: {tracking_url}",
-            "delivered":f"Ghazala Transport: Aap ki shipment {awb} successfully deliver ho gayi hai. Shukriya.",
+            "delivered":f"Ghazala Transport: Aap ki shipment {awb} destination branch pohanch chuki hai aur pickup ke liye ready hai. Branch se collect kar sakte hain. Track: {tracking_url}",
             "delayed":f"Ghazala Transport: Aap ki shipment {awb} mein delay update hai. Track: {tracking_url}",
         },
         "hi":{
@@ -690,7 +713,7 @@ def _shipment_whatsapp_text(shipment,status,tracking_url):
             "in_transit":f"Ghazala Transport: Shipment {awb} destination branch ki taraf transit mein hai. Track: {tracking_url}",
             "at_destination":f"Ghazala Transport: Shipment {awb} destination branch pahunch gayi hai. Track: {tracking_url}",
             "out_for_delivery":f"Ghazala Transport: Shipment {awb} delivery ke liye nikal chuki hai. Track: {tracking_url}",
-            "delivered":f"Ghazala Transport: Shipment {awb} successfully deliver ho gayi hai. Dhanyavaad.",
+            "delivered":f"Ghazala Transport: Shipment {awb} destination branch pahunch gayi hai aur pickup ke liye ready hai. Track: {tracking_url}",
             "delayed":f"Ghazala Transport: Shipment {awb} mein delay update hai. Track: {tracking_url}",
         },
         "bn":{
@@ -699,11 +722,11 @@ def _shipment_whatsapp_text(shipment,status,tracking_url):
             "in_transit":f"Ghazala Transport: Shipment {awb} destination branch-er dike jacche. Track: {tracking_url}",
             "at_destination":f"Ghazala Transport: Shipment {awb} destination branch-e pouchheche. Track: {tracking_url}",
             "out_for_delivery":f"Ghazala Transport: Shipment {awb} delivery-r jonno ber hoyeche. Track: {tracking_url}",
-            "delivered":f"Ghazala Transport: Shipment {awb} successfully delivered. Dhonnobad.",
+            "delivered":f"Ghazala Transport: Shipment {awb} destination branch-e pouchheche ebong pickup-er jonno ready. Track: {tracking_url}",
             "delayed":f"Ghazala Transport: Shipment {awb}-e delay update ache. Track: {tracking_url}",
         },
     }
-    if canonical not in ("created","dispatched","in_transit","at_destination","out_for_delivery","delivered","delayed"):
+    if canonical not in ("created","dispatched","delivered"):
         return ""
     return (templates.get(language) or templates["en"]).get(canonical,"")
 
@@ -721,7 +744,9 @@ def dispatch_shipment_contact_whatsapp(con,shipment_id,status,tracking_url):
         return None
     canonical=transitions.canonical(status)
     source_key=f"shipment-contact:{shipment_id}:{canonical}"
-    recipient=str(item["phone"]).strip()
+    recipient=normalize_whatsapp_recipient(item["phone"])
+    if not recipient:
+        return None
     existing=con.execute("""SELECT status FROM notification_delivery_log
         WHERE source_key=? AND channel='whatsapp' AND recipient=?""",(source_key,recipient)).fetchone()
     if existing and existing["status"] in ("sent","demo","not_configured","queued"):
