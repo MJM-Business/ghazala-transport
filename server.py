@@ -7900,7 +7900,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send_json({
                     "ok":True,"awb":awb,"status":delivered_status,"stage":delivered_stage,
                     "received_at":updated["received_at"],
-                    "destination_branch":dict(destination_branch) if destination_branch else None
+                    "destination_branch":dict(destination_branch) if destination_branch else None,
+                    "whatsapp_delivery":whatsapp_result or {"delivery":"skipped","error":"No WhatsApp lifecycle message was sent for this event.","provider":"Twilio WhatsApp"}
                 })
 
             self.prepare_mutation(c,user,'POST',parts,data)
