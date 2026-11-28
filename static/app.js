@@ -1049,6 +1049,39 @@ function landingPage(){return `<div class="landing-shell"><div class="landing-wr
   <div><span class="highlight-num">03</span><div><b>ربط الفروع</b><small>جدة ↔ جازان</small></div></div>
 </div>
 
+<!-- GHZ SHIPMENT JOURNEY: lightweight animated workflow -->
+<section class="ghz-flow" id="workflow" aria-labelledby="ghzFlowTitle">
+  <div class="ghz-flow-copy">
+    <span class="landing-kicker-3d"><i>✦</i> رحلة الشحنة خطوة بخطوة</span>
+    <h2 id="ghzFlowTitle">من إنشاء الشحنة حتى استلامها في فرع الوجهة</h2>
+    <p>تابع كيف تنتقل الشحنة بين الفروع، من التسجيل في جهاز POS حتى الاستلام النهائي وتحديث الحالة في جميع البوابات.</p>
+    <div class="ghz-flow-tabs" role="tablist" aria-label="Shipment workflow">
+      <button class="ghz-flow-tab active" type="button" data-flow-step="0"><b>01</b><span>إنشاء الشحنة</span></button>
+      <button class="ghz-flow-tab" type="button" data-flow-step="1"><b>02</b><span>جاهزة للإرسال</span></button>
+      <button class="ghz-flow-tab" type="button" data-flow-step="2"><b>03</b><span>تم الترحيل</span></button>
+      <button class="ghz-flow-tab" type="button" data-flow-step="3"><b>04</b><span>في الطريق</span></button>
+      <button class="ghz-flow-tab" type="button" data-flow-step="4"><b>05</b><span>وصلت للفرع</span></button>
+      <button class="ghz-flow-tab" type="button" data-flow-step="5"><b>06</b><span>تم الاستلام</span></button>
+    </div>
+  </div>
+  <div class="ghz-flow-stage" data-flow-active="0">
+    <div class="ghz-flow-scene" aria-hidden="true">
+      <div class="ghz-flow-hub hub-origin"><span>JED</span><small>فرع الإرسال</small></div>
+      <div class="ghz-flow-road"><i></i><b></b></div>
+      <div class="ghz-flow-hub hub-destination"><span>JAZ</span><small>فرع الوجهة</small></div>
+      <div class="ghz-flow-box"><span class="box-top"></span><span class="box-face">GHZ</span></div>
+      <div class="ghz-flow-truck"><span class="truck-body">GHAZALA</span><span class="truck-cab"></span><i></i><b></b></div>
+      <div class="ghz-flow-scan">⌗</div>
+      <div class="ghz-flow-check">✓</div>
+    </div>
+    <div class="ghz-flow-status">
+      <span class="ghz-flow-counter">01 / 06</span>
+      <h3>إنشاء الشحنة</h3>
+      <p>يقوم مستخدم POS بتسجيل بيانات الشحنة وإنشاء رقم AWB والباركود وQR.</p>
+    </div>
+  </div>
+</section>
+
 <!-- SECTION 1: OUR SERVICES IN 3D -->
 <section class="landing-section services-section-3d" id="services">
   <div class="landing-section-heading">
@@ -1376,6 +1409,39 @@ function bindLandingInteractions() {
       }
     };
   });
+
+  // Shipment journey animation: auto-play, clickable and reduced-motion aware.
+  const flowStage=document.querySelector('.ghz-flow-stage');
+  const flowTabs=Array.from(document.querySelectorAll('.ghz-flow-tab'));
+  if(window.__ghzFlowTimer){clearInterval(window.__ghzFlowTimer);window.__ghzFlowTimer=null}
+  if(flowStage&&flowTabs.length){
+    const flowContent=[
+      ['01 / 06','إنشاء الشحنة','يقوم مستخدم POS بتسجيل بيانات الشحنة وإنشاء رقم AWB والباركود وQR.'],
+      ['02 / 06','جاهزة للإرسال','تظهر الشحنة في سجلات الفرع وتكون جاهزة للمراجعة والطباعة قبل الترحيل.'],
+      ['03 / 06','تم الترحيل','يضغط مستخدم POS على Dispatch فتتحدث الحالة وتظهر الشحنة مباشرة لفرع الوجهة.'],
+      ['04 / 06','في الطريق','تنتقل الشحنة بين الفرعين مع بقاء نفس السجل المركزي متاحاً للإدارة والفرعين.'],
+      ['05 / 06','وصلت للفرع','تظهر الشحنة في Incoming Shipments لدى فرع الوجهة مع خيار Shipment Received.'],
+      ['06 / 06','تم الاستلام','عند التأكيد من POS أو الكمبيوتر تتحدث الحالة إلى Delivered في فرع الإرسال وفرع الوجهة ولوحة الإدارة.']
+    ];
+    const activateFlow=(index)=>{
+      const i=((Number(index)||0)%flowTabs.length+flowTabs.length)%flowTabs.length;
+      flowStage.dataset.flowActive=String(i);
+      flowTabs.forEach((tab,n)=>tab.classList.toggle('active',n===i));
+      const [counter,title,desc]=flowContent[i];
+      const counterEl=flowStage.querySelector('.ghz-flow-counter');
+      const titleEl=flowStage.querySelector('.ghz-flow-status h3');
+      const descEl=flowStage.querySelector('.ghz-flow-status p');
+      if(counterEl)counterEl.textContent=counter;
+      if(titleEl)titleEl.textContent=phrase(title);
+      if(descEl)descEl.textContent=phrase(desc);
+    };
+    flowTabs.forEach((tab,i)=>tab.onclick=()=>activateFlow(i));
+    activateFlow(0);
+    if(!window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+      let current=0;
+      window.__ghzFlowTimer=setInterval(()=>{current=(current+1)%flowTabs.length;activateFlow(current)},3800);
+    }
+  }
 
   // 3D Card tilt effect on mouse movement for services
   document.querySelectorAll('.service-card-3d').forEach(card => {
