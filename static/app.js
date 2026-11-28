@@ -1006,9 +1006,9 @@ function landingPage(){return `<div class="landing-shell"><div class="landing-wr
       <button class="landing-track-cta" type="button" data-customer-track-guest><span class="landing-track-cta-icon">⌕</span><span class="landing-track-cta-text">تتبع شحنتك</span></button>
     </div>
     <div class="landing-trust">
-      <span><i>✓</i> وجهتان واضحتان</span>
-      <span><i>✓</i> الدفع عند الاستلام</span>
-      <span><i>✓</i> متابعة تشغيلية</span>
+      <span><i>✓</i> تتبع برقم الشحنة</span>
+      <span><i>✓</i> دفع مرن حسب الشحنة</span>
+      <span><i>✓</i> تحديثات حالة واضحة</span>
     </div>
   </div>
   <div class="landing-art">
@@ -1044,9 +1044,9 @@ function landingPage(){return `<div class="landing-shell"><div class="landing-wr
 </section>
 
 <div class="landing-highlights">
-  <div><span class="highlight-num">01</span><div><b>مسار محدد</b><small>شبكة الفروع</small></div></div>
-  <div><span class="highlight-num">02</span><div><b>متابعة أوضح</b><small>الحالة والموعد المتوقع</small></div></div>
-  <div><span class="highlight-num">03</span><div><b>فريق عمليات</b><small>سائق وموقع مكلّف لكل رحلة</small></div></div>
+  <div><span class="highlight-num">01</span><div><b>تسجيل الشحنة</b><small>AWB وباركود وQR</small></div></div>
+  <div><span class="highlight-num">02</span><div><b>تحديث الحالة</b><small>من الإنشاء حتى الاستلام</small></div></div>
+  <div><span class="highlight-num">03</span><div><b>ربط الفروع</b><small>جدة ↔ جازان</small></div></div>
 </div>
 
 <!-- SECTION 1: OUR SERVICES IN 3D -->
@@ -1263,11 +1263,11 @@ function landingPage(){return `<div class="landing-shell"><div class="landing-wr
         <span class="step-num-badge">02</span>
       </div>
       <div class="step-card-body">
-        <h4>الفرز والتحميل في المركز اللوجستي</h4>
-        <p>فحص الأوزان والأبعاد، المسح الضوئي للطرود بقائمة المنافست، وتثبيت وتأمين البضائع داخل شاحنات النقل المجهزة.</p>
+        <h4>التجهيز والإرسال من الفرع</h4>
+        <p>تُراجع بيانات الشحنة في فرع الإرسال، ثم يتم تحديث حالتها إلى "Dispatched" لتظهر مباشرة لدى فرع الوجهة.</p>
         <ul class="step-feature-list">
-          <li>✓ مسح جماعي Batch Scan</li>
-          <li>✓ تعيين السائق المعتمد</li>
+          <li>✓ مزامنة بين فرعي الإرسال والاستلام</li>
+          <li>✓ حالة شحنة موحدة وواضحة</li>
         </ul>
       </div>
     </div>
@@ -1279,11 +1279,11 @@ function landingPage(){return `<div class="landing-shell"><div class="landing-wr
         <span class="step-num-badge">03</span>
       </div>
       <div class="step-card-body">
-        <h4>النقل السريع والتتبع المباشر</h4>
-        <p>انطلاق الرحلة عبر طريق الساحل مع مراقبة GPS حية لحركة الشاحنة، قياس درجات الحرارة لحظياً، وتحديث موعد الوصول ETA.</p>
+        <h4>الوصول إلى فرع الوجهة</h4>
+        <p>تظهر الشحنة لدى فرع الوجهة بحالة "Out for Delivery" حتى وصول الطرد فعلياً واستلامه من إدارة الفرع.</p>
         <ul class="step-feature-list">
-          <li>✓ تتبع الأقمار الصناعية Live GPS</li>
-          <li>✓ تحديث مستمر لموعد الوصول</li>
+          <li>✓ ظهور تلقائي لدى فرع الوجهة</li>
+          <li>✓ عرض تفاصيل الدفع والشحنة</li>
         </ul>
       </div>
     </div>
@@ -1295,11 +1295,11 @@ function landingPage(){return `<div class="landing-shell"><div class="landing-wr
         <span class="step-num-badge">04</span>
       </div>
       <div class="step-card-body">
-        <h4>التسليم المعتمد وإثبات الاستلام POD</h4>
-        <p>توصيل الشحنة لباب المستلم، توقيع إلكتروني حي على الشاشة، تحصيل مبالغ الدفع عند الاستلام COD وتوريدها للتاجر فوراً.</p>
+        <h4>تأكيد الاستلام وإغلاق الشحنة</h4>
+        <p>عند وصول الطرد، يؤكد فرع الوجهة "Shipment Received"؛ وإذا كانت الشحنة غير مدفوعة يتم تحصيل المبلغ وتحديث الدفع قبل الإغلاق.</p>
         <ul class="step-feature-list">
-          <li>✓ توقيع إلكتروني حي POD</li>
-          <li>✓ تحصيل نقدي ومحفظة فورية</li>
+          <li>✓ تأكيد Shipment Received</li>
+          <li>✓ تحديث تلقائي إلى Delivered</li>
         </ul>
       </div>
     </div>
