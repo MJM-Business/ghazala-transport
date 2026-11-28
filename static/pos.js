@@ -356,7 +356,21 @@ async function settingsPanel(){
  panel.innerHTML='<div class="empty">...</div>';
  try{
    const data=await api('/api/pos/profile');me=data.user||me;const branch=data.branch||primaryBranch(me)||{};
-   panel.innerHTML='<div class="section-title">'+esc(t('profile'))+'</div><div class="settings-note"><b>Bridge:</b> <span id="bridgeVersion">Checking...</span><br><b>Printer:</b> <span id="printerStatus">Checking...</span><button id="printerTestBtn" type="button" class="btn orange" style="margin-top:8px">Printer Test</button></div><form id="settingsForm"><label class="field"><span>'+esc(t('name'))+'</span><input name="display_name" value="'+esc(me.display_name||'')+'" required></label><label class="field"><span>'+esc(t('account'))+'</span><input value="'+esc(me.username||'')+'" readonly></label><label class="field"><span>'+esc(t('branch'))+'</span><input value="'+esc(localBranchName(branch)+(branch.city?' · '+localCity(branch.city):''))+'" readonly></label><div class="settings-note">'+esc(t('passwordHint'))+'</div><label class="field"><span>'+esc(t('currentPassword'))+'</span><input name="current_password" type="password" autocomplete="current-password"></label><label class="field"><span>'+esc(t('newPassword'))+'</span><input name="new_password" type="password" autocomplete="new-password"></label><button class="btn primary" type="submit">'+esc(t('save'))+'</button></form>';
+   panel.innerHTML='<div class="section-title">'+esc(t('profile'))+'</div><div class="settings-note"><b>Bridge:</b> <span id="bridgeVersion">Checking...</span><br><b>Printer:</b> <span id="printerStatus">Checking...</span><button id="printerTestBtn" type="button" class="btn orange" style="margin-top:8px">Printer Test</button></div><div class="settings-note"><b>WhatsApp Provider Test</b><label class="field" style="margin-top:8px"><span>Customer WhatsApp</span><input id="waTestPhone" type="tel" placeholder="+9665XXXXXXXX"></label><button id="waTestBtn" type="button" class="btn orange">Send WhatsApp Test</button><div id="waTestStatus" style="margin-top:8px"></div></div><form id="settingsForm"><label class="field"><span>'+esc(t('name'))+'</span><input name="display_name" value="'+esc(me.display_name||'')+'" required></label><label class="field"><span>'+esc(t('account'))+'</span><input value="'+esc(me.username||'')+'" readonly></label><label class="field"><span>'+esc(t('branch'))+'</span><input value="'+esc(localBranchName(branch)+(branch.city?' · '+localCity(branch.city):''))+'" readonly></label><div class="settings-note">'+esc(t('passwordHint'))+'</div><label class="field"><span>'+esc(t('currentPassword'))+'</span><input name="current_password" type="password" autocomplete="current-password"></label><label class="field"><span>'+esc(t('newPassword'))+'</span><input name="new_password" type="password" autocomplete="new-password"></label><button class="btn primary" type="submit">'+esc(t('save'))+'</button></form>';
+   const waTestBtn=$('#waTestBtn');
+   if(waTestBtn)waTestBtn.onclick=async()=>{
+     const phone=String($('#waTestPhone').value||'').trim(),status=$('#waTestStatus');
+     if(!phone){status.textContent='Enter WhatsApp number.';return}
+     waTestBtn.disabled=true;status.textContent='Sending WhatsApp test...';
+     try{
+       const res=await api('/api/pos/whatsapp-test',{method:'POST',body:JSON.stringify({phone})});
+       status.textContent='WhatsApp: '+String(res.delivery||'sent');
+       toast('WhatsApp test sent');
+     }catch(err){
+       status.textContent='WhatsApp failed: '+err.message;
+       toast('WhatsApp failed: '+err.message);
+     }finally{waTestBtn.disabled=false}
+   };
    const printerBridge=window.GhazalaPOSPrinter||window.AndroidPrinter||window.Android;
    const bridgeVersionEl=$('#bridgeVersion');
    if(bridgeVersionEl){
