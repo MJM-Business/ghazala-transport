@@ -8555,3 +8555,51 @@ body.guest .route-section-3d .station-info-panels{
     width:100% !important;
   }
 }
+
+
+/* Ghazala shipment journey — public landing only */
+body.guest .ghz-flow{display:grid;grid-template-columns:minmax(0,.9fr) minmax(440px,1.1fr);gap:clamp(28px,4vw,64px);align-items:center;margin:58px 0 18px;padding:clamp(28px,4vw,52px);border:1px solid #e9e7e3;border-radius:28px;background:linear-gradient(145deg,#fff 0%,#faf9f7 54%,#f5f2ee 100%);box-shadow:0 24px 60px #11182712;overflow:hidden}
+body.guest .ghz-flow-copy h2{max-width:580px;margin:14px 0 12px;font-size:clamp(28px,3vw,46px);line-height:1.25;letter-spacing:-.035em}
+body.guest .ghz-flow-copy>p{max-width:620px;color:#6f7378;line-height:1.9;font-size:14px}
+body.guest .ghz-flow-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:24px}
+body.guest .ghz-flow-tab{display:flex;align-items:center;gap:10px;border:1px solid #e5e4e0;border-radius:14px;padding:11px 12px;background:#fff;color:#25282b;text-align:start;cursor:pointer;transition:.2s ease}
+body.guest .ghz-flow-tab b{display:grid;place-items:center;flex:0 0 32px;width:32px;height:32px;border-radius:10px;background:#f2f1ee;color:#8a8d90;font:700 10px 'JetBrains Mono',monospace}
+body.guest .ghz-flow-tab span{font-size:12px;font-weight:700}
+body.guest .ghz-flow-tab:hover{transform:translateY(-2px);border-color:#f0a45f}
+body.guest .ghz-flow-tab.active{border-color:#df6e16;background:#fff8f2;box-shadow:0 10px 25px #df6e1617}
+body.guest .ghz-flow-tab.active b{background:#df6e16;color:#fff}
+body.guest .ghz-flow-stage{position:relative;min-height:470px;border-radius:24px;background:linear-gradient(180deg,#171717 0 52%,#202020 52% 100%);overflow:hidden;box-shadow:0 24px 50px #11182725,inset 0 1px 0 #ffffff12}
+body.guest .ghz-flow-stage:before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 25%,#ff8b2d20,transparent 34%),linear-gradient(90deg,#ffffff05 1px,transparent 1px),linear-gradient(#ffffff05 1px,transparent 1px);background-size:auto,36px 36px,36px 36px}
+body.guest .ghz-flow-scene{position:absolute;inset:0 0 122px;overflow:hidden}
+body.guest .ghz-flow-road{position:absolute;left:12%;right:12%;bottom:78px;height:4px;background:#525252;border-radius:10px}
+body.guest .ghz-flow-road i{position:absolute;inset:0;background:repeating-linear-gradient(90deg,#f59b50 0 24px,transparent 24px 42px);opacity:.8;animation:ghzRoad 1.2s linear infinite}
+body.guest .ghz-flow-road b{position:absolute;left:0;right:0;top:15px;height:1px;background:#ffffff18}
+body.guest .ghz-flow-hub{position:absolute;bottom:98px;width:94px;height:92px;border:1px solid #ffffff18;border-radius:16px;background:#262626;box-shadow:0 16px 30px #0006;display:grid;place-items:center;align-content:center;gap:5px;color:#fff}
+body.guest .ghz-flow-hub span{font:800 18px 'JetBrains Mono',monospace;color:#f18a36}
+body.guest .ghz-flow-hub small{font-size:9px;color:#aaa}
+body.guest .hub-origin{left:8%}.hub-destination{right:8%}
+body.guest .ghz-flow-box{position:absolute;left:16%;bottom:189px;width:58px;height:52px;transform:translateX(-50%);transition:left .75s cubic-bezier(.2,.8,.2,1),bottom .55s ease,opacity .3s}
+body.guest .ghz-flow-box .box-face{position:absolute;inset:9px 0 0;background:linear-gradient(135deg,#f6a15b,#db6c16);border-radius:5px;color:#fff;font:800 10px 'JetBrains Mono';display:grid;place-items:center;box-shadow:0 12px 20px #0005}
+body.guest .ghz-flow-box .box-top{position:absolute;left:4px;right:4px;top:0;height:16px;background:#ffbd82;clip-path:polygon(12% 100%,0 35%,50% 0,100% 35%,88% 100%)}
+body.guest .ghz-flow-truck{position:absolute;left:27%;bottom:83px;width:125px;height:58px;opacity:0;transform:translateX(-50%) scale(.92);transition:left .9s cubic-bezier(.2,.8,.2,1),opacity .3s,transform .3s}
+body.guest .truck-body{position:absolute;left:0;bottom:12px;width:82px;height:39px;border-radius:7px 3px 3px 7px;background:#f08026;color:#fff;font:800 8px 'JetBrains Mono';display:grid;place-items:center}
+body.guest .truck-cab{position:absolute;right:5px;bottom:12px;width:40px;height:32px;border-radius:5px 9px 4px 4px;background:#fff}
+body.guest .ghz-flow-truck i,body.guest .ghz-flow-truck b{position:absolute;bottom:2px;width:20px;height:20px;border:6px solid #3c3c3c;border-radius:50%;background:#111}.ghz-flow-truck i{left:18px}.ghz-flow-truck b{right:17px}
+body.guest .ghz-flow-scan{position:absolute;left:16%;bottom:235px;width:42px;height:42px;border:1px solid #f18a36;border-radius:12px;color:#f18a36;display:grid;place-items:center;font-size:22px;opacity:0;transform:translateX(-50%) scale(.7);transition:.35s}
+body.guest .ghz-flow-check{position:absolute;right:13%;bottom:206px;width:52px;height:52px;border-radius:50%;background:#1d9f68;color:white;display:grid;place-items:center;font-size:26px;font-weight:800;opacity:0;transform:scale(.5);transition:.35s}
+body.guest .ghz-flow-status{position:absolute;left:0;right:0;bottom:0;min-height:122px;padding:22px 26px;background:#fff;border-top:1px solid #e9e7e3}
+body.guest .ghz-flow-counter{display:block;color:#df6e16;font:700 10px 'JetBrains Mono';letter-spacing:.1em}
+body.guest .ghz-flow-status h3{margin:6px 0 4px;font-size:20px}.ghz-flow-status p{margin:0;color:#70757a;font-size:11px;line-height:1.8}
+body.guest .ghz-flow-stage[data-flow-active="0"] .ghz-flow-scan{opacity:1;transform:translateX(-50%) scale(1)}
+body.guest .ghz-flow-stage[data-flow-active="1"] .ghz-flow-box{left:24%;bottom:150px}
+body.guest .ghz-flow-stage[data-flow-active="2"] .ghz-flow-box,body.guest .ghz-flow-stage[data-flow-active="3"] .ghz-flow-box{opacity:0}
+body.guest .ghz-flow-stage[data-flow-active="2"] .ghz-flow-truck{left:31%;opacity:1;transform:translateX(-50%) scale(1)}
+body.guest .ghz-flow-stage[data-flow-active="3"] .ghz-flow-truck{left:59%;opacity:1;transform:translateX(-50%) scale(1)}
+body.guest .ghz-flow-stage[data-flow-active="4"] .ghz-flow-truck{left:79%;opacity:1;transform:translateX(-50%) scale(1)}
+body.guest .ghz-flow-stage[data-flow-active="4"] .ghz-flow-box{left:84%;bottom:189px}
+body.guest .ghz-flow-stage[data-flow-active="5"] .ghz-flow-box{left:84%;bottom:189px}
+body.guest .ghz-flow-stage[data-flow-active="5"] .ghz-flow-check{opacity:1;transform:scale(1)}
+@keyframes ghzRoad{to{transform:translateX(42px)}}
+@media(max-width:920px){body.guest .ghz-flow{grid-template-columns:1fr;padding:24px}.ghz-flow-stage{min-height:430px}}
+@media(max-width:600px){body.guest .ghz-flow{margin-top:34px;padding:18px;border-radius:20px}.ghz-flow-copy h2{font-size:27px}.ghz-flow-tabs{grid-template-columns:1fr!important}.ghz-flow-stage{min-height:390px!important}.ghz-flow-hub{width:74px;height:76px}.hub-origin{left:5%!important}.hub-destination{right:5%!important}.ghz-flow-truck{width:104px}.truck-body{width:67px!important}.ghz-flow-status{padding:18px 19px}}
+@media(prefers-reduced-motion:reduce){body.guest .ghz-flow *{animation:none!important;transition:none!important}}
