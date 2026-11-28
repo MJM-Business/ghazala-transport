@@ -4,6 +4,7 @@ import traceback
 from pathlib import Path
 from urllib.parse import urlparse, parse_qs, unquote, urlencode, quote
 from urllib.request import Request, urlopen
+from urllib.error import HTTPError
 from datetime import datetime, timezone, timedelta
 import argparse, base64, hashlib, hmac, io, json, math, os, re, secrets, sqlite3, threading, time, uuid
 from migrations import apply_migrations
@@ -671,8 +672,27 @@ def _send_whatsapp(con,recipient,message):
                         headers={"Authorization":f"Basic {auth_header}","Content-Type":"application/x-www-form-urlencoded"})
         with urlopen(request,timeout=10) as response: response.read()
         return {"delivery":"sent","error":"","provider":"Twilio WhatsApp"}
+    except HTTPError as exc:
+        detail=""
+        try:
+            detail=exc.read().decode("utf-8","replace")
+            try:
+                payload=json.loads(detail)
+                detail=str(payload.get("message") or payload.get("detail") or detail)
+                code=payload.get("code")
+                if code not in (None,""):
+                    detail=f"Twilio {code}: {detail}"
+            except Exception:
+                pass
+        except Exception:
+            detail=""
+        error=(detail or str(exc))[:500]
+        print(f"[WhatsApp] failed to {to}: {error}", flush=True)
+        return {"delivery":"failed","error":error,"provider":"Twilio WhatsApp"}
     except Exception as exc:
-        return {"delivery":"failed","error":str(exc)[:300],"provider":"Twilio WhatsApp"}
+        error=str(exc)[:500]
+        print(f"[WhatsApp] failed to {to}: {error}", flush=True)
+        return {"delivery":"failed","error":error,"provider":"Twilio WhatsApp"}
 
 
 def _shipment_whatsapp_text(shipment,status,tracking_url):
